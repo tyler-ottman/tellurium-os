@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <limine.h>
+#include "./gdt/GDT.h"
  
 // The Limine requests can be placed anywhere, but it is important that
 // the compiler does not optimise them away, so, usually, they should
@@ -24,6 +25,8 @@ void _start(void) {
      || terminal_request.response->terminal_count < 1) {
         done();
     }
+
+    load_gdt();
  
     // We should now be able to call the Limine terminal to print out
     // a simple "Hello World" to screen.

@@ -51,7 +51,7 @@ override CFLAGS +=       \
     -mno-red-zone        \
     -mcmodel=kernel      \
     -MMD
- 
+
 # Internal linker flags that should not be changed by the user.
 override LDFLAGS +=         \
     -nostdlib               \
