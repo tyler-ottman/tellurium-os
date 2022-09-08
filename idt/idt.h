@@ -2,15 +2,28 @@
 #define IDT_H
 
 #include <stdint.h>
+#include <gdt/GDT.h>
 
+// https://wiki.osdev.org/Interrupt_Descriptor_Table
+
+// IDT Descriptor (IDTR)
 typedef struct {
     uint16_t size;
     uint64_t offset;
 }__attribute__((packed)) IDT_Descriptor;
 
+// IDT Entry
 typedef struct {
-    uint16_t offset;
-    
+    uint16_t offset_low16;
+    uint16_t segment_selector;
+    uint8_t ist;
+    uint8_t gate_type;
+    uint16_t offset_middle16;
+    uint32_t offset_upper32;
+    uint32_t reserved;
 }__attribute__((packed)) IDT_Entry;
+
+void init_idt(void);
+void add_descriptor(uint8_t, void*, uint8_t);
 
 #endif // IDT_H

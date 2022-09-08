@@ -3,6 +3,8 @@
 #ifndef GDT_H
 #define GDT_H
 
+#define GDT_KERNEL_CODE 0x28
+
 // https://wiki.osdev.org/Global_Descriptor_Table
 
 // GDT Descriptor (GDTR)
@@ -25,7 +27,7 @@ typedef struct {
     GDT_Entry gdt_entry[7];
 } GDT;
 
-void load_gdt(void);
+void init_gdt(void);
 void setGdt(void);
 
 #endif // GDT_H

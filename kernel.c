@@ -1,7 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <limine.h>
-#include "./gdt/GDT.h"
+#include <gdt/GDT.h>
+#include <idt/idt.h>
  
 // The Limine requests can be placed anywhere, but it is important that
 // the compiler does not optimise them away, so, usually, they should
@@ -26,7 +27,9 @@ void _start(void) {
         done();
     }
 
-    load_gdt();
+    __asm__ volatile ("cli"); // disable interrupts
+    init_gdt();
+    init_idt();
  
     // We should now be able to call the Limine terminal to print out
     // a simple "Hello World" to screen.

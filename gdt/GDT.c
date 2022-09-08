@@ -7,7 +7,7 @@ GDT_Descriptor gdtr;
 GDT gdt;
 
 // https://github.com/limine-bootloader/limine/blob/trunk/PROTOCOL.md
-void load_gdt() {
+void init_gdt() {
     gdtr.base = (uint64_t)&gdtr;
     gdtr.size = sizeof(GDT) - 1;
 
