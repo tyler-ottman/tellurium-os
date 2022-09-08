@@ -1,5 +1,11 @@
 #include "GDT.h"
 
+// GDTR
+GDT_Descriptor gdtr;
+
+// GDT
+GDT gdt;
+
 // https://github.com/limine-bootloader/limine/blob/trunk/PROTOCOL.md
 void load_gdt() {
     gdtr.base = (uint64_t)&gdtr;

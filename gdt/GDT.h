@@ -25,12 +25,6 @@ typedef struct {
     GDT_Entry gdt_entry[7];
 } GDT;
 
-// GDTR
-GDT_Descriptor gdtr;
-
-// GDT
-GDT gdt;
-
 void load_gdt(void);
 void setGdt(void);
 
