@@ -2,7 +2,7 @@
 #define IDT_H
 
 #include <stdint.h>
-#include <gdt/GDT.h>
+#include <arch/GDT.h>
 
 // https://wiki.osdev.org/Interrupt_Descriptor_Table
 

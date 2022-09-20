@@ -23,13 +23,18 @@ void add_descriptor(uint8_t vector, void* gate_entry, uint8_t flags) {
     descriptor_ptr->reserved = 0;
 }
 
+extern void* isr_table[];
+
 void init_idt(void) {
     idtr.offset = (uint64_t)&idt_entry[0];
     idtr.size = 256 * sizeof(IDT_Entry) - 1;
 
-    // for (uint8_t idx = 0; idx < 256; idx++) {
-        // add descriptors here
-    // }
+    // Load IDT entries
+    for (uint8_t idx = 0; idx < 21; idx++) {
+        if (idx <= 20) { // Add Exception entries in IDT
+            add_descriptor(idx, isr_table[idx], 0x8e);
+        }
+    }
 
     // Load gdtr register
     __asm__ volatile ("lidt %0" : : "m"(idtr));
