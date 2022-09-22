@@ -1,4 +1,5 @@
 #include <arch/terminal.h>
+#include <libc/string.h>
 #include <stdint.h>
 
 const char* exception_name[] =  {

@@ -26,6 +26,13 @@ void done(void) {
     }
 }
 
-void terminal_print(const char* str, int len) {
+void terminal_print(const char* str) {
+    int len = __strlen(str);
     terminal_request.response->write(terminal, str, len);
+}
+
+void terminal_println(const char* str) {
+    int len = __strlen(str);
+    terminal_request.response->write(terminal, str, len);
+    terminal_request.response->write(terminal, "\n", 1);
 }

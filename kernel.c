@@ -4,8 +4,10 @@
 #include <arch/GDT.h>
 #include <arch/idt.h>
 #include <arch/terminal.h>
+#include <memory/pmm.h>
  
 static volatile int a;
+extern void overflow(void);
 
 // The following will be our kernel's entry point.
 void _start(void) {
@@ -13,11 +15,12 @@ void _start(void) {
     init_terminal();
     init_gdt();
     init_idt();
+    init_pmm();
  
-    terminal_print("Kernel Initialized\n", 20);
+    terminal_println("Kernel Initialized");
 
     a = 2;
-    a /= 0;
+    a = a / 0;
 
     // We're done, just hang...
     done();

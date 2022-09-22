@@ -36,6 +36,6 @@ void init_idt(void) {
         }
     }
 
-    // Load gdtr register
+    // Load idtr register
     __asm__ volatile ("lidt %0" : : "m"(idtr));
 }
