@@ -1,5 +1,6 @@
 #include <libc/string.h>
 
+// https://github.com/bminor/newlib/blob/master/newlib/libc/stdlib/utoa.c
 char* __utoa(unsigned value, char *str, int base) {
   const char digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
   int i, j;

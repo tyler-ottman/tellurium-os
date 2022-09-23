@@ -1,0 +1,1 @@
+int __atoi(const char **str);
