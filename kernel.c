@@ -20,7 +20,7 @@ void _start(void) {
     terminal_printf("Init kernel: complete\n");
 
     a = 2;
-    a /= 0;
+    // a /= 0;
 
     // We're done, just hang...
     done();
