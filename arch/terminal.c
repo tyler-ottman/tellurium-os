@@ -85,7 +85,37 @@ int terminal_vfprintf(va_list valist, const char* format) {
 
             // Assume 64-bit for now
             if ((*format == 'i') || (*format == 'd')) { // Signed Integer
-                // Todo, signed 
+                // Todo, signed
+                uint64_t val = va_arg(valist, long long);\
+
+                // Get string representation of number
+                char str_num[256];
+                __itoa(val, str_num);
+
+                // Calculate padding taking into account length of string
+                uint64_t len = __strlen(str_num);
+                if ((len >= width) || (width == 0)) {
+                    // No padding needed
+                    width = 0;
+                } else {
+                    width -= len;
+                }
+
+                // Padding character either '0' or ' '
+                char padding_char = (flags & 1) ? '0' : ' ';
+
+                // Apply padding
+                for (uint64_t idx = 0; idx < width; idx++) {
+                    terminal_putchar(padding_char);
+                }
+
+                // Print string representation of number
+                char* str = str_num;
+                while (*str) {
+                    terminal_putchar(*str);
+                    str++;
+                }
+
             } else { // Unsigned Binary/Octal/Decimal/Hex
                 uint64_t val = va_arg(valist, long long);
                 

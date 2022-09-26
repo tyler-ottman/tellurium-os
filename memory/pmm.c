@@ -7,7 +7,7 @@ static volatile struct limine_memmap_request memory_map_request = {
 
 // AVL internals
 static int avl_size;
-static int bitmap_size;
+static int bitmap_size_bytes;
 static int cur_entry_idx;
 struct mmap_range_node* base;
 struct mmap_range_node* avl_nodes;
@@ -60,9 +60,6 @@ void init_bitmap_avl(struct limine_memmap_entry** entries, int size) {
         }
     }
 
-    // Todo: calculate size of bitmaps for each mmap section
-    bitmap_size = 0;
-
     // Calculate how much space is needed for avl entries
     uint64_t avl_byte_size = avl_size * sizeof(struct mmap_range_node);
     terminal_printf("%u entries in AVL, total size: %u\n", avl_size, avl_byte_size);
@@ -82,7 +79,20 @@ void init_bitmap_avl(struct limine_memmap_entry** entries, int size) {
         }
     }
 
-    // Todo: Find and allocate space for Bitmap structures
+    // Calculate total size of all bitmaps
+    // bitmap_size_bytes = 0;
+    // for (int idx = 0; idx < size; idx++) {
+    //     struct limine_memmap_entry* mmap_entry = entries[idx];
+    // }
+
+    // // Find and allocate space for bitmap structures
+    // bitmap_size_bytes = avl_size * sizeof(struct bitmap);
+    // for (int idx = 0; idx < size; idx++) {
+    //     struct limine_memmap_entry* mmap_entry = entries[idx];
+    //     if (mmap_entry->type != LIMINE_MEMMAP_USABLE) {
+    //         continue;
+    //     }
+    // }
 
     // Initialize AVL nodes to equilvalent NULL
     struct mmap_range_node* avl_ptr = avl_nodes;
@@ -243,7 +253,7 @@ void print_internal(struct mmap_range_node* base) {
 
     // Logic reaches here, everything to the left of subtree print
     // Now print contents of current node
-    terminal_printf("Low: %16x High: %16x BF: %u\n", base->interval.base, base->interval.high, get_balance_factor(base));
+    terminal_printf("Low: %16x High: %16x Balance Factor: %d\n", base->interval.base, base->interval.high, get_balance_factor(base));
 
     // Traverse right subtree
     if (base->right != NULL) {

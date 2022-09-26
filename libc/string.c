@@ -31,6 +31,16 @@ char* __utoa(unsigned value, char *str, int base) {
   return str;
 }
 
+char* __itoa(int value, char* str) {
+    if (value < 0) {
+        value *= -1;
+        *(str++) = '-';
+    }
+
+    // Normal __utoa() call
+    return __utoa(value, str, 10);
+}
+
 size_t __strlen(const char* str) {
     const char* start = str;
     while(*str != '\0')
