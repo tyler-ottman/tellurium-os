@@ -38,4 +38,6 @@ void init_idt(void) {
 
     // Load idtr register
     __asm__ volatile ("lidt %0" : : "m"(idtr));
+
+    terminal_printf(LIGHT_GREEN"IDT: initialized at: %16x\n", idtr.offset);
 }

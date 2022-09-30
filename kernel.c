@@ -17,10 +17,10 @@ void _start(void) {
     init_idt();
     init_pmm();
  
-    terminal_printf("Init kernel: complete\n");
+    terminal_printf(LIGHT_GREEN"Init kernel: complete\n");
 
     a = 2;
-    // a /= 0;
+    a /= 0;
 
     // We're done, just hang...
     done();

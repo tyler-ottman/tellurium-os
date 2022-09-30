@@ -37,6 +37,9 @@ int terminal_vfprintf(va_list valist, const char* format) {
     uint64_t width; // Field width in format specifier
     uint64_t base; // Default base for numbers
 
+    // Push default color
+    terminal_request.response->write(terminal, LIGHT_YELLOW, __strlen(LIGHT_YELLOW));
+
     while (*format) {
         flags = 0;
         width = 0;
@@ -75,6 +78,7 @@ int terminal_vfprintf(va_list valist, const char* format) {
         case 'o':
         case 'u':
         case 'x': {
+
             // Base used when converting number to string
             switch (*format) {
             case 'b': base = 2; break;
@@ -187,7 +191,7 @@ int terminal_vfprintf(va_list valist, const char* format) {
                 terminal_putchar(*arg);
                 arg++;
             }
-            
+
             format++;
             break;
         }
@@ -196,7 +200,9 @@ int terminal_vfprintf(va_list valist, const char* format) {
             format++;
             break;
         }
+
     }
+
     return 1;
 }
 

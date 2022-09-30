@@ -74,5 +74,8 @@ void init_gdt() {
 void setGdt(void) {
     gdtr.size = sizeof(GDT);
     gdtr.base = (uint64_t)&gdt;
+
     __asm__ volatile ("lgdt %0" :: "m" (gdtr));
+
+    terminal_printf(LIGHT_GREEN"GDT: initialized at: %16x\n", gdtr.base);
 }

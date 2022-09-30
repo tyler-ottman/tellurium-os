@@ -1,7 +1,7 @@
 #include <libc/string.h>
 
 // https://github.com/bminor/newlib/blob/master/newlib/libc/stdlib/utoa.c
-char* __utoa(unsigned value, char *str, int base) {
+char* __utoa(unsigned long value, char *str, int base) {
   const char digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
   int i, j;
   unsigned remainder;
@@ -46,4 +46,13 @@ size_t __strlen(const char* str) {
     while(*str != '\0')
         str++;
     return (size_t)(str - start);
+}
+
+void* __memset(void* base, int val, int len) {
+    char* ptr = (char*)base;
+    
+    while (len-- > 0)
+        *(ptr--) = val;
+    
+    return base;
 }
