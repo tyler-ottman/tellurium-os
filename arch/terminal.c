@@ -38,7 +38,7 @@ int terminal_vfprintf(va_list valist, const char* format) {
     uint64_t base; // Default base for numbers
 
     // Push default color
-    terminal_request.response->write(terminal, LIGHT_YELLOW, __strlen(LIGHT_YELLOW));
+    terminal_request.response->write(terminal, CYAN, __strlen(CYAN));
 
     while (*format) {
         flags = 0;
