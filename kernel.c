@@ -20,7 +20,11 @@ void _start(void) {
     terminal_printf(LIGHT_GREEN"Init kernel: complete\n");
 
     a = 2;
-    a /= 0;
+    // a /= 0;
+
+    // Test page allocate
+    uint8_t* test = (uint8_t*)palloc(97);
+    
 
     // We're done, just hang...
     done();

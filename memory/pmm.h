@@ -5,7 +5,11 @@
 
 #define PAGE_SIZE_BYTES     4096
 
+// Read status of bitmap index
 uint8_t bitmap_read(uint64_t addr);
+
+// Check the status of bitmap at 'index' for 'pages' entries
+bool bitmap_available(size_t bitmap_index, size_t pages);
 
 // set bit at corresponding address to 0/1
 void bitmap_set(uint64_t addr);
@@ -17,8 +21,11 @@ uint64_t palign(size_t frames);
 // https://wiki.osdev.org/Page_Frame_Allocation
 void init_pmm(void);
 
+// Internal page frame allocator
+void* palloc_internal(size_t pages);
+
 // Alocated n contiguous pages
-void* palloc(size_t n);
+void* palloc(size_t pages);
 
 // Free allocated pages
-void pfree(void* base, size_t n);
+void pfree(void* base, size_t pages);

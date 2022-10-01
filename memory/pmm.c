@@ -9,6 +9,17 @@ uint64_t bitmap_max_entries; // Number of page frame entries in bitmap
 uint64_t cached_index = 0; // List index in bitmap accessed
 uint8_t* bitmap; // Raw bitmap
 
+bool bitmap_available(size_t bitmap_index, size_t pages) {
+    for (size_t idx = 0; idx < pages; idx++) {
+        uint64_t addr = (bitmap_index + idx) * PAGE_SIZE_BYTES;
+        if (bitmap_read(addr)) {
+            // Cannot allocate at given address
+            return false;
+        }
+    }
+    return true;
+}
+
 uint8_t bitmap_read(uint64_t addr) {
     size_t nth_bit = addr / PAGE_SIZE_BYTES;
     return (bitmap[nth_bit / 8] >> (nth_bit % 8)) & 1;
@@ -103,4 +114,43 @@ void init_pmm(void) {
     uint64_t reserved_frames = frames - free_frames;
     terminal_printf("PMM: Page frames -> Total: %u, Reserved: %u, Free: %u\n", frames, reserved_frames, free_frames);
     terminal_printf("PMM: Bitmap size aligned: %u\n", bitmap_size_aligned);
+}
+
+void* palloc_internal(size_t pages) {
+    while (cached_index + pages < bitmap_max_entries) {
+        // Try to allocates pages at current index
+        if (bitmap_available(cached_index, pages)) {
+            terminal_printf("Allocate %u frames at %16x\n", pages, cached_index * PAGE_SIZE_BYTES);
+            for (size_t idx = 0; idx < pages; idx++) {
+                uint64_t addr = (cached_index + idx) * PAGE_SIZE_BYTES;
+                bitmap_set(addr);
+            }
+            void* ret = (void*)(cached_index * PAGE_SIZE_BYTES);
+            cached_index += pages;
+            return ret;
+        }
+        cached_index++;
+    }
+    return NULL;
+}
+
+void* palloc(size_t pages) {
+    void* ret = (void*)palloc_internal(pages);
+
+    if (!ret) {
+        // https://wiki.osdev.org/Page_Frame_Allocation
+        // Information about caching index
+        cached_index = 0;
+        ret = (void*)palloc_internal(pages);
+    }
+
+    return ret;
+}
+
+void pfree(void* base, size_t pages) {
+    uint64_t addr = (uint64_t)base;
+    for (size_t idx = 0; idx < pages; idx++) {
+        bitmap_reset(addr);
+        addr += PAGE_SIZE_BYTES;
+    }
 }
