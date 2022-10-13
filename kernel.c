@@ -5,9 +5,7 @@
 #include <arch/idt.h>
 #include <arch/terminal.h>
 #include <memory/pmm.h>
- 
-static volatile int a;
-extern void overflow(void);
+#include <memory/vmm.h>
 
 // The following will be our kernel's entry point.
 void _start(void) {
@@ -16,15 +14,13 @@ void _start(void) {
     init_gdt();
     init_idt();
     init_pmm();
- 
+    // init_vmm();
+
     terminal_printf(LIGHT_GREEN"Init kernel: complete\n");
-
-    a = 2;
-    // a /= 0;
-
-    // Test page allocate
-    uint8_t* test = (uint8_t*)palloc(97);
     
+    uint64_t* temp = (uint64_t*)(0xffffffff70000000);
+    uint64_t a = *temp;
+    terminal_printf("Here it is: %x\n", a);
 
     // We're done, just hang...
     done();

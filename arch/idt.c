@@ -13,6 +13,7 @@ void add_descriptor(uint8_t vector, void* gate_entry, uint8_t flags) {
 
     // Address of entry to our descriptor
     uint64_t entry_addr = (uint64_t)gate_entry;
+    // terminal_printf("This is entry added: %x\n", entry_addr);
 
     descriptor_ptr->offset_low16 = entry_addr & 0xffff;
     descriptor_ptr->segment_selector = GDT_KERNEL_CODE;

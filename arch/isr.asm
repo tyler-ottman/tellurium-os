@@ -10,106 +10,106 @@ isr_table:
 
 extern exception_handler
 ISR_0:
-    push 0
+    mov rdi, 0x0
     call exception_handler
     iretq
 
 ISR_1:
-    push 1
+    mov rdi, 0x1
     call exception_handler
     iretq
     
 ISR_2:
-    push 2
+    mov rdi, 0x2
     call exception_handler
     iretq
     
 ISR_3:
-    push 3
+    mov rdi, 0x3
     call exception_handler
     iretq
     
 ISR_4:
-    push 4
+    mov rdi, 0x4
     call exception_handler
     iretq
     
 ISR_5:
-    push 5
+    mov rdi, 0x5
     call exception_handler
     iretq
     
 ISR_6:
-    push 6
+    mov rdi, 0x6
     call exception_handler
     iretq
     
 ISR_7:
-    push 7
+    mov rdi, 0x7
     call exception_handler
     iretq
     
 ISR_8:
-    push 8
+    mov rdi, 0x8
     call exception_handler
     iretq
     
 ISR_9:
-    push 9
+    mov rdi, 0x9
     call exception_handler
     iretq
     
 ISR_10:
-    push 10
+    mov rdi, 0xa
     call exception_handler
     iretq
     
 ISR_11:
-    push 11
+    mov rdi, 0xb
     call exception_handler
     iretq
     
 ISR_12:
-    push 12
+    mov rdi, 0xc
     call exception_handler
     iretq
     
 ISR_13:
-    push 13
+    mov rdi, 0xd
     call exception_handler
     iretq
     
 ISR_14:
-    push 14
+    mov rdi, 0xe
     call exception_handler
     iretq
     
 ISR_15:
-    push 15
+    mov rdi, 0xf
     call exception_handler
     iretq
     
 ISR_16:
-    push 16
+    mov rdi, 0x10
     call exception_handler
     iretq
     
 ISR_17:
-    push 17
+    mov rdi, 0x11
     call exception_handler
     iretq
     
 ISR_18:
-    push 18
+    mov rdi, 0x12
     call exception_handler
     iretq
     
 ISR_19:
-    push 19
+    mov rdi, 0x13
     call exception_handler
     iretq
     
 ISR_20:
-    push 20
+    mov rdi, 0x14
     call exception_handler
     iretq

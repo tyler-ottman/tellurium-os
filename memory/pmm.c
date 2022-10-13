@@ -70,7 +70,6 @@ void init_pmm(void) {
         }
     }
 
-
     uint64_t frames = max_address / PAGE_SIZE_BYTES;
     bitmap_max_entries = frames;
     // Align bitmap size to neareset 4kb
@@ -91,6 +90,10 @@ void init_pmm(void) {
 
     // Mark sections as allocated/free
     __memset((void*)bitmap, 0xff, bitmap_size_aligned);
+    terminal_printf("PMM: bitmap addr: %016x: %d\n", bitmap, *bitmap);
+    uint64_t* test = (uint64_t*)(0xffff800000000000 + bitmap);
+    *test = 0x4f;
+    terminal_printf("AFTER: %016x\n", *bitmap);
     for (size_t idx = 0; idx < mmap_entries; idx++) {
         entry = entries[idx];
         if (entry->type == LIMINE_MEMMAP_USABLE) {
@@ -113,7 +116,9 @@ void init_pmm(void) {
     uint64_t free_frames = available_bytes / PAGE_SIZE_BYTES;
     uint64_t reserved_frames = frames - free_frames;
     terminal_printf("PMM: Page frames -> Total: %u, Reserved: %u, Free: %u\n", frames, reserved_frames, free_frames);
-    terminal_printf("PMM: Bitmap size aligned: %u\n", bitmap_size_aligned);
+    // terminal_printf("PMM: Bitmap size aligned: %u\n", bitmap_size_aligned);
+
+    terminal_printf(LIGHT_GREEN "PMM: Initialized\n");
 }
 
 void* palloc_internal(size_t pages) {
@@ -134,7 +139,7 @@ void* palloc_internal(size_t pages) {
     return NULL;
 }
 
-void* palloc(size_t pages) {
+void* pmm_alloc(size_t pages) {
     void* ret = (void*)palloc_internal(pages);
 
     if (!ret) {
@@ -147,7 +152,7 @@ void* palloc(size_t pages) {
     return ret;
 }
 
-void pfree(void* base, size_t pages) {
+void pmm_free(void* base, size_t pages) {
     uint64_t addr = (uint64_t)base;
     for (size_t idx = 0; idx < pages; idx++) {
         bitmap_reset(addr);
