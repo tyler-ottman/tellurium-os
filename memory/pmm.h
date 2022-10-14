@@ -5,6 +5,8 @@
 
 #define PAGE_SIZE_BYTES     4096
 
+extern volatile struct limine_memmap_request memory_map_request;
+
 // Read status of bitmap index
 uint8_t bitmap_read(uint64_t addr);
 

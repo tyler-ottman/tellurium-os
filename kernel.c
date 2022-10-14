@@ -14,13 +14,9 @@ void _start(void) {
     init_gdt();
     init_idt();
     init_pmm();
-    // init_vmm();
+    init_vmm();
 
     terminal_printf(LIGHT_GREEN"Init kernel: complete\n");
-    
-    uint64_t* temp = (uint64_t*)(0xffffffff70000000);
-    uint64_t a = *temp;
-    terminal_printf("Here it is: %x\n", a);
 
     // We're done, just hang...
     done();

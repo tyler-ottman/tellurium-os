@@ -1,6 +1,6 @@
 #include <memory/pmm.h>
 
-static volatile struct limine_memmap_request memory_map_request = {
+volatile struct limine_memmap_request memory_map_request = {
     .id = LIMINE_MEMMAP_REQUEST,
     .revision = 0
 };
@@ -91,9 +91,6 @@ void init_pmm(void) {
     // Mark sections as allocated/free
     __memset((void*)bitmap, 0xff, bitmap_size_aligned);
     terminal_printf("PMM: bitmap addr: %016x: %d\n", bitmap, *bitmap);
-    uint64_t* test = (uint64_t*)(0xffff800000000000 + bitmap);
-    *test = 0x4f;
-    terminal_printf("AFTER: %016x\n", *bitmap);
     for (size_t idx = 0; idx < mmap_entries; idx++) {
         entry = entries[idx];
         if (entry->type == LIMINE_MEMMAP_USABLE) {
@@ -125,7 +122,7 @@ void* palloc_internal(size_t pages) {
     while (cached_index + pages < bitmap_max_entries) {
         // Try to allocates pages at current index
         if (bitmap_available(cached_index, pages)) {
-            terminal_printf("Allocate %u frames at %16x\n", pages, cached_index * PAGE_SIZE_BYTES);
+            // terminal_printf("Allocate %u frames at %16x\n", pages, cached_index * PAGE_SIZE_BYTES);
             for (size_t idx = 0; idx < pages; idx++) {
                 uint64_t addr = (cached_index + idx) * PAGE_SIZE_BYTES;
                 bitmap_set(addr);
