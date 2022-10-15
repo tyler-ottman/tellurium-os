@@ -96,4 +96,4 @@ $(KERNEL): $(OBJ)
 # Remove object files and the final executable.
 .PHONY: clean
 clean:
-	rm -rf $(KERNEL) $(OBJ) $(HEADER_DEPS)
+	rm -rf $(KERNEL) $(OBJ) $(HEADER_DEPS) *.log

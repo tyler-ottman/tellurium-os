@@ -28,6 +28,7 @@ void done(void) {
 
 void terminal_putchar(const char chr) {
     terminal_request.response->write(terminal, &chr, 1);
+    write_serial(chr, COM1);
 }
 
 #define PRINTF_PAD_ZERO_MASK        0

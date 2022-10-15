@@ -6,6 +6,7 @@
 #include <arch/terminal.h>
 #include <memory/pmm.h>
 #include <memory/vmm.h>
+#include <devices/serial.h>
 
 // The following will be our kernel's entry point.
 void _start(void) {
@@ -15,6 +16,7 @@ void _start(void) {
     init_idt();
     init_pmm();
     init_vmm();
+    init_serial();
 
     terminal_printf(LIGHT_GREEN"Init kernel: complete\n");
 

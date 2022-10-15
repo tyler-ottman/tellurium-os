@@ -53,6 +53,7 @@ void init_vmm() {
     // text section
     for (uint64_t addr = _stext_align; addr < _etext_align; addr += PAGE_SIZE) {
         uint64_t paddr = addr - kernel_virtual_base + kernel_physical_base;
+        // terminal_printf("mapping %x to %x\n", addr, paddr);
         map_page(addr, paddr, PML_PRESENT);
     }
 
@@ -80,13 +81,20 @@ void init_vmm() {
         if (entry->type == LIMINE_MEMMAP_KERNEL_AND_MODULES) {
             continue; // Already mapped
         }
-        terminal_printf("heree\n");
-        terminal_printf("Start: %x, end: %x\n", start_paddr, end_paddr);
+
         for (uint64_t addr = start_paddr; addr < end_paddr; addr += PAGE_SIZE) {
             map_page(addr + hhdm, addr, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
             map_page(addr, addr, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
         }
     }
+
+    // Hand CR3 to OS
+    terminal_printf("Change to OS paging\n");
+    // uint64_t cr3_write = (uint64_t)pml4_base;
+
+    print_levels();
+
+    // __asm__ volatile ("movq %0, %%cr3" : "=r"(cr3_write));
 
     terminal_printf(LIGHT_GREEN "VMM: Initialized\n");
 }
@@ -102,21 +110,21 @@ uint64_t align_address(uint64_t addr, bool round_up) {
 }
 
 uint64_t* allocate_map(uint64_t* map_base, uint64_t map_entry, uint64_t flags) {
-    map_base = pmm_alloc(1);
-    __memset(map_base, 0, PAGE_SIZE);
-
-    if (!map_base) {
+    uint64_t* next_level_map = pmm_alloc(1);
+    
+    if (!next_level_map) {
         return NULL;
     }
 
-    map_base[map_entry] |= flags;
-    return map_base;
+    __memset(next_level_map, 0, PAGE_SIZE);
+    map_base[map_entry] = ((uint64_t)next_level_map) | flags;
+    return (uint64_t*)((uint64_t)next_level_map & PML_PHYSICAL_ADDRESS);
 }
 
 bool get_next_page_map(uint64_t** new_map_base, uint64_t* map_base, uint64_t map_entry) {
     uint64_t next_map_entry = map_base[map_entry];
 
-    if (next_map_entry & 0x1) {
+    if (next_map_entry & PML_PRESENT) {
         *new_map_base = (uint64_t*)(next_map_entry & PML_PHYSICAL_ADDRESS);
         return true;
     }
@@ -129,10 +137,12 @@ void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     uint64_t pdpte = (vaddr >> 30) & 0x1ff;
     uint64_t pde = (vaddr >> 21) & 0x1ff;
     uint64_t pte = (vaddr >> 12) & 0x1ff;
+    // terminal_printf("NEW MAPPING: %x -> %x\n", vaddr, paddr);
 
     uint64_t* pdpt_base = NULL;
     if (!get_next_page_map(&pdpt_base, pml4_base, pml4e)) {
         pdpt_base = allocate_map(pml4_base, pml4e, PML_PRESENT | PML_WRITE | PML_USER);
+        // terminal_printf("%x -> %x, pdpt_base: %x\n", vaddr, paddr, pdpt_base);
         if (!pdpt_base) {
             // Out of memory, handle later
         }
@@ -141,6 +151,7 @@ void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     uint64_t* pd_base = NULL;
     if (!get_next_page_map(&pd_base, pdpt_base, pdpte)) {
         pd_base = allocate_map(pdpt_base, pdpte, PML_PRESENT | PML_WRITE | PML_USER);
+        // terminal_printf("%x -> %x, pd_base: %x\n", vaddr, paddr, pd_base);
         if (!pd_base) {
             // Out of memory, handle later
         }
@@ -149,6 +160,7 @@ void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     uint64_t* pt_base = NULL;
     if (!get_next_page_map(&pt_base, pd_base, pde)) {
         pt_base = allocate_map(pd_base, pde, PML_PRESENT | PML_WRITE | PML_USER);
+        // terminal_printf("%x -> %x, pt_base: %x\n", vaddr, paddr, pt_base);
         if (!pt_base) {
             // Out of memory, handle later
         }
@@ -182,4 +194,37 @@ void unmap_page(uint64_t vaddr) {
 
     // Clear TLB
     __asm__ volatile ("invlpg (%0)" : : "r"(vaddr));
+}
+
+void print_levels(void) {
+    terminal_printf("pml4_base: %x\n", pml4_base);
+    
+    // Traverse PML4
+    for (size_t idx = 0; idx < 512; idx++) {
+        if (pml4_base[idx] & PML_PRESENT) {
+            terminal_printf("pml4_base[%d]: %x\n", idx, pml4_base[idx]);
+
+            // Traverse PDPT
+            uint64_t* pdpt_base = (uint64_t*)(pml4_base[idx] & PML_PHYSICAL_ADDRESS);
+            for (size_t jdx = 0; jdx < 512; jdx++) {
+                if (pdpt_base[jdx] & PML_PRESENT) {
+                    terminal_printf("  pdpt_base[%d]: %x\n", jdx, pdpt_base[jdx]);
+
+                    uint64_t* pd_base = (uint64_t*)(pdpt_base[jdx] & PML_PHYSICAL_ADDRESS);
+                    for (size_t kdx = 0; kdx < 512; kdx++) {
+                        if (pd_base[kdx] & PML_PRESENT) {
+                            terminal_printf("    pd_base[%d]: %x\n", kdx, pd_base[kdx]);
+
+                            uint64_t* pt_base = (uint64_t*)(pd_base[kdx] & PML_PHYSICAL_ADDRESS);
+                            for (size_t ldx = 0; ldx < 512; ldx++) {
+                                if (pt_base[ldx] & PML_PRESENT) {
+                                    terminal_printf("      pt_base[%d]: %x\n", ldx, pt_base[ldx]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

@@ -4,6 +4,7 @@
 #include <libc/string.h>
 #include <libc/ctype.h>
 #include <libc/stdlib.h>
+#include <devices/serial.h>
 
 // Resets state of colors
 #define RESET           "\033[m"
