@@ -8,6 +8,11 @@
 #include <memory/vmm.h>
 #include <devices/serial.h>
 
+int a = 2;
+int breakpoint() {
+    return a++;
+}
+
 // The following will be our kernel's entry point.
 void _start(void) {
     __asm__ volatile ("cli"); // disable interrupts

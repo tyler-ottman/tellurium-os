@@ -1,5 +1,7 @@
 #include <memory/vmm.h>
 
+extern int breakpoint(void);
+
 // Using linker script to find kernel sections
 extern uint8_t _stext[];
 extern uint8_t _etext[];
@@ -20,6 +22,14 @@ static volatile struct limine_hhdm_request kernel_hhdm_request = {
 
 static uint64_t* pml4_base = NULL;
 
+void map_section(uint64_t vaddr_base, uint64_t paddr_base, uint64_t len, uint64_t flags) {
+    uint64_t paddr = paddr_base;
+    for (uint64_t vaddr = vaddr_base; vaddr < vaddr_base + len; vaddr += PAGE_SIZE) {
+        map_page(vaddr, paddr, flags);
+        paddr += PAGE_SIZE;
+    }
+}
+
 void init_vmm() {
     struct limine_kernel_address_response* kernel_response = kernel_addr_request.response;
     struct limine_memmap_response* limine_memory_map = memory_map_request.response;
@@ -34,40 +44,31 @@ void init_vmm() {
         // Todo: throw error if allocation fails
     }
 
-    terminal_printf("VMM: Kernel: Physical Base: %016x, Virtual Base: %016x\n", kernel_response->physical_base, kernel_response->virtual_base);
-    terminal_printf("text: 0x%x - 0x%x, rodata: 0x%x - 0x%x\ndata: 0x%x - 0x%x\n", _stext, _etext, _srodata, _erodata, _sdata, _edata);
-    
-    uint64_t _stext_align = align_address((uint64_t)_stext, false);
-    uint64_t _srodata_align = align_address((uint64_t)_srodata, false);
-    uint64_t _sdata_align = align_address((uint64_t)_sdata, false);
-    uint64_t _etext_align = align_address((uint64_t)_etext, true);
-    uint64_t _erodata_align = align_address((uint64_t)_erodata, true);
-    uint64_t _edata_align = align_address((uint64_t)_edata, true);
+    uint64_t kernel_vaddr = kernel_response->virtual_base;
+    uint64_t kernel_paddr = kernel_response->physical_base;
 
-    terminal_printf("Aligned: text: %x - %x, rodata: %x - %x, data: %x - %x\n", _stext_align, _etext_align, _srodata_align, _erodata_align, _sdata_align, _edata_align);
+    // map .text section
+    uint64_t stext_vaddr = align_address((uint64_t)_stext, false);
+    uint64_t etext_vaddr = align_address((uint64_t)_etext, true);
+    uint64_t stext_paddr = stext_vaddr - kernel_vaddr + kernel_paddr;
+    uint64_t text_len = etext_vaddr - stext_vaddr;
+    map_section(stext_vaddr, stext_paddr, text_len, PML_PRESENT);
 
-    // Map physical kernel to virtual upper 2 GB of high half
-    uint64_t kernel_virtual_base = kernel_response->virtual_base;
-    uint64_t kernel_physical_base = kernel_response->physical_base;
+    // map .rodata section
+    uint64_t srodata_vaddr = align_address((uint64_t)_srodata, false);
+    uint64_t erodata_vaddr = align_address((uint64_t)_erodata, true);
+    uint64_t srodata_paddr = srodata_vaddr - kernel_vaddr + kernel_paddr;
+    uint64_t rodata_len = erodata_vaddr - srodata_vaddr;
+    map_section(srodata_vaddr, srodata_paddr, rodata_len, PML_NOT_EXECUTABLE | PML_PRESENT);
 
-    // text section
-    for (uint64_t addr = _stext_align; addr < _etext_align; addr += PAGE_SIZE) {
-        uint64_t paddr = addr - kernel_virtual_base + kernel_physical_base;
-        // terminal_printf("mapping %x to %x\n", addr, paddr);
-        map_page(addr, paddr, PML_PRESENT);
-    }
+    // map .data section
+    uint64_t sdata_vaddr = align_address((uint64_t)_sdata, false);
+    uint64_t edata_vaddr = align_address((uint64_t)_edata, true);
+    uint64_t sdata_paddr = sdata_vaddr - kernel_vaddr + kernel_paddr;
+    uint64_t data_len = edata_vaddr - sdata_vaddr;
+    map_section(sdata_vaddr, sdata_paddr, data_len, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
 
-    // rodata section
-    for (uint64_t addr = _srodata_align; addr < _erodata_align; addr += PAGE_SIZE) {
-        uint64_t paddr = addr - kernel_virtual_base + kernel_physical_base;
-        map_page(addr, paddr, PML_NOT_EXECUTABLE | PML_PRESENT);
-    }
-
-    // data section
-    for (uint64_t addr = _sdata_align; addr < _edata_align; addr += PAGE_SIZE) {
-        uint64_t paddr = addr - kernel_virtual_base + kernel_physical_base;
-        map_page(addr, paddr, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
-    }
+    terminal_printf(".text: %016x - %016x, .rodata: %016x - %016x\n.data: %016x - %016x\n", stext_vaddr, etext_vaddr, srodata_vaddr, erodata_vaddr, sdata_vaddr, edata_vaddr);
 
     // identity map of lower 4 GBs
     struct limine_memmap_entry** entries = limine_memory_map->entries;
@@ -77,24 +78,18 @@ void init_vmm() {
 
         uint64_t start_paddr = align_address(entry->base, false);
         uint64_t end_paddr = align_address(entry->base + entry->length, true);
+        uint64_t len = end_paddr - start_paddr;
 
-        if (entry->type == LIMINE_MEMMAP_KERNEL_AND_MODULES) {
-            continue; // Already mapped
-        }
-
-        for (uint64_t addr = start_paddr; addr < end_paddr; addr += PAGE_SIZE) {
-            map_page(addr + hhdm, addr, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
-            map_page(addr, addr, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
-        }
+        map_section(start_paddr + hhdm, start_paddr, len, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
+        map_section(start_paddr, start_paddr, len, PML_WRITE | PML_PRESENT);
     }
 
-    // Hand CR3 to OS
-    terminal_printf("Change to OS paging\n");
-    // uint64_t cr3_write = (uint64_t)pml4_base;
+    // Hand over paging to OS
+    uint64_t cr3_write = (uint64_t)pml4_base;
+    __asm__ volatile ("mov %0, %%cr3" : : "r"(cr3_write));
+    print_levels(pml4_base, 1);
 
-    print_levels();
-
-    // __asm__ volatile ("movq %0, %%cr3" : "=r"(cr3_write));
+    // Todo: Destroy Limine's page tables
 
     terminal_printf(LIGHT_GREEN "VMM: Initialized\n");
 }
@@ -196,35 +191,37 @@ void unmap_page(uint64_t vaddr) {
     __asm__ volatile ("invlpg (%0)" : : "r"(vaddr));
 }
 
-void print_levels(void) {
-    terminal_printf("pml4_base: %x\n", pml4_base);
+uint64_t get_virt_addr(size_t pml4e, size_t pdpte, size_t pde, size_t pte, size_t page_offset) {
+    uint64_t virt = 0;
+    virt |= (pml4e << 39);
+    virt |= (pdpte << 30);
+    virt |= (pde << 21);
+    virt |= (pte << 12);
+    virt |= (page_offset);
+
+    if ((pml4e >> 8) & 1) {
+        virt |= 0xffff000000000000;
+    }
+
+    return virt;
+}
+
+const char* map_names[] = {"pml4_base", "pdpt_base", "pd_base", "pt_base"};
+void recursive_level_print(uint64_t* base, size_t lvls_remaining, size_t depth) {
+    if (!lvls_remaining) return;
     
-    // Traverse PML4
-    for (size_t idx = 0; idx < 512; idx++) {
-        if (pml4_base[idx] & PML_PRESENT) {
-            terminal_printf("pml4_base[%d]: %x\n", idx, pml4_base[idx]);
+    for (size_t idx = 0; idx < PAGE_ENTRIES; idx++) {
+        if (base[idx] & PML_PRESENT) {
+            for (size_t jdx = 0; jdx < depth; jdx++) terminal_printf("\t");
+            terminal_printf("%s[%d]: %016x\n", map_names[depth], idx, base[idx]);
 
-            // Traverse PDPT
-            uint64_t* pdpt_base = (uint64_t*)(pml4_base[idx] & PML_PHYSICAL_ADDRESS);
-            for (size_t jdx = 0; jdx < 512; jdx++) {
-                if (pdpt_base[jdx] & PML_PRESENT) {
-                    terminal_printf("  pdpt_base[%d]: %x\n", jdx, pdpt_base[jdx]);
-
-                    uint64_t* pd_base = (uint64_t*)(pdpt_base[jdx] & PML_PHYSICAL_ADDRESS);
-                    for (size_t kdx = 0; kdx < 512; kdx++) {
-                        if (pd_base[kdx] & PML_PRESENT) {
-                            terminal_printf("    pd_base[%d]: %x\n", kdx, pd_base[kdx]);
-
-                            uint64_t* pt_base = (uint64_t*)(pd_base[kdx] & PML_PHYSICAL_ADDRESS);
-                            for (size_t ldx = 0; ldx < 512; ldx++) {
-                                if (pt_base[ldx] & PML_PRESENT) {
-                                    terminal_printf("      pt_base[%d]: %x\n", ldx, pt_base[ldx]);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            uint64_t* map_base = (uint64_t*)(base[idx] & PML_PHYSICAL_ADDRESS);
+            recursive_level_print(map_base, lvls_remaining - 1, depth + 1);
         }
     }
+}
+
+void print_levels(uint64_t* base, uint64_t num_levels) {
+    if (num_levels > 4) return;
+    recursive_level_print(base, num_levels, 0);
 }

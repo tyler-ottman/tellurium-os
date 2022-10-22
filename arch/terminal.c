@@ -231,6 +231,9 @@ Features:
         - Ex: terminal_printf("Hello %08u\n", 18);
         - Ex: terminal_printf("Hello %08x\n", 18);
 */
+
+extern int breakpoint(void);
+
 int terminal_printf(const char* format, ...) {
     va_list valist;
     int err;
