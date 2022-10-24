@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <limine.h>
+#include <acpi/acpi.h>
 #include <arch/GDT.h>
 #include <arch/idt.h>
 #include <arch/terminal.h>
@@ -22,6 +23,7 @@ void _start(void) {
     init_pmm();
     init_vmm();
     init_serial();
+    init_acpi();
 
     terminal_printf(LIGHT_GREEN"Init kernel: complete\n");
 

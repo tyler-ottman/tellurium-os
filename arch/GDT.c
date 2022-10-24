@@ -35,7 +35,7 @@ void init_gdt() {
     gdt.gdt_entry[2].flags_limit = 0;
     gdt.gdt_entry[2].base_high = 0;
 
-    // 32-bit kernel code
+    // // 32-bit kernel code
     gdt.gdt_entry[3].limit_low = 0xffff;
     gdt.gdt_entry[3].base_low = 0;
     gdt.gdt_entry[3].base_middle = 0;

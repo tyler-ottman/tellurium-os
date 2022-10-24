@@ -25,7 +25,6 @@ uint64_t* allocate_map(uint64_t* map_base, uint64_t map_entry, uint64_t flags);
 bool get_next_page_map(uint64_t** new_map_base, uint64_t* map_base, uint64_t map_entry);
 void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags);
 void unmap_page(uint64_t vaddr);
-// void print_levels(uint64_t* base);
 
 void recursive_level_print(uint64_t* base, size_t lvls_remaining, size_t num_lvls);
 void print_levels(uint64_t* base, uint64_t num_lvls);

@@ -21,6 +21,7 @@ static volatile struct limine_hhdm_request kernel_hhdm_request = {
 };
 
 static uint64_t* pml4_base = NULL;
+size_t frames_allocated = 0;
 
 void map_section(uint64_t vaddr_base, uint64_t paddr_base, uint64_t len, uint64_t flags) {
     uint64_t paddr = paddr_base;
@@ -83,14 +84,15 @@ void init_vmm() {
         map_section(start_paddr + hhdm, start_paddr, len, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
         map_section(start_paddr, start_paddr, len, PML_WRITE | PML_PRESENT);
     }
-
+    
     // Hand over paging to OS
     uint64_t cr3_write = (uint64_t)pml4_base;
     __asm__ volatile ("mov %0, %%cr3" : : "r"(cr3_write));
-    print_levels(pml4_base, 1);
+    // print_levels(pml4_base, 2);
 
     // Todo: Destroy Limine's page tables
 
+    terminal_printf("VMM: tellurium-os using %d frames\n", frames_allocated);
     terminal_printf(LIGHT_GREEN "VMM: Initialized\n");
 }
 
@@ -111,6 +113,7 @@ uint64_t* allocate_map(uint64_t* map_base, uint64_t map_entry, uint64_t flags) {
         return NULL;
     }
 
+    frames_allocated++;
     __memset(next_level_map, 0, PAGE_SIZE);
     map_base[map_entry] = ((uint64_t)next_level_map) | flags;
     return (uint64_t*)((uint64_t)next_level_map & PML_PHYSICAL_ADDRESS);
