@@ -66,3 +66,14 @@ void* __memcpy(void* dest, const void* src, size_t n) {
     }
     return dest;
 }
+
+int __memcmp(const void* str1, const void* str2, size_t n) {
+    const char* src1 = (const char*)str1;
+    const char* src2 = (const char*)str2;
+    while (n-- > 0) {
+        if (*src1++ != *src2++) {
+            return (*(src1-1) < *(src2-1)) ? -1 : 1;
+        }
+    }
+    return 0;
+}
