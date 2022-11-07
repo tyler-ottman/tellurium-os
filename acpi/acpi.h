@@ -40,11 +40,43 @@ struct XSDT {
     char* entries[];
 } __attribute__ ((packed));
 
+#define ENTRY_LAPIC         0
+#define ENTRY_IO_APIC       1
+#define ENTRY_INT_OVERRIDE  2
+
 struct MADT {
     struct SDT sdt;
     uint32_t local_interrupt_ctrl_addr;
     uint32_t flags;
     uint8_t* entries;
+} __attribute__ ((packed));
+
+struct MADT_record {
+    uint8_t entry_type;
+    uint8_t record_length;
+} __attribute__ ((packed));
+
+struct proc_lapic {
+    struct MADT_record metadata;
+    uint8_t acpi_proc_uid;
+    uint8_t apic_id;
+    uint32_t flags;
+} __attribute__ ((packed));
+
+struct io_apic {
+    struct MADT_record metadata;
+    uint8_t io_apic_id;
+    uint8_t reserved;
+    uint32_t* io_apic_address;
+    uint32_t global_sys_interrupt_base;
+} __attribute__ ((packed));
+
+struct int_src_override {
+    struct MADT_record metadata;
+    uint8_t bus;
+    uint8_t source;
+    uint32_t global_sys_interrupt;
+    uint16_t flags;
 } __attribute__ ((packed));
 
 size_t get_sdt_entry_size(const struct RSDP* rsdp);
@@ -53,5 +85,7 @@ size_t get_rsdp_size(const struct RSDP* rsdp);
 bool is_xsdt(const struct RSDP* rsdp);
 void sdt_error(const char* sdt_table);
 bool verify_checksum(const uint8_t* data, size_t num_bytes);
+
+void init_apics(const struct MADT* madt);
 void* find_sdt(const char* sig);
 void init_acpi(void);
