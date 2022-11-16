@@ -1,7 +1,16 @@
 #include <devices/serial.h>
+#include <devices/msr.h>
 #include <arch/terminal.h>
 #include <libc/string.h>
 #include <stdbool.h>
+
+#define ENTRY_LAPIC                 0
+#define ENTRY_IO_APIC               1
+#define ENTRY_INT_OVERRIDE          2
+#define LOCAL_APIC_ADDR_OVERRIDE    5
+
+#define UNALIGNED_LAPIC "ACPI: Unaligned lapic register\n"
+#define INVALID_SDT(SDT) "ACPI: Invalid " SDT " Table\n"
 
 #define RSDP_64 36
 #define RSDP_32 20
@@ -40,10 +49,6 @@ struct XSDT {
     char* entries[];
 } __attribute__ ((packed));
 
-#define ENTRY_LAPIC         0
-#define ENTRY_IO_APIC       1
-#define ENTRY_INT_OVERRIDE  2
-
 struct MADT {
     struct SDT sdt;
     uint32_t local_interrupt_ctrl_addr;
@@ -79,13 +84,21 @@ struct int_src_override {
     uint16_t flags;
 } __attribute__ ((packed));
 
+struct local_apic_addr_override {
+    struct MADT_record metadata;
+    uint16_t reserved;
+    uint64_t* local_apic_addr;
+} __attribute__ ((packed));
+
 size_t get_sdt_entry_size(const struct RSDP* rsdp);
 size_t get_rsdp_size(const struct RSDP* rsdp);
 
 bool is_xsdt(const struct RSDP* rsdp);
-void sdt_error(const char* sdt_table);
 bool verify_checksum(const uint8_t* data, size_t num_bytes);
-
 void init_apics(const struct MADT* madt);
+uint64_t* get_lapic_addr(const struct MADT* madt);
+bool is_lapic_aligned(size_t offset);
+uint32_t read_lapic_reg(size_t offset);
+void write_lapic_reg(size_t offset, uint32_t val);
 void* find_sdt(const char* sig);
 void init_acpi(void);
