@@ -1,13 +1,14 @@
-#include <stdint.h>
-#include <stddef.h>
-#include <limine.h>
 #include <acpi/acpi.h>
 #include <arch/GDT.h>
 #include <arch/idt.h>
 #include <arch/terminal.h>
+#include <devices/lapic.h>
+#include <devices/serial.h>
+#include <limine.h>
 #include <memory/pmm.h>
 #include <memory/vmm.h>
-#include <devices/serial.h>
+#include <stdint.h>
+#include <stddef.h>
 
 int a = 2;
 int breakpoint() {
@@ -24,6 +25,7 @@ void _start(void) {
     // init_vmm();
     init_serial();
     init_acpi();
+    init_lapic();
 
     kprintf(LIGHT_GREEN"Init kernel: complete\n");
 

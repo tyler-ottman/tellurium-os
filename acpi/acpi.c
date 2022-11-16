@@ -85,24 +85,6 @@ uint64_t find_lapic_addr(const struct MADT* madt) {
     return madt->local_interrupt_ctrl_addr;
 }
 
-bool is_lapic_aligned(size_t offset) {
-    return offset < 0x400 || (offset % 16 == 0);
-}
-
-uint32_t read_lapic_reg(size_t offset) {
-    if (!is_lapic_aligned(offset)) {
-        kerror(UNALIGNED_LAPIC);
-    }
-}
-
-void write_lapic_reg(size_t offset, uint32_t val) {
-    if  (!is_lapic_aligned(offset)) {
-        kerror(UNALIGNED_LAPIC);
-    }
-}
-
-
-
 void* find_sdt(const char* sig) {
     struct SDT* sdt;
     size_t sdt_size = is_xsdt(rsdp) ? xsdt->sdt.length : rsdt->sdt.length;
@@ -148,6 +130,5 @@ void init_acpi() {
     lapic_addr = find_lapic_addr(madt);
     init_apic_info(madt);
 
-    kprintf("ACPI: lapic addr: %x\n", lapic_addr);
     kprintf(LIGHT_GREEN"ACPI: Initialized\n");
 }

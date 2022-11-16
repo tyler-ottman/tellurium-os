@@ -1,3 +1,6 @@
+#ifndef ACPI_H
+#define ACPI_H
+
 #include <devices/serial.h>
 #include <devices/msr.h>
 #include <arch/terminal.h>
@@ -99,9 +102,8 @@ bool is_xsdt(const struct RSDP* rsdp);\
 bool verify_checksum(const uint8_t* data, size_t num_bytes);
 void init_apic_info(const struct MADT* madt);
 uint64_t find_lapic_addr(const struct MADT* madt);
-bool is_lapic_aligned(size_t offset);
-uint32_t read_lapic_reg(size_t offset);
-void write_lapic_reg(size_t offset, uint32_t val);
 
 void* find_sdt(const char* sig);
 void init_acpi(void);
+
+#endif // ACPI_H
