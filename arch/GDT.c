@@ -77,5 +77,5 @@ void setGdt(void) {
 
     __asm__ volatile ("lgdt %0" :: "m" (gdtr));
 
-    terminal_printf(LIGHT_GREEN"GDT: initialized at: %16x\n", gdtr.base);
+    kprintf(LIGHT_GREEN"GDT: initialized at: %16x\n", gdtr.base);
 }

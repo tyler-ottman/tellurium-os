@@ -69,7 +69,7 @@ void init_vmm() {
     uint64_t data_len = edata_vaddr - sdata_vaddr;
     map_section(sdata_vaddr, sdata_paddr, data_len, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
 
-    terminal_printf(".text: %016x - %016x, .rodata: %016x - %016x\n.data: %016x - %016x\n", stext_vaddr, etext_vaddr, srodata_vaddr, erodata_vaddr, sdata_vaddr, edata_vaddr);
+    kprintf(".text: %016x - %016x, .rodata: %016x - %016x\n.data: %016x - %016x\n", stext_vaddr, etext_vaddr, srodata_vaddr, erodata_vaddr, sdata_vaddr, edata_vaddr);
 
     // identity map of lower 4 GBs
     struct limine_memmap_entry** entries = limine_memory_map->entries;
@@ -92,8 +92,8 @@ void init_vmm() {
 
     // Todo: Destroy Limine's page tables
 
-    terminal_printf("VMM: tellurium-os using %d frames\n", frames_allocated);
-    terminal_printf(LIGHT_GREEN "VMM: Initialized\n");
+    kprintf("VMM: tellurium-os using %d frames\n", frames_allocated);
+    kprintf(LIGHT_GREEN "VMM: Initialized\n");
 }
 
 uint64_t align_address(uint64_t addr, bool round_up) {
@@ -135,12 +135,12 @@ void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     uint64_t pdpte = (vaddr >> 30) & 0x1ff;
     uint64_t pde = (vaddr >> 21) & 0x1ff;
     uint64_t pte = (vaddr >> 12) & 0x1ff;
-    // terminal_printf("NEW MAPPING: %x -> %x\n", vaddr, paddr);
+    // kprintf("NEW MAPPING: %x -> %x\n", vaddr, paddr);
 
     uint64_t* pdpt_base = NULL;
     if (!get_next_page_map(&pdpt_base, pml4_base, pml4e)) {
         pdpt_base = allocate_map(pml4_base, pml4e, PML_PRESENT | PML_WRITE | PML_USER);
-        // terminal_printf("%x -> %x, pdpt_base: %x\n", vaddr, paddr, pdpt_base);
+        // kprintf("%x -> %x, pdpt_base: %x\n", vaddr, paddr, pdpt_base);
         if (!pdpt_base) {
             // Out of memory, handle later
         }
@@ -149,7 +149,7 @@ void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     uint64_t* pd_base = NULL;
     if (!get_next_page_map(&pd_base, pdpt_base, pdpte)) {
         pd_base = allocate_map(pdpt_base, pdpte, PML_PRESENT | PML_WRITE | PML_USER);
-        // terminal_printf("%x -> %x, pd_base: %x\n", vaddr, paddr, pd_base);
+        // kprintf("%x -> %x, pd_base: %x\n", vaddr, paddr, pd_base);
         if (!pd_base) {
             // Out of memory, handle later
         }
@@ -158,7 +158,7 @@ void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     uint64_t* pt_base = NULL;
     if (!get_next_page_map(&pt_base, pd_base, pde)) {
         pt_base = allocate_map(pd_base, pde, PML_PRESENT | PML_WRITE | PML_USER);
-        // terminal_printf("%x -> %x, pt_base: %x\n", vaddr, paddr, pt_base);
+        // kprintf("%x -> %x, pt_base: %x\n", vaddr, paddr, pt_base);
         if (!pt_base) {
             // Out of memory, handle later
         }
@@ -215,8 +215,8 @@ void recursive_level_print(uint64_t* base, size_t lvls_remaining, size_t depth) 
     
     for (size_t idx = 0; idx < PAGE_ENTRIES; idx++) {
         if (base[idx] & PML_PRESENT) {
-            for (size_t jdx = 0; jdx < depth; jdx++) terminal_printf("\t");
-            terminal_printf("%s[%d]: %016x\n", map_names[depth], idx, base[idx]);
+            for (size_t jdx = 0; jdx < depth; jdx++) kprintf("\t");
+            kprintf("%s[%d]: %016x\n", map_names[depth], idx, base[idx]);
 
             uint64_t* map_base = (uint64_t*)(base[idx] & PML_PHYSICAL_ADDRESS);
             recursive_level_print(map_base, lvls_remaining - 1, depth + 1);

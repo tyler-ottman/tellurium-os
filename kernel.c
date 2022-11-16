@@ -25,7 +25,7 @@ void _start(void) {
     init_serial();
     init_acpi();
 
-    terminal_printf(LIGHT_GREEN"Init kernel: complete\n");
+    kprintf(LIGHT_GREEN"Init kernel: complete\n");
 
     // We're done, just hang...
     done();

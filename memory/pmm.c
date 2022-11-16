@@ -59,7 +59,7 @@ void init_pmm(void) {
 
     // Print number of memory map entries
     size_t mmap_entries = memory_map_response->entry_count;
-    terminal_printf("Limine -> MMap entries: %u\n", mmap_entries);  
+    kprintf("Limine -> MMap entries: %u\n", mmap_entries);  
 
     // Calculate max physical address page frames can be allocated
     uint64_t max_address = 0;
@@ -90,7 +90,7 @@ void init_pmm(void) {
 
     // Mark sections as allocated/free
     __memset((void*)bitmap, 0xff, bitmap_size_aligned);
-    terminal_printf("PMM: bitmap addr: %016x: %d\n", bitmap, *bitmap);
+    kprintf("PMM: bitmap addr: %016x: %d\n", bitmap, *bitmap);
     for (size_t idx = 0; idx < mmap_entries; idx++) {
         entry = entries[idx];
         if (entry->type == LIMINE_MEMMAP_USABLE) {
@@ -104,7 +104,7 @@ void init_pmm(void) {
     uint64_t available_bytes = 0;
     for (size_t idx = 0; idx < mmap_entries; idx++) {
         entry = entries[idx];
-        terminal_printf("Base: %016x, Len: %16x, Type: %u\n", entry->base, entry->length, entry->type);
+        kprintf("Base: %016x, Len: %16x, Type: %u\n", entry->base, entry->length, entry->type);
         if (entry->type == LIMINE_MEMMAP_USABLE) {
             available_bytes += entry->length;
         }
@@ -112,17 +112,17 @@ void init_pmm(void) {
 
     uint64_t free_frames = available_bytes / PAGE_SIZE_BYTES;
     uint64_t reserved_frames = frames - free_frames;
-    terminal_printf("PMM: Page frames -> Total: %u, Reserved: %u, Free: %u\n", frames, reserved_frames, free_frames);
-    // terminal_printf("PMM: Bitmap size aligned: %u\n", bitmap_size_aligned);
+    kprintf("PMM: Page frames -> Total: %u, Reserved: %u, Free: %u\n", frames, reserved_frames, free_frames);
+    // kprintf("PMM: Bitmap size aligned: %u\n", bitmap_size_aligned);
 
-    terminal_printf(LIGHT_GREEN "PMM: Initialized\n");
+    kprintf(LIGHT_GREEN "PMM: Initialized\n");
 }
 
 void* palloc_internal(size_t pages) {
     while (cached_index + pages < bitmap_max_entries) {
         // Try to allocates pages at current index
         if (bitmap_available(cached_index, pages)) {
-            // terminal_printf("Allocate %u frames at %16x\n", pages, cached_index * PAGE_SIZE_BYTES);
+            // kprintf("Allocate %u frames at %16x\n", pages, cached_index * PAGE_SIZE_BYTES);
             for (size_t idx = 0; idx < pages; idx++) {
                 uint64_t addr = (cached_index + idx) * PAGE_SIZE_BYTES;
                 bitmap_set(addr);

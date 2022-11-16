@@ -27,7 +27,7 @@ void done(void) {
 }
 
 void kerror(const char* err) {
-    terminal_printf(LIGHT_RED"%s", err);
+    kprintf(LIGHT_RED"%s", err);
     done();
 }
 
@@ -212,34 +212,9 @@ int terminal_vfprintf(va_list valist, const char* format) {
     return 1;
 }
 
-/* Basic printf function for debugging terminal in VGA text mode
-Features:
-    - Print string literals
-        - Ex: terminal_printf("Hello World!");
-    - Print formatted character with or without LEFT padding
-        - Ex: terminal_printf("Hel%5clo World!", 'f');
-        - Ex: terminal_printf("Hel%clo World!", 'f');
-    - Print formatted strings with or without LEFT padding
-        - Ex: terminal_printf("Hello %s\n", "World");
-        - Ex: terminal_printf("Hello %20s\n", "World");
-    - Print formatted base 2/8/10/16 number with or without LEFT '0'/' ' padding
-        - Ex: terminal_printf("Hello %b\n", 18);
-        - Ex: terminal_printf("Hello %o\n", 18);
-        - Ex: terminal_printf("Hello %u\n", 18);
-        - Ex: terminal_printf("Hello %x\n", 18);
-        - Ex: terminal_printf("Hello %8b\n", 18);
-        - Ex: terminal_printf("Hello %8o\n", 18);
-        - Ex: terminal_printf("Hello %8u\n", 18);
-        - Ex: terminal_printf("Hello %8x\n", 18);
-        - Ex: terminal_printf("Hello %08b\n", 18);
-        - Ex: terminal_printf("Hello %08o\n", 18);
-        - Ex: terminal_printf("Hello %08u\n", 18);
-        - Ex: terminal_printf("Hello %08x\n", 18);
-*/
-
 extern int breakpoint(void);
 
-int terminal_printf(const char* format, ...) {
+int kprintf(const char* format, ...) {
     va_list valist;
     int err;
     

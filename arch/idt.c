@@ -13,7 +13,7 @@ void add_descriptor(uint8_t vector, void* gate_entry, uint8_t flags) {
 
     // Address of entry to our descriptor
     uint64_t entry_addr = (uint64_t)gate_entry;
-    // terminal_printf("This is entry added: %x\n", entry_addr);
+    // kprintf("This is entry added: %x\n", entry_addr);
 
     descriptor_ptr->offset_low16 = entry_addr & 0xffff;
     descriptor_ptr->segment_selector = GDT_KERNEL_CODE;
@@ -40,5 +40,5 @@ void init_idt(void) {
     // Load idtr register
     __asm__ volatile ("lidt %0" : : "m"(idtr));
 
-    terminal_printf(LIGHT_GREEN"IDT: initialized at: %16x\n", idtr.offset);
+    kprintf(LIGHT_GREEN"IDT: initialized at: %16x\n", idtr.offset);
 }

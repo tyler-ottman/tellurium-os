@@ -65,7 +65,7 @@ void init_apic_info(const struct MADT* madt) {
             io_apic_ID[io_apic_index++] = io_apic->io_apic_id;
         } else if (type == ENTRY_INT_OVERRIDE) {
             struct int_src_override* override = (struct int_src_override*)record;
-            terminal_printf("ACPI: ENTRY_INT_OVERRIDE: %x\n", override->global_sys_interrupt);
+            kprintf("ACPI: ENTRY_INT_OVERRIDE: %x\n", override->global_sys_interrupt);
         }
         
         offset += record->record_length;
@@ -148,6 +148,6 @@ void init_acpi() {
     lapic_addr = find_lapic_addr(madt);
     init_apic_info(madt);
 
-    terminal_printf("ACPI: lapic addr: %x\n", lapic_addr);
-    terminal_printf(LIGHT_GREEN"ACPI: Initialized\n");
+    kprintf("ACPI: lapic addr: %x\n", lapic_addr);
+    kprintf(LIGHT_GREEN"ACPI: Initialized\n");
 }

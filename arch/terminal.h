@@ -33,4 +33,4 @@ void kerror(const char* err);
 
 void terminal_putchar(const char chr);
 int terminal_vfprintf(va_list valist, const char* format);
-int terminal_printf(const char* format, ...);
+int kprintf(const char* format, ...);
