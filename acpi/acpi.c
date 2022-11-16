@@ -7,27 +7,18 @@ static volatile struct limine_rsdp_request kernel_rsdp_request = {
     .revision = 0
 };
 
-static volatile struct limine_smp_request kernel_smp_request = {
-    .id = LIMINE_SMP_REQUEST,
-    .revision = 0
-};
-
 static struct RSDP* rsdp = NULL;
 static struct MADT* madt = NULL;
 static struct RSDT* rsdt = NULL;
 static struct XSDT* xsdt = NULL;
 
-size_t core_count;
+size_t core_count = 0;
 size_t local_apic_index = 0;
 size_t io_apic_index = 0;
-
 uint32_t local_apic_ID[128];
 uint32_t io_apic_ID[128];
-
-uint32_t* io_apic_addr = NULL;
-
-bool lapic_addr_override = false;
-uint64_t* lapic_addr = NULL;
+uint64_t io_apic_addr = 0;
+uint64_t lapic_addr = 0;
 
 size_t get_rsdp_size(const struct RSDP* rsdp) {
     return rsdp->revision >= 2 ? RSDP_64 : RSDP_32;
@@ -35,6 +26,14 @@ size_t get_rsdp_size(const struct RSDP* rsdp) {
 
 size_t get_sdt_entry_size(const struct RSDP* rsdp) {
     return get_rsdp_size(rsdp) == RSDP_64 ? 8 : 4;
+}
+
+struct MADT* get_madt() {
+    return madt;
+}
+
+uint32_t* get_lapic_addr() {
+    return (uint32_t*)lapic_addr; 
 }
 
 bool is_xsdt(const struct RSDP* rsdp) {
@@ -49,9 +48,7 @@ bool verify_checksum(const uint8_t* data, size_t num_bytes) {
     return !checksum;
 }
 
-void init_apics(const struct MADT* madt) {
-    core_count = 0;
-
+void init_apic_info(const struct MADT* madt) {
     for (size_t offset = 0x2c; offset < madt->sdt.length;) {
         struct MADT_record* record = (struct MADT_record*)((uint8_t*)madt + offset);
         int type = record->entry_type;
@@ -75,7 +72,7 @@ void init_apics(const struct MADT* madt) {
     }
 }
 
-uint64_t* get_lapic_addr(const struct MADT* madt) {
+uint64_t find_lapic_addr(const struct MADT* madt) {
     for (size_t offset = 0x2c; offset < madt->sdt.length;) {
         struct MADT_record* record = (struct MADT_record*)((uint8_t*)madt + offset); 
         if (record->entry_type == LOCAL_APIC_ADDR_OVERRIDE) {
@@ -85,7 +82,7 @@ uint64_t* get_lapic_addr(const struct MADT* madt) {
         
         offset += record->record_length;
     }
-    return (uint64_t*)((uint64_t)madt->local_interrupt_ctrl_addr);
+    return madt->local_interrupt_ctrl_addr;
 }
 
 bool is_lapic_aligned(size_t offset) {
@@ -103,6 +100,8 @@ void write_lapic_reg(size_t offset, uint32_t val) {
         kerror(UNALIGNED_LAPIC);
     }
 }
+
+
 
 void* find_sdt(const char* sig) {
     struct SDT* sdt;
@@ -126,41 +125,29 @@ void* find_sdt(const char* sig) {
 
 void init_acpi() {
     struct limine_rsdp_response* rsdp_response = kernel_rsdp_request.response;
-    struct limine_smp_response* smp_response = kernel_smp_request.response;
 
     rsdp = rsdp_response->address;
-    rsdt = (struct RSDT*)rsdp->rsdt_address;
+    rsdt = (struct RSDT*)((uint64_t)rsdp->rsdt_address);
     xsdt = (struct XSDT*)rsdp->xsdt_address;
 
     if (!verify_checksum((const uint8_t*)rsdp, get_rsdp_size(rsdp))) {
         kerror(INVALID_SDT("RSDP"));
     }
 
-    // If RSDT, verify its checksum. Otherwise verify XSDT checksum
     if (is_xsdt(rsdp) && !verify_checksum((const uint8_t*)xsdt, xsdt->sdt.length)) {
         kerror(INVALID_SDT("XSDT"));
     } else if (!verify_checksum((const uint8_t*)rsdt, rsdt->sdt.length)) {
         kerror(INVALID_SDT("RSDT"));
     }
 
-    // Find MADT
     madt = find_sdt("APIC");
     if (!madt || !verify_checksum((const uint8_t*)madt, madt->sdt.length)) {
         kerror(INVALID_SDT("MADT"));
     }
 
-    // Calculate local apic addres
-    lapic_addr = get_lapic_addr(madt);
-    uint64_t* apic_base_msr = (uint64_t*)get_msr(IA32_APIC_BASE);
+    lapic_addr = find_lapic_addr(madt);
+    init_apic_info(madt);
 
-    terminal_printf("ACPI: IA32_APIC_BASE: %x\n", apic_base_msr);
-    terminal_printf("Content: %x\n", apic_base_msr[0]);
-    terminal_printf("ACPI: Local APIC addr: %x\n", lapic_addr);
-
-    // Find local and I/O APICs
-    init_apics(madt);
-
-    terminal_printf("ACPI: Limine: # cores: %x\n", smp_response->cpu_count);
-
+    terminal_printf("ACPI: lapic addr: %x\n", lapic_addr);
     terminal_printf(LIGHT_GREEN"ACPI: Initialized\n");
 }

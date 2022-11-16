@@ -20,9 +20,9 @@ struct RSDP {
     uint8_t checksum;
     uint8_t oemid[6];
     uint8_t revision;
-    uint32_t* rsdt_address;
+    uint32_t rsdt_address;
     uint32_t length;
-    uint64_t* xsdt_address;
+    uint64_t xsdt_address;
     uint8_t extended_checksum;
     uint8_t reserved[3];
 } __attribute__ ((packed));
@@ -72,7 +72,7 @@ struct io_apic {
     struct MADT_record metadata;
     uint8_t io_apic_id;
     uint8_t reserved;
-    uint32_t* io_apic_address;
+    uint32_t io_apic_address;
     uint32_t global_sys_interrupt_base;
 } __attribute__ ((packed));
 
@@ -87,18 +87,21 @@ struct int_src_override {
 struct local_apic_addr_override {
     struct MADT_record metadata;
     uint16_t reserved;
-    uint64_t* local_apic_addr;
+    uint32_t local_apic_addr;
 } __attribute__ ((packed));
 
 size_t get_sdt_entry_size(const struct RSDP* rsdp);
 size_t get_rsdp_size(const struct RSDP* rsdp);
+struct MADT* get_madt(void);
+uint32_t* get_lapic_addr(void);
+bool is_xsdt(const struct RSDP* rsdp);\
 
-bool is_xsdt(const struct RSDP* rsdp);
 bool verify_checksum(const uint8_t* data, size_t num_bytes);
-void init_apics(const struct MADT* madt);
-uint64_t* get_lapic_addr(const struct MADT* madt);
+void init_apic_info(const struct MADT* madt);
+uint64_t find_lapic_addr(const struct MADT* madt);
 bool is_lapic_aligned(size_t offset);
 uint32_t read_lapic_reg(size_t offset);
 void write_lapic_reg(size_t offset, uint32_t val);
+
 void* find_sdt(const char* sig);
 void init_acpi(void);
