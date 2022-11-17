@@ -4,6 +4,7 @@
 #include <acpi/acpi.h>
 #include <arch/terminal.h>
 #include <devices/msr.h>
+#include <memory/vmm.h>
 
 #define LOCAL_APIC_ID               0x020
 #define LOCAL_APIC_VERSION          0x030

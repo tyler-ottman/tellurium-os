@@ -1,3 +1,6 @@
+#ifndef VMM_H
+#define VMM_H
+
 #include <arch/terminal.h>
 #include <memory/pmm.h>
 #include <libc/string.h>
@@ -18,6 +21,7 @@
 #define PML_PHYSICAL_ADDRESS    0x0000fffffffff000
 #define PML_NOT_EXECUTABLE      0x8000000000000000
 
+uint64_t get_pml4_base(void);
 void map_section(uint64_t vaddr_base, uint64_t paddr_base, uint64_t len, uint64_t flags);
 void init_vmm(void);
 uint64_t align_address(uint64_t addr, bool round_up);
@@ -28,3 +32,5 @@ void unmap_page(uint64_t vaddr);
 
 void recursive_level_print(uint64_t* base, size_t lvls_remaining, size_t num_lvls);
 void print_levels(uint64_t* base, uint64_t num_lvls);
+
+#endif // VMM_H

@@ -22,7 +22,7 @@ void _start(void) {
     init_gdt();
     init_idt();
     init_pmm();
-    // init_vmm();
+    init_vmm();
     init_serial();
     init_acpi();
     init_lapic();

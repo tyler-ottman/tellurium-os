@@ -7,6 +7,9 @@
 
 extern volatile struct limine_memmap_request memory_map_request;
 
+uint8_t* get_bitmap_addr(void);
+size_t get_bitmap_size(void);
+
 // Read status of bitmap index
 uint8_t bitmap_read(uint64_t addr);
 

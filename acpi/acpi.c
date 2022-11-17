@@ -64,8 +64,8 @@ void init_apic_info(const struct MADT* madt) {
             io_apic_addr = io_apic->io_apic_address;
             io_apic_ID[io_apic_index++] = io_apic->io_apic_id;
         } else if (type == ENTRY_INT_OVERRIDE) {
-            struct int_src_override* override = (struct int_src_override*)record;
-            kprintf("ACPI: ENTRY_INT_OVERRIDE: %x\n", override->global_sys_interrupt);
+            // struct int_src_override* override = (struct int_src_override*)record;
+            // kprintf("ACPI: ENTRY_INT_OVERRIDE: %x\n", override->global_sys_interrupt);
         }
         
         offset += record->record_length;

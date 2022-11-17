@@ -24,7 +24,11 @@ void write_lapic_reg(size_t offset, uint32_t val) {
 
 void init_lapic() {
     lapic_addr = get_lapic_addr();
-    
     kprintf("LAPIC: Addr: %x\n", lapic_addr);
+    
+    uint64_t map_addr = (uint64_t)lapic_addr;
+    map_section(map_addr, map_addr, 4096, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
+
+    
     kprintf(LIGHT_GREEN "LAPIC: Initialized\n");
 }

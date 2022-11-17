@@ -23,6 +23,10 @@ static volatile struct limine_hhdm_request kernel_hhdm_request = {
 static uint64_t* pml4_base = NULL;
 size_t frames_allocated = 0;
 
+uint64_t get_pml4_base() {
+    return (uint64_t)pml4_base;
+}
+
 void map_section(uint64_t vaddr_base, uint64_t paddr_base, uint64_t len, uint64_t flags) {
     uint64_t paddr = paddr_base;
     for (uint64_t vaddr = vaddr_base; vaddr < vaddr_base + len; vaddr += PAGE_SIZE) {
@@ -85,6 +89,10 @@ void init_vmm() {
         map_section(start_paddr, start_paddr, len, PML_WRITE | PML_PRESENT);
     }
     
+    uint64_t bitmap_addr = (uint64_t)get_bitmap_addr();
+    size_t bitmap_size = get_bitmap_size();
+    map_section(bitmap_addr, bitmap_addr, bitmap_size, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
+
     // Hand over paging to OS
     uint64_t cr3_write = (uint64_t)pml4_base;
     __asm__ volatile ("mov %0, %%cr3" : : "r"(cr3_write));
@@ -107,7 +115,7 @@ uint64_t align_address(uint64_t addr, bool round_up) {
 }
 
 uint64_t* allocate_map(uint64_t* map_base, uint64_t map_entry, uint64_t flags) {
-    uint64_t* next_level_map = pmm_alloc(1);
+    uint64_t* next_level_map = pmm_alloc(1);  
     
     if (!next_level_map) {
         return NULL;
@@ -121,7 +129,6 @@ uint64_t* allocate_map(uint64_t* map_base, uint64_t map_entry, uint64_t flags) {
 
 bool get_next_page_map(uint64_t** new_map_base, uint64_t* map_base, uint64_t map_entry) {
     uint64_t next_map_entry = map_base[map_entry];
-
     if (next_map_entry & PML_PRESENT) {
         *new_map_base = (uint64_t*)(next_map_entry & PML_PHYSICAL_ADDRESS);
         return true;
@@ -136,7 +143,7 @@ void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     uint64_t pde = (vaddr >> 21) & 0x1ff;
     uint64_t pte = (vaddr >> 12) & 0x1ff;
     // kprintf("NEW MAPPING: %x -> %x\n", vaddr, paddr);
-
+    
     uint64_t* pdpt_base = NULL;
     if (!get_next_page_map(&pdpt_base, pml4_base, pml4e)) {
         pdpt_base = allocate_map(pml4_base, pml4e, PML_PRESENT | PML_WRITE | PML_USER);
@@ -145,7 +152,7 @@ void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
             // Out of memory, handle later
         }
     }
-
+    
     uint64_t* pd_base = NULL;
     if (!get_next_page_map(&pd_base, pdpt_base, pdpte)) {
         pd_base = allocate_map(pdpt_base, pdpte, PML_PRESENT | PML_WRITE | PML_USER);
@@ -159,6 +166,7 @@ void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     if (!get_next_page_map(&pt_base, pd_base, pde)) {
         pt_base = allocate_map(pd_base, pde, PML_PRESENT | PML_WRITE | PML_USER);
         // kprintf("%x -> %x, pt_base: %x\n", vaddr, paddr, pt_base);
+
         if (!pt_base) {
             // Out of memory, handle later
         }

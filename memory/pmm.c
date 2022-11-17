@@ -8,6 +8,15 @@ volatile struct limine_memmap_request memory_map_request = {
 uint64_t bitmap_max_entries; // Number of page frame entries in bitmap
 uint64_t cached_index = 0; // List index in bitmap accessed
 uint8_t* bitmap; // Raw bitmap
+size_t bitmap_size_aligned;
+
+uint8_t* get_bitmap_addr() {
+    return bitmap;
+}
+
+size_t get_bitmap_size() {
+    return bitmap_size_aligned;
+}
 
 bool bitmap_available(size_t bitmap_index, size_t pages) {
     for (size_t idx = 0; idx < pages; idx++) {
@@ -59,7 +68,7 @@ void init_pmm(void) {
 
     // Print number of memory map entries
     size_t mmap_entries = memory_map_response->entry_count;
-    kprintf("Limine -> MMap entries: %u\n", mmap_entries);  
+    kprintf("PMM: MMap entries: %u\n", mmap_entries);  
 
     // Calculate max physical address page frames can be allocated
     uint64_t max_address = 0;
@@ -73,7 +82,7 @@ void init_pmm(void) {
     uint64_t frames = max_address / PAGE_SIZE_BYTES;
     bitmap_max_entries = frames;
     // Align bitmap size to neareset 4kb
-    uint64_t bitmap_size_aligned = palign(frames);
+    bitmap_size_aligned = palign(frames);
 
     // Find spot in memory for bitmap data structure
     for (size_t idx = 0; idx < mmap_entries; idx++) {
@@ -90,7 +99,7 @@ void init_pmm(void) {
 
     // Mark sections as allocated/free
     __memset((void*)bitmap, 0xff, bitmap_size_aligned);
-    kprintf("PMM: bitmap addr: %016x: %d\n", bitmap, *bitmap);
+    kprintf("PMM: bitmap addr: %016x\n", bitmap);
     for (size_t idx = 0; idx < mmap_entries; idx++) {
         entry = entries[idx];
         if (entry->type == LIMINE_MEMMAP_USABLE) {
@@ -138,7 +147,7 @@ void* palloc_internal(size_t pages) {
 
 void* pmm_alloc(size_t pages) {
     void* ret = (void*)palloc_internal(pages);
-
+    
     if (!ret) {
         // https://wiki.osdev.org/Page_Frame_Allocation
         // Information about caching index
