@@ -2,9 +2,18 @@
 
 // Load this to idtr register
 static IDT_Descriptor idtr;
+size_t cur_vector_idt;
 
 // Array of 256 IDT entries
 __attribute__((aligned(0x10))) static IDT_Entry idt_entry[256];
+
+uint8_t allocate_vector() {
+    if (cur_vector_idt >= 256) {
+        kerror("IDT: Exceeded available IDT entries\n");
+    }
+
+    return cur_vector_idt++;
+}
 
 // Add IDT Descriptor to IDT
 void add_descriptor(uint8_t vector, void* gate_entry, uint8_t flags) {
@@ -36,6 +45,8 @@ void init_idt(void) {
             add_descriptor(idx, isr_table[idx], 0x8e);
         }
     }
+
+    cur_vector_idt = 32;
 
     // Load idtr register
     __asm__ volatile ("lidt %0" : : "m"(idtr));

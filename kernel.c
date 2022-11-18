@@ -1,4 +1,5 @@
 #include <acpi/acpi.h>
+#include <arch/cpu.h>
 #include <arch/GDT.h>
 #include <arch/idt.h>
 #include <arch/terminal.h>
@@ -25,6 +26,7 @@ void _start(void) {
     init_vmm();
     init_serial();
     init_acpi();
+    init_cpu();
     init_lapic();
 
     kprintf(LIGHT_GREEN"Init kernel: complete\n");

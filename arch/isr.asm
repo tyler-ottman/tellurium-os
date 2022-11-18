@@ -113,3 +113,9 @@ ISR_20:
     mov rdi, 0x14
     call exception_handler
     iretq
+
+global ISR_Timer_Interrupt
+extern lapic_time_handler
+ISR_Timer_Interrupt:
+    call lapic_time_handler
+    ireqt

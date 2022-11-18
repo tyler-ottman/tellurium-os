@@ -36,6 +36,10 @@ uint32_t* get_lapic_addr() {
     return (uint32_t*)lapic_addr; 
 }
 
+size_t get_core_count() {
+    return core_count;
+}
+
 bool is_xsdt(const struct RSDP* rsdp) {
     return rsdp->revision >= 2;
 }
@@ -58,6 +62,7 @@ void init_apic_info(const struct MADT* madt) {
             if (lapic->flags & 0x3) {
                 core_count++;
                 local_apic_ID[local_apic_index++] = lapic->apic_id;
+                kprintf("ACPI: Lapic %x detected\n", lapic->apic_id);
             }
         } else if (type == ENTRY_IO_APIC) {
             struct io_apic* io_apic = (struct io_apic*)record;

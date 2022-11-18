@@ -97,6 +97,7 @@ size_t get_sdt_entry_size(const struct RSDP* rsdp);
 size_t get_rsdp_size(const struct RSDP* rsdp);
 struct MADT* get_madt(void);
 uint32_t* get_lapic_addr(void);
+size_t get_core_count(void);
 bool is_xsdt(const struct RSDP* rsdp);\
 
 bool verify_checksum(const uint8_t* data, size_t num_bytes);
