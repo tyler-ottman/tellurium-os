@@ -6,8 +6,6 @@
 
 #define GDT_KERNEL_CODE 0x28
 
-// https://wiki.osdev.org/Global_Descriptor_Table
-
 // GDT Descriptor (GDTR)
 typedef struct {
     uint16_t size; // Size of GDT
@@ -29,6 +27,7 @@ typedef struct {
 } GDT;
 
 void init_gdt(void);
-void setGdt(void);
+void load_gdt(void);
+
 
 #endif // GDT_H

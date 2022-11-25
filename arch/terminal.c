@@ -212,8 +212,6 @@ int terminal_vfprintf(va_list valist, const char* format) {
     return 1;
 }
 
-extern int breakpoint(void);
-
 int kprintf(const char* format, ...) {
     va_list valist;
     int err;

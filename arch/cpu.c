@@ -17,8 +17,12 @@ void init_cpu(void) {
 
         core->goto_address = core_init;
     }
+    kprintf("BSP: AP startup complete\n");
 }
 
 void core_init(struct limine_smp_info* core) {
+    load_gdt();
+    idt_load();
+
     while(1) {}
 }

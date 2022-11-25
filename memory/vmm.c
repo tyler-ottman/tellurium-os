@@ -1,7 +1,5 @@
 #include <memory/vmm.h>
 
-extern int breakpoint(void);
-
 // Using linker script to find kernel sections
 extern uint8_t _stext[];
 extern uint8_t _etext[];

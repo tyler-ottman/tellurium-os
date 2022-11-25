@@ -3,6 +3,8 @@
 
 #include <limine.h>
 #include <acpi/acpi.h>
+#include <arch/gdt.h>
+#include <arch/idt.h>
 #include <arch/terminal.h>
 
 void init_cpu(void);

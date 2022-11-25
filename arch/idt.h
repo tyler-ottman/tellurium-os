@@ -2,7 +2,7 @@
 #define IDT_H
 
 #include <stdint.h>
-#include <arch/GDT.h>
+#include <arch/gdt.h>
 #include <arch/terminal.h>
 
 // https://wiki.osdev.org/Interrupt_Descriptor_Table
@@ -26,6 +26,7 @@ typedef struct {
 
 uint8_t allocate_vector(void);
 void add_descriptor(uint8_t, void*, uint8_t);
+void idt_load(void);
 void init_idt(void);
 
 #endif // IDT_H

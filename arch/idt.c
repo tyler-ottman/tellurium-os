@@ -1,4 +1,4 @@
-#include "idt.h"
+#include <arch/idt.h>
 
 // Load this to idtr register
 static IDT_Descriptor idtr;
@@ -35,6 +35,10 @@ void add_descriptor(uint8_t vector, void* gate_entry, uint8_t flags) {
 
 extern void* isr_table[];
 
+void idt_load() {
+    __asm__ volatile ("lidt %0" : : "m"(idtr));
+}
+
 void init_idt(void) {
     idtr.offset = (uint64_t)&idt_entry[0];
     idtr.size = 256 * sizeof(IDT_Entry) - 1;
@@ -48,8 +52,7 @@ void init_idt(void) {
 
     cur_vector_idt = 32;
 
-    // Load idtr register
-    __asm__ volatile ("lidt %0" : : "m"(idtr));
+    idt_load();
 
     kprintf(LIGHT_GREEN"IDT: initialized at: %16x\n", idtr.offset);
 }

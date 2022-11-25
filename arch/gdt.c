@@ -1,4 +1,4 @@
-#include "GDT.h"
+#include <arch/gdt.h>
 
 // GDTR
 GDT_Descriptor gdtr;
@@ -68,14 +68,14 @@ void init_gdt() {
     gdt.gdt_entry[6].base_high = 0;
 
     // Load gdt
-    setGdt();
+    load_gdt();
 }
 
-void setGdt(void) {
+void load_gdt(void) {
     gdtr.size = sizeof(GDT);
     gdtr.base = (uint64_t)&gdt;
 
     __asm__ volatile ("lgdt %0" :: "m" (gdtr));
 
-    kprintf(LIGHT_GREEN"GDT: initialized at: %16x\n", gdtr.base);
+    // kprintf(LIGHT_GREEN"GDT: initialized at: %16x\n", gdtr.base);
 }

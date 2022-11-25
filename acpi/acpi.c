@@ -1,7 +1,5 @@
 #include <acpi/acpi.h>
 
-extern int breakpoint();
-
 static volatile struct limine_rsdp_request kernel_rsdp_request = {
     .id = LIMINE_RSDP_REQUEST,
     .revision = 0
@@ -18,7 +16,7 @@ size_t io_apic_index = 0;
 uint32_t local_apic_ID[128];
 uint32_t io_apic_ID[128];
 uint64_t io_apic_addr = 0;
-uint64_t lapic_addr = 0;
+static uint64_t lapic_addr = 0;
 
 size_t get_rsdp_size(const struct RSDP* rsdp) {
     return rsdp->revision >= 2 ? RSDP_64 : RSDP_32;
