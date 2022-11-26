@@ -1,10 +1,12 @@
-#include <stdint.h>
-#include <arch/terminal.h>
-
 #ifndef GDT_H
 #define GDT_H
 
-#define GDT_KERNEL_CODE 0x28
+#include <stdint.h>
+#include <arch/terminal.h>
+#include <libc/string.h>
+
+#define GDT_MAX_ENTRIES     0xff
+#define GDT_KERNEL_CODE     0x28
 
 // GDT Descriptor (GDTR)
 typedef struct {
@@ -23,10 +25,29 @@ typedef struct {
 }__attribute__((packed)) GDT_Entry;
 
 typedef struct {
-    GDT_Entry gdt_entry[7];
+    GDT_Entry gdt_entry[GDT_MAX_ENTRIES];
 } GDT;
 
+typedef struct {
+    uint32_t reserved0;
+    uint64_t rsp0;
+    uint64_t rsp1;
+    uint64_t rsp2;
+    uint64_t reserved1;
+    uint64_t ist1;
+    uint64_t ist2;
+    uint64_t ist3;
+    uint64_t ist4;
+    uint64_t ist5;
+    uint64_t ist6;
+    uint64_t ist7;
+    uint64_t reserved2;
+    uint16_t reserved3;
+    uint16_t io_map_base_addr;
+}__attribute__((packed)) tss;
+
 void init_gdt(void);
+void add_gdt_entry(GDT_Entry entry);
 void load_gdt(void);
 
 

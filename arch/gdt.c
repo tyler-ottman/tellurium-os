@@ -1,81 +1,95 @@
 #include <arch/gdt.h>
 
-// GDTR
 GDT_Descriptor gdtr;
-
-// GDT
 GDT gdt;
+
+size_t gdt_index = 0;
 
 // https://github.com/limine-bootloader/limine/blob/trunk/PROTOCOL.md
 void init_gdt() {
-    gdtr.base = (uint64_t)&gdtr;
-    gdtr.size = sizeof(GDT) - 1;
+    GDT_Entry null_descriptor = {
+        .limit_low = 0,
+        .base_low = 0,
+        .base_middle = 0,
+        .access_byte = 0,
+        .flags_limit = 0,
+        .base_high = 0
+    };
 
-    // Null Descriptor
-    gdt.gdt_entry[0].limit_low = 0;
-    gdt.gdt_entry[0].base_low = 0;
-    gdt.gdt_entry[0].base_middle = 0;
-    gdt.gdt_entry[0].access_byte = 0;
-    gdt.gdt_entry[0].flags_limit = 0;
-    gdt.gdt_entry[0].base_high = 0;
+    GDT_Entry kernel_code16 = {
+        .limit_low = 0xffff,
+        .base_low = 0,
+        .base_middle = 0,
+        .access_byte = 0x9a,
+        .flags_limit = 0,
+        .base_high = 0
+    };
 
-    // 16-bit kernel code
-    gdt.gdt_entry[1].limit_low = 0xffff;
-    gdt.gdt_entry[1].base_low = 0;
-    gdt.gdt_entry[1].base_middle = 0;
-    gdt.gdt_entry[1].access_byte = 154;
-    gdt.gdt_entry[1].flags_limit = 0;
-    gdt.gdt_entry[1].base_high = 0;
+    GDT_Entry kernel_data16 = {
+        .limit_low = 0xffff,
+        .base_low = 0,
+        .base_middle = 0,
+        .access_byte = 0x92,
+        .flags_limit = 0,
+        .base_high = 0
+    };
 
-    // 16-bit kernel data
-    gdt.gdt_entry[2].limit_low = 0xffff;
-    gdt.gdt_entry[2].base_low = 0;
-    gdt.gdt_entry[2].base_middle = 0;
-    gdt.gdt_entry[2].access_byte = 146;
-    gdt.gdt_entry[2].flags_limit = 0;
-    gdt.gdt_entry[2].base_high = 0;
+    GDT_Entry kernel_code32 = {
+        .limit_low = 0xffff,
+        .base_low = 0,
+        .base_middle = 0,
+        .access_byte = 0x9a,
+        .flags_limit = 0xcf,
+        .base_high = 0
+    };
 
-    // // 32-bit kernel code
-    gdt.gdt_entry[3].limit_low = 0xffff;
-    gdt.gdt_entry[3].base_low = 0;
-    gdt.gdt_entry[3].base_middle = 0;
-    gdt.gdt_entry[3].access_byte = 154;
-    gdt.gdt_entry[3].flags_limit = 207;
-    gdt.gdt_entry[3].base_high = 0;
+    GDT_Entry kernel_data32 = {
+        .limit_low = 0xffff,
+        .base_low = 0,
+        .base_middle = 0,
+        .access_byte = 0x92,
+        .flags_limit = 0xcf,
+        .base_high = 0
+    };
 
-    // 32-bit kernel data
-    gdt.gdt_entry[4].limit_low = 0xffff;
-    gdt.gdt_entry[4].base_low = 0;
-    gdt.gdt_entry[4].base_middle = 0;
-    gdt.gdt_entry[4].access_byte = 146;
-    gdt.gdt_entry[4].flags_limit = 207;
-    gdt.gdt_entry[4].base_high = 0;
+    GDT_Entry kernel_code64 = {
+        .limit_low = 0,
+        .base_low = 0,
+        .base_middle = 0,
+        .access_byte = 0x9a,
+        .flags_limit = 0x20,
+        .base_high = 0
+    };
 
-    // 64-bit kernel code
-    gdt.gdt_entry[5].limit_low = 0;
-    gdt.gdt_entry[5].base_low = 0;
-    gdt.gdt_entry[5].base_middle = 0;
-    gdt.gdt_entry[5].access_byte = 154;
-    gdt.gdt_entry[5].flags_limit = 32;
-    gdt.gdt_entry[5].base_high = 0;
+    GDT_Entry kernel_data64 = {
+        .limit_low = 0,
+        .base_low = 0,
+        .base_middle = 0,
+        .access_byte = 0x92,
+        .flags_limit = 0,
+        .base_high = 0
+    };
 
-    // 64-bit kernel data
-    gdt.gdt_entry[6].limit_low = 0;
-    gdt.gdt_entry[6].base_low = 0;
-    gdt.gdt_entry[6].base_middle = 0;
-    gdt.gdt_entry[6].access_byte = 146;
-    gdt.gdt_entry[6].flags_limit = 0;
-    gdt.gdt_entry[6].base_high = 0;
+    add_gdt_entry(null_descriptor);
+    add_gdt_entry(kernel_code16);
+    add_gdt_entry(kernel_data16);
+    add_gdt_entry(kernel_code32);
+    add_gdt_entry(kernel_data32);
+    add_gdt_entry(kernel_code64);
+    add_gdt_entry(kernel_data64);
 
-    // Load gdt
-    load_gdt();
-}
-
-void load_gdt(void) {
     gdtr.size = sizeof(GDT);
     gdtr.base = (uint64_t)&gdt;
 
-    __asm__ volatile ("lgdt %0" :: "m" (gdtr));
+    load_gdt();
 
-    // kprintf(LIGHT_GREEN"GDT: initialized at: %16x\n", gdtr.base);
+    kprintf(LIGHT_GREEN"GDT: initialized at: %16x\n", gdtr.base);
+}
+
+void add_gdt_entry(GDT_Entry entry) {
+    gdt.gdt_entry[gdt_index++] = entry;
+}
+
+void load_gdt(void) {
+    __asm__ volatile ("lgdt %0" :: "m" (gdtr));
 }
