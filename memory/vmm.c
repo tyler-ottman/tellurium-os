@@ -18,11 +18,11 @@ static volatile struct limine_hhdm_request kernel_hhdm_request = {
     .revision = 0
 };
 
-static uint64_t* pml4_base = NULL;
+static struct pagemap* k_pagemap = NULL;
 size_t frames_allocated = 0;
 
-uint64_t get_pml4_base() {
-    return (uint64_t)pml4_base;
+struct pagemap* get_kernel_pagemap() {
+    return k_pagemap;
 }
 
 void map_section(uint64_t vaddr_base, uint64_t paddr_base, uint64_t len, uint64_t flags) {
@@ -41,10 +41,15 @@ void init_vmm() {
     uint64_t* limine_cr3;
     __asm__ volatile ("movq %%cr3, %0" : "=r"(limine_cr3));
 
-    // Allocate frame for pml4
-    pml4_base = pmm_alloc(1);
-    if (!pml4_base) {
-        // Todo: throw error if allocation fails
+    // Allocate frame for kernel pagemap
+    k_pagemap = pmm_alloc(1);
+    if (!k_pagemap) {
+        kerror("VMM: Failed to allocate kernel pagemap\n");
+    }
+    
+    k_pagemap->pml4_base = pmm_alloc(1);
+    if (!k_pagemap->pml4_base) {
+        kerror("VMM: Failed to allocate kernel pml4\n");
     }
 
     uint64_t kernel_vaddr = kernel_response->virtual_base;
@@ -92,14 +97,19 @@ void init_vmm() {
     map_section(bitmap_addr, bitmap_addr, bitmap_size, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
 
     // Hand over paging to OS
-    uint64_t cr3_write = (uint64_t)pml4_base;
-    __asm__ volatile ("mov %0, %%cr3" : : "r"(cr3_write));
-    // print_levels(pml4_base, 2);
+    load_pagemap(k_pagemap);
+
+    // print_levels(k_pagemap->pml4_base, 2);
 
     // Todo: Destroy Limine's page tables
 
     kprintf("VMM: tellurium-os using %d frames\n", frames_allocated);
     kprintf(LIGHT_GREEN "VMM: Initialized\n");
+}
+
+void load_pagemap(struct pagemap* map) {
+    uint64_t cr3_write = (uint64_t)map->pml4_base;
+    __asm__ volatile ("mov %0, %%cr3" : : "r"(cr3_write));
 }
 
 uint64_t align_address(uint64_t addr, bool round_up) {
@@ -143,8 +153,8 @@ void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     // kprintf("NEW MAPPING: %x -> %x\n", vaddr, paddr);
     
     uint64_t* pdpt_base = NULL;
-    if (!get_next_page_map(&pdpt_base, pml4_base, pml4e)) {
-        pdpt_base = allocate_map(pml4_base, pml4e, PML_PRESENT | PML_WRITE | PML_USER);
+    if (!get_next_page_map(&pdpt_base, k_pagemap->pml4_base, pml4e)) {
+        pdpt_base = allocate_map(k_pagemap->pml4_base, pml4e, PML_PRESENT | PML_WRITE | PML_USER);
         // kprintf("%x -> %x, pdpt_base: %x\n", vaddr, paddr, pdpt_base);
         if (!pdpt_base) {
             // Out of memory, handle later
@@ -180,7 +190,7 @@ void unmap_page(uint64_t vaddr) {
     uint64_t pte = (vaddr >> 12) & 0x1ff;
 
     uint64_t* pdpt_base = NULL;
-    if (!get_next_page_map(&pdpt_base, pml4_base, pml4e)) {
+    if (!get_next_page_map(&pdpt_base, k_pagemap->pml4_base, pml4e)) {
         return;
     }
 

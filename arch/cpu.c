@@ -24,9 +24,8 @@ void core_init(struct limine_smp_info* core) {
     load_gdt();
     idt_load();
 
-    if (core->lapic_id == 1) {
-        // kprintf("AP 1 init\n");
-    }
+    load_pagemap(get_kernel_pagemap());
 
+    
     while(1) {}
 }
