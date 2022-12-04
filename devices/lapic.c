@@ -6,7 +6,7 @@ bool is_lapic_aligned(size_t offset) {
     return offset < 0x400 || (offset % 16 == 0);
 }
 
-uint32_t read_lapic_reg(size_t offset) {
+uint32_t lapic_read(size_t offset) {
     if (!is_lapic_aligned(offset)) {
         kerror(UNALIGNED_LAPIC);
     }
@@ -14,7 +14,7 @@ uint32_t read_lapic_reg(size_t offset) {
     return *((uint32_t*)((uint64_t)lapic_addr + offset));
 }
 
-void write_lapic_reg(size_t offset, uint32_t val) {
+void lapic_write(size_t offset, uint32_t val) {
     if  (!is_lapic_aligned(offset)) {
         kerror(UNALIGNED_LAPIC);
     }
@@ -31,25 +31,45 @@ void enable_interrupts() {
     __asm__ volatile ("sti");
 }
 
+void disable_interrupts() {
+    __asm__ volatile ("cli");
+}
+
 extern void* ISR_Timer_Interrupt[];
 void init_lapic() {
     lapic_addr = get_lapic_addr();
 
     // Software enable local APIC
-    uint32_t spurious_reg = read_lapic_reg(SPURIOUS_INTERRUPT_VECTOR);
+    lapic_enable();
+    
+    // Add IDT entry for timer interrupts
     uint8_t lapic_vector = allocate_vector();
-    spurious_reg |= (1 << 8);
-    spurious_reg &= ((0xffffff00) | lapic_vector);
-    write_lapic_reg(SPURIOUS_INTERRUPT_VECTOR, spurious_reg);
-    
-    kprintf("IST handler addr: %016x\n", ISR_Timer_Interrupt);
     add_descriptor(lapic_vector, ISR_Timer_Interrupt, 0x8e);
-    write_lapic_reg(LVT_TIMER, read_lapic_reg(LVT_TIMER) | lapic_vector);
-    write_lapic_reg(LVT_TIMER, read_lapic_reg(LVT_TIMER) & ~(LVT_TIMER_MASK_BIT));
-    write_lapic_reg(LVT_INITIAL_COUNT, 0x1fffffff);
+    lapic_lvt_set_vector(LVT_TIMER, lapic_vector);
+
+    // Enable reception of timer interrupt
+    lapic_lvt_enable(LVT_TIMER);
     
+    lapic_write(LVT_INITIAL_COUNT, 0x30000000);
     enable_interrupts();
-    
-    // kprintf("Reg: %x\n", read_lapic_reg(SPURIOUS_INTERRUPT_VECTOR));
-    // kprintf(LIGHT_GREEN "LAPIC: Initialized\n");
+}
+
+void lapic_lvt_set_vector(uint32_t lvt, uint8_t vector) {
+    lapic_write(lvt, (lapic_read(lvt) & ~(LVT_VECTOR)) | vector);
+}
+
+void lapic_lvt_enable(uint32_t lvt) {
+    lapic_write(lvt, lapic_read(lvt) & ~(LVT_MASK));
+}
+
+void lapic_lvt_disable(uint32_t lvt) {
+    lapic_write(lvt, lapic_read(lvt) | LVT_MASK);
+}
+
+void lapic_enable() {
+    lapic_write(SIV, lapic_read(SIV) | SIV_ENABLE);
+}
+
+void lapic_disable() {
+    lapic_write(SIV, lapic_read(SIV) & ~(SIV_ENABLE));
 }

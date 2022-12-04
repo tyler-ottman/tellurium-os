@@ -13,7 +13,8 @@
 
 // The following will be our kernel's entry point.
 void _start(void) {
-    // __asm__ volatile ("cli"); // disable interrupts
+    disable_interrupts();
+    
     init_terminal();
     init_gdt();
     init_idt();
