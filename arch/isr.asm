@@ -1,6 +1,10 @@
 ; Used for loading entries for IDT
 ; Array of function pointers for x86_64 exceptions
 global isr_table
+global ISR_Timer_Interrupt
+extern lapic_time_handler
+extern exception_handler
+
 isr_table:
 %assign i 0 
 %rep    21 
@@ -8,7 +12,7 @@ isr_table:
 %assign i i+1 
 %endrep
 
-extern exception_handler
+
 ISR_0:
     mov rdi, 0x0
     call exception_handler
@@ -114,8 +118,8 @@ ISR_20:
     call exception_handler
     iretq
 
-global ISR_Timer_Interrupt
-extern lapic_time_handler
+
+
 ISR_Timer_Interrupt:
     call lapic_time_handler
-    ireqt
+    iretq

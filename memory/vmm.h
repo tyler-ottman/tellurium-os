@@ -1,6 +1,7 @@
 #ifndef VMM_H
 #define VMM_H
 
+#include <acpi/acpi.h>
 #include <arch/terminal.h>
 #include <memory/pmm.h>
 #include <libc/string.h>

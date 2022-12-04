@@ -14,6 +14,4 @@ struct pcb {
     char filename[MAX_FILE_NAME];
 } __attribute__((packed));
 
-
-
 #endif // SCHEDULER_H

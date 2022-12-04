@@ -96,6 +96,9 @@ void init_vmm() {
     size_t bitmap_size = get_bitmap_size();
     map_section(bitmap_addr, bitmap_addr, bitmap_size, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
 
+    uint64_t lapic_addr = (uint64_t)get_lapic_addr();
+    map_section(lapic_addr, lapic_addr, 4096, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
+
     // Hand over paging to OS
     load_pagemap(k_pagemap);
 
@@ -108,7 +111,7 @@ void init_vmm() {
 }
 
 void load_pagemap(struct pagemap* map) {
-    uint64_t cr3_write = (uint64_t)map->pml4_base;
+    uint64_t cr3_write = (uint64_t)(map->pml4_base);
     __asm__ volatile ("mov %0, %%cr3" : : "r"(cr3_write));
 }
 

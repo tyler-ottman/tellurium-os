@@ -31,6 +31,8 @@ void add_descriptor(uint8_t vector, void* gate_entry, uint8_t flags) {
     descriptor_ptr->offset_middle16 = (entry_addr >> 16) & 0xffff;
     descriptor_ptr->offset_upper32 = (entry_addr >> 32) & 0xffffffff;
     descriptor_ptr->reserved = 0;
+
+    idt_load();
 }
 
 extern void* isr_table[];
@@ -51,8 +53,6 @@ void init_idt(void) {
     }
 
     cur_vector_idt = 32;
-
-    idt_load();
 
     kprintf(LIGHT_GREEN"IDT: initialized at: %16x\n", idtr.offset);
 }

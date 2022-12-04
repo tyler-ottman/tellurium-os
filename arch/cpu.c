@@ -17,7 +17,9 @@ void init_cpu(void) {
 
         core->goto_address = core_init;
     }
-    kprintf("BSP: AP startup complete\n");
+    // kprintf("BSP: AP startup complete\n");
+
+    // core_init(NULL);
 }
 
 void core_init(struct limine_smp_info* core) {
@@ -26,6 +28,9 @@ void core_init(struct limine_smp_info* core) {
 
     load_pagemap(get_kernel_pagemap());
 
-    
+    init_lapic();
+
     while(1) {}
+
+    done();
 }

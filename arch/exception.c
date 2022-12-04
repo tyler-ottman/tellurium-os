@@ -4,8 +4,7 @@ __attribute__((noreturn))
 void exception_handler(uint8_t vector) { // Stop everything
     kprintf("%s\n", exception_name[vector]);
 
-    __asm__ volatile ("cli");
-    __asm__ volatile ("hlt");
+    done();
 
     while(1) {} // Never reaches here
 }

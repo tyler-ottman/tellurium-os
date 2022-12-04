@@ -27,13 +27,13 @@ void lapic_time_handler() {
     done();
 }
 
-extern void* ISR_Timer_Interrupt;
+void enable_interrupts() {
+    __asm__ volatile ("sti");
+}
+
+extern void* ISR_Timer_Interrupt[];
 void init_lapic() {
     lapic_addr = get_lapic_addr();
-    kprintf("LAPIC: Addr: %x\n", lapic_addr);
-
-    uint64_t map_addr = (uint64_t)lapic_addr;
-    map_section(map_addr, map_addr, 4096, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
 
     // Software enable local APIC
     uint32_t spurious_reg = read_lapic_reg(SPURIOUS_INTERRUPT_VECTOR);
@@ -41,8 +41,15 @@ void init_lapic() {
     spurious_reg |= (1 << 8);
     spurious_reg &= ((0xffffff00) | lapic_vector);
     write_lapic_reg(SPURIOUS_INTERRUPT_VECTOR, spurious_reg);
+    
+    kprintf("IST handler addr: %016x\n", ISR_Timer_Interrupt);
     add_descriptor(lapic_vector, ISR_Timer_Interrupt, 0x8e);
-
-    kprintf("Reg: %x\n", read_lapic_reg(SPURIOUS_INTERRUPT_VECTOR));
-    kprintf(LIGHT_GREEN "LAPIC: Initialized\n");
+    write_lapic_reg(LVT_TIMER, read_lapic_reg(LVT_TIMER) | lapic_vector);
+    write_lapic_reg(LVT_TIMER, read_lapic_reg(LVT_TIMER) & ~(LVT_TIMER_MASK_BIT));
+    write_lapic_reg(LVT_INITIAL_COUNT, 0x1fffffff);
+    
+    enable_interrupts();
+    
+    // kprintf("Reg: %x\n", read_lapic_reg(SPURIOUS_INTERRUPT_VECTOR));
+    // kprintf(LIGHT_GREEN "LAPIC: Initialized\n");
 }
