@@ -9,6 +9,10 @@ static volatile struct limine_terminal_request terminal_request = {
 };
 
 static struct limine_terminal *terminal;
+static uint64_t kprint_lock = 0;
+
+extern void spinlock_acquire(uint64_t*);
+extern void spinlock_release(uint64_t*);
 
 void init_terminal() {
     if (terminal_request.response == NULL
@@ -213,12 +217,16 @@ int terminal_vfprintf(va_list valist, const char* format) {
 }
 
 int kprintf(const char* format, ...) {
+    spinlock_acquire(&kprint_lock);
+
     va_list valist;
     int err;
     
     va_start(valist, format);
     err = terminal_vfprintf(valist, format);
     va_end(valist);
+
+    spinlock_release(&kprint_lock);
 
     return err;
 }

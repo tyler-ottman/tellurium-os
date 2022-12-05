@@ -23,8 +23,13 @@ void lapic_write(size_t offset, uint32_t val) {
 }
 
 void lapic_time_handler() {
-    kprintf(MAGENTA"Interrupt detected\n");
-    done();
+    lapic_eoi();
+
+    kprintf(MAGENTA"Timer Interrupt Handler\n");
+
+    lapic_write(LVT_INITIAL_COUNT, 0x30000000);    
+    enable_interrupts();
+    // done();
 }
 
 void enable_interrupts() {
@@ -50,7 +55,7 @@ void init_lapic() {
     // Enable reception of timer interrupt
     lapic_lvt_enable(LVT_TIMER);
     
-    lapic_write(LVT_INITIAL_COUNT, 0x30000000);
+    lapic_write(LVT_INITIAL_COUNT, 0x50000000);
     enable_interrupts();
 }
 
@@ -72,4 +77,8 @@ void lapic_enable() {
 
 void lapic_disable() {
     lapic_write(SIV, lapic_read(SIV) & ~(SIV_ENABLE));
+}
+
+void lapic_eoi() {
+    lapic_write(LAPIC_EOI, 0);
 }

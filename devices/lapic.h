@@ -9,7 +9,7 @@
 
 #define LOCAL_APIC_ID               0x020
 #define LOCAL_APIC_VERSION          0x030
-#define EOI                         0x0B0
+#define LAPIC_EOI                   0x0B0
 #define SIV                         0x0F0
 #define LVT_TIMER                   0x320
 #define DIVIDE_CONFIG               0x3e0
@@ -35,5 +35,6 @@ void lapic_lvt_enable(uint32_t lvt);
 void lapic_lvt_disable(uint32_t lvt);
 void lapic_enable(void);
 void lapic_disable(void);
+void lapic_eoi(void);
 
 #endif // LAPIC_H
