@@ -145,7 +145,7 @@ void* palloc_internal(size_t pages) {
     return NULL;
 }
 
-void* pmm_alloc(size_t pages) {
+void* palloc(size_t pages) {
     void* ret = (void*)palloc_internal(pages);
     
     if (!ret) {
@@ -158,7 +158,7 @@ void* pmm_alloc(size_t pages) {
     return ret;
 }
 
-void pmm_free(void* base, size_t pages) {
+void pfree(void* base, size_t pages) {
     uint64_t addr = (uint64_t)base;
     for (size_t idx = 0; idx < pages; idx++) {
         bitmap_reset(addr);

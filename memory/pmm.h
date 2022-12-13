@@ -30,7 +30,7 @@ void init_pmm(void);
 void* palloc_internal(size_t pages);
 
 // Alocated n contiguous pages
-void* pmm_alloc(size_t pages);
+void* palloc(size_t pages);
 
 // Free allocated pages
-void pmm_free(void* base, size_t pages);
+void pfree(void* base, size_t pages);

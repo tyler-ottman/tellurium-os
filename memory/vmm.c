@@ -42,12 +42,12 @@ void init_vmm() {
     __asm__ volatile ("movq %%cr3, %0" : "=r"(limine_cr3));
 
     // Allocate frame for kernel pagemap
-    k_pagemap = pmm_alloc(1);
+    k_pagemap = palloc(1);
     if (!k_pagemap) {
         kerror("VMM: Failed to allocate kernel pagemap\n");
     }
     
-    k_pagemap->pml4_base = pmm_alloc(1);
+    k_pagemap->pml4_base = palloc(1);
     if (!k_pagemap->pml4_base) {
         kerror("VMM: Failed to allocate kernel pml4\n");
     }
@@ -126,7 +126,7 @@ uint64_t align_address(uint64_t addr, bool round_up) {
 }
 
 uint64_t* allocate_map(uint64_t* map_base, uint64_t map_entry, uint64_t flags) {
-    uint64_t* next_level_map = pmm_alloc(1);  
+    uint64_t* next_level_map = palloc(1);  
     
     if (!next_level_map) {
         return NULL;
