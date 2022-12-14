@@ -33,7 +33,8 @@ struct cache_metadata {
 void cache_insert(size_t chunk_size);
 int get_cache_index(size_t chunk_size);
 
-void transfer_slab(struct slab* slab);
+// void transfer_slab(struct slab* slab);
+void transfer_slab(struct slab* slab, struct slab** old_list, struct slab** new_list);
 void slab_spawn(struct cache* cache);
 
 void* slab_inner_alloc_chunk(struct slab* slab_list_base);

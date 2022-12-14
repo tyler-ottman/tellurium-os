@@ -36,32 +36,8 @@ int get_cache_index(size_t chunk_size) {
     return -1;
 }
 
-void transfer_slab(struct slab* slab) {
-    bool is_full = slab->used_chunks == slab->total_chunks;
-    bool is_empty = slab->used_chunks == 0;
-    
-    struct cache* cache = slab->cache;
-    struct slab** old_list;
-    struct slab** new_list;
-    
-    if (is_full) { // partial -> full
-        old_list = &(cache->slabs_partial);
-        new_list = &(cache->slabs_full);
-    } else if (is_empty) { // partial -> empty
-        old_list = &(cache->slabs_partial);
-        new_list = &(cache->slabs_empty);
-    } else {
-        if (slab->used_chunks == 1) { // empty -> partial
-            old_list = &(cache->slabs_empty);
-            new_list = &(cache->slabs_partial);
-        } else { // full -> partial
-            old_list = &(cache->slabs_full);
-            new_list = &(cache->slabs_partial);
-        }
-    }
-
+void transfer_slab(struct slab* slab, struct slab** old_list, struct slab** new_list) {
     if (slab->prev == NULL && slab->next == NULL) { // Only slab in list
-        
         *old_list = NULL;
     } else if (slab->next == NULL) { // Slab at end of list
         slab->prev->next = NULL;
@@ -72,9 +48,9 @@ void transfer_slab(struct slab* slab) {
         slab->prev->next = slab->next;
         slab->next->prev = slab->prev;
     }
-    
+
     slab->next = *new_list;
-    *new_list = slab;    
+    *new_list = slab;
     slab->prev = NULL;
 }
 
@@ -92,15 +68,15 @@ void slab_spawn(struct cache* cache) {
     slab->total_chunks = total_chunks - header_size_chunks;
     slab->cache = cache;
 
-    // Insert to partial list
-    if (cache->slabs_partial != NULL) {
-        slab->next = cache->slabs_partial;
+    // Insert to empty list
+    if (cache->slabs_empty != NULL) {
+        slab->next = cache->slabs_empty;
         slab->next->prev = slab;
     }
-    cache->slabs_partial = slab;
+    cache->slabs_empty = slab;
 
     // Initialize chunk freelist
-    uint64_t base_addr = (uint64_t)cache->slabs_partial;
+    uint64_t base_addr = (uint64_t)cache->slabs_empty;
     base_addr += chunk_size * header_size_chunks;
     slab->free_chunk = (uint64_t*)base_addr;
     void** cur_chunk = (void**)slab->free_chunk;
@@ -112,23 +88,26 @@ void slab_spawn(struct cache* cache) {
 }
 
 void* slab_inner_alloc_chunk(struct slab* slab_list_base) {
-    struct slab* cur_slab = slab_list_base;
+    struct slab* slab = slab_list_base;
 
-    while (cur_slab != NULL) {
-        if ((cur_slab->used_chunks != cur_slab->total_chunks)) {
-            cur_slab->used_chunks++;
-            void** old_free_chunk = cur_slab->free_chunk;
-            cur_slab->free_chunk = *old_free_chunk;
+    while (slab != NULL) {
+        if ((slab->used_chunks != slab->total_chunks)) {
+            slab->used_chunks++;
+            void** old_free_chunk = slab->free_chunk;
+            slab->free_chunk = *old_free_chunk;
             
             // Add slab to full list
-            if (cur_slab->used_chunks == cur_slab->total_chunks) {
-                transfer_slab(cur_slab);
+            struct cache* cache = slab->cache;
+            if (slab->used_chunks == slab->total_chunks) { // partial -> full
+                transfer_slab(slab, &(cache->slabs_partial), &(cache->slabs_full));
+            } else if (slab->used_chunks == 1) { // empty -> partial
+                transfer_slab(slab, &(cache->slabs_empty), &(cache->slabs_partial));
             }
+
             return old_free_chunk;
         }
-        cur_slab = cur_slab->next;
+        slab = slab->next;
     }
-
     return NULL;
 }
 
@@ -151,8 +130,7 @@ void* slab_alloc_chunk(int cache_idx) {
     // Empty/Partial lists have no chunks available
     slab_spawn(cache);
 
-    return slab_inner_alloc_chunk(cache->slabs_partial);
-
+    return slab_inner_alloc_chunk(cache->slabs_empty);
 }
 
 void* slab_alloc(size_t size) {
@@ -170,7 +148,8 @@ void* slab_alloc(size_t size) {
 
 void slab_free_chunk(void* addr) {
     struct slab* slab = (struct slab*)((uint64_t)addr & ~0xfff);
-    
+    struct cache* cache = slab->cache;
+
     void **new_free = addr;
     
     *new_free = slab->free_chunk;
@@ -178,11 +157,10 @@ void slab_free_chunk(void* addr) {
     slab->free_chunk = new_free;
     
     // Check if slab needs to be relocated
-    uint16_t prev_chunks = slab->used_chunks;
-    slab->used_chunks--;
-    
-    if ((slab->used_chunks == 0) || (prev_chunks == slab->total_chunks)) {
-        transfer_slab(slab);
+    if ((slab->used_chunks + 1) == slab->total_chunks) { // full -> partial
+        transfer_slab(slab, &(cache->slabs_full), &(cache->slabs_partial));
+    } else if (slab->used_chunks == 0) {
+        transfer_slab(slab, &(cache->slabs_partial), &(cache->slabs_empty));
     }
 }
 
