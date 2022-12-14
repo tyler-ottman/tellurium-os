@@ -1,3 +1,6 @@
+#ifndef PMM_H
+#define PMM_H
+
 #include <stdbool.h>
 #include <arch/terminal.h>
 #include <libc/string.h>
@@ -23,7 +26,6 @@ void bitmap_reset(uint64_t addr);
 // Align page to 4kb
 uint64_t palign(size_t frames);
 
-// https://wiki.osdev.org/Page_Frame_Allocation
 void init_pmm(void);
 
 // Internal page frame allocator
@@ -34,3 +36,5 @@ void* palloc(size_t pages);
 
 // Free allocated pages
 void pfree(void* base, size_t pages);
+
+#endif // PMM_H

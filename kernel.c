@@ -7,6 +7,7 @@
 #include <devices/serial.h>
 #include <limine.h>
 #include <memory/pmm.h>
+#include <memory/slab.h>
 #include <memory/vmm.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -20,6 +21,7 @@ void _start(void) {
     init_idt();
     init_acpi();
     init_pmm();
+    init_slab();
     init_vmm();
     init_serial();
     
