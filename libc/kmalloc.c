@@ -1,4 +1,4 @@
-#include <memory/kmalloc.h>
+#include <libc/kmalloc.h>
 #include <memory/slab.h>
 
 void* kmalloc(size_t size) {
