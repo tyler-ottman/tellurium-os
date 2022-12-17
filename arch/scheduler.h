@@ -1,17 +1,10 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-#include <arch/terminal.h>
-#include <memory/vmm.h>
+#include <stdint.h>
+#include <arch/thread.h>
+#include <arch/process.h>
 
-#define MAX_FILE_NAME       256
-
-struct pcb {
-    struct pagemap* pmap;
-    int pid;
-    int state;
-    uint64_t* ksp;
-    char filename[MAX_FILE_NAME];
-} __attribute__((packed));
+struct tcb* create_kernel_thread(void* entry, void* param);
 
 #endif // SCHEDULER_H

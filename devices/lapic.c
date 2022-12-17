@@ -1,4 +1,5 @@
 #include <devices/lapic.h>
+#include <arch/cpu.h>
 
 uint32_t* lapic_addr;
 
@@ -27,17 +28,8 @@ void lapic_time_handler() {
 
     kprintf(MAGENTA"Timer Interrupt Handler\n");
 
-    lapic_write(LVT_INITIAL_COUNT, 0x30000000);    
-    enable_interrupts();
-    // done();
-}
-
-void enable_interrupts() {
-    __asm__ volatile ("sti");
-}
-
-void disable_interrupts() {
-    __asm__ volatile ("cli");
+    // lapic_write(LVT_INITIAL_COUNT, 0x30000000);    
+    // enable_interrupts();
 }
 
 extern void* ISR_Timer_Interrupt[];
@@ -55,8 +47,8 @@ void init_lapic() {
     // Enable reception of timer interrupt
     lapic_lvt_enable(LVT_TIMER);
     
-    lapic_write(LVT_INITIAL_COUNT, 0x50000000);
-    enable_interrupts();
+    // lapic_write(LVT_INITIAL_COUNT, 0x50000000);
+    // enable_interrupts();
 }
 
 void lapic_lvt_set_vector(uint32_t lvt, uint8_t vector) {
