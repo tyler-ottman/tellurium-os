@@ -1,4 +1,5 @@
 #include <arch/terminal.h>
+#include <arch/lock.h>
 
 // The Limine requests can be placed anywhere, but it is important that
 // the compiler does not optimise them away, so, usually, they should
@@ -9,10 +10,7 @@ static volatile struct limine_terminal_request terminal_request = {
 };
 
 static struct limine_terminal *terminal;
-static uint64_t kprint_lock = 0;
-
-extern void spinlock_acquire(uint64_t*);
-extern void spinlock_release(uint64_t*);
+static spinlock_t kprint_lock = 0;
 
 void init_terminal() {
     if (terminal_request.response == NULL
