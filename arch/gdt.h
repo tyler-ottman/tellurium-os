@@ -7,6 +7,7 @@
 
 #define GDT_MAX_ENTRIES     0xff
 #define GDT_KERNEL_CODE     0x28
+#define GDT_KERNEL_DATA     0x30
 
 // GDT Descriptor (GDTR)
 typedef struct {

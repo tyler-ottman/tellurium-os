@@ -5,9 +5,13 @@
 #include <libc/vector.h>
 #include <limine.h>
 
+#define RFLAGS_RESERVED_MASK        0x0002
+#define RFLAGS_INTERRUPT_MASK       0x0200
+
 #define KERNEL_THREAD_STACK_SIZE    (2 * PAGE_SIZE_BYTES)
 
 struct context {
+    uint64_t ds;
     uint64_t rax;
     uint64_t rbx;
     uint64_t rcx;
@@ -31,6 +35,11 @@ struct context {
     uint64_t ss;
 };
 
+struct core_local_info {
+    uint64_t* kernel_sp;
+};
+
+struct core_local_info* get_core_local_info(void);
 void enable_interrupts(void);
 void disable_interrupts(void);
 void init_cpu(void);

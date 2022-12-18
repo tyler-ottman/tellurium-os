@@ -21,6 +21,7 @@ void cache_insert(size_t chunk_size) {
     struct cache* cache = palloc(1);
     cache->slabs_empty = cache->slabs_partial = cache->slabs_full = NULL;
     cache->chunk_size = chunk_size;
+    cache->lock = 0;
     
     caches[metadata.cur_caches++] = cache;    
 }
@@ -108,6 +109,7 @@ void* slab_inner_alloc_chunk(struct slab* slab_list_base) {
         }
         slab = slab->next;
     }
+
     return NULL;
 }
 
@@ -115,27 +117,37 @@ void* slab_alloc_chunk(int cache_idx) {
     struct cache* cache = caches[cache_idx];
     void* addr;
 
+    spinlock_acquire(&(cache->lock));
+
     // Try getting chunk from partial slab list
     addr = slab_inner_alloc_chunk(cache->slabs_partial);
     if (addr != NULL) {
+        spinlock_release(&(cache->lock));
         return addr;
     }
 
     // Try getting chunk from empty slab list
     addr = slab_inner_alloc_chunk(cache->slabs_empty);
     if (addr != NULL) {
+        spinlock_release(&(cache->lock));
         return addr;
     }
 
     // Empty/Partial lists have no chunks available
     slab_spawn(cache);
 
-    return slab_inner_alloc_chunk(cache->slabs_empty);
+    addr = slab_inner_alloc_chunk(cache->slabs_empty);
+
+    spinlock_release(&(cache->lock));
+
+    return addr;
 }
 
 void slab_free_chunk(void* addr) {
     struct slab* slab = (struct slab*)((uint64_t)addr & ~0xfff);
     struct cache* cache = slab->cache;
+
+    spinlock_acquire(&(cache->lock));
 
     void **new_free = addr;
     *new_free = slab->free_chunk;
@@ -147,6 +159,8 @@ void slab_free_chunk(void* addr) {
     } else if (slab->used_chunks == 0) {
         transfer_slab(slab, &(cache->slabs_partial), &(cache->slabs_empty));
     }
+
+    spinlock_release(&(cache->lock));
 }
 
 void* slab_alloc(size_t size) {

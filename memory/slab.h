@@ -2,6 +2,7 @@
 #define SLAB_H
 
 #include <stdint.h>
+#include <arch/lock.h>
 
 #define SLAB_CHUNK_SIZE_VARIENTS    16
 
@@ -12,7 +13,6 @@ struct slab {
     struct cache* cache;
     struct slab* prev;
     struct slab* next;
-    uint32_t lock;
     uint16_t used_chunks;
     uint16_t total_chunks;
     void* free_chunk;
@@ -22,6 +22,7 @@ struct cache {
     struct slab* slabs_empty;
     struct slab* slabs_partial;
     struct slab* slabs_full;
+    spinlock_t lock;
     size_t chunk_size;
 };
 

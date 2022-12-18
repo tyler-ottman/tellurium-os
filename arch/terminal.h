@@ -27,6 +27,8 @@
 #define LIGHT_CYAN      RESET"\033[1;36m"
 #define WHITE           RESET"\033[1;37m"
 
+#define ASSERT(cond) {if (!(cond)) kerror("Assertion failed\n");}
+
 void init_terminal(void);
 void done(void);
 void kerror(const char* err);
