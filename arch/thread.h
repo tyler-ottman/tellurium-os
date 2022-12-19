@@ -4,12 +4,15 @@
 #include <arch/cpu.h>
 #include <arch/process.h>
 
+#define IDLE_THREAD_TID     0
+
 enum thread_state {
-    READY       = 0,
-    RUNNING     = 1,
-    WAITING     = 2,
-    BLOCKED     = 3,
-    ZOMBIE      = 4
+    CREATED     = 0,
+    READY       = 1,
+    RUNNING     = 2,
+    WAITING     = 3,
+    BLOCKED     = 4,
+    ZOMBIE      = 5
 };
 
 struct tcb {
@@ -19,7 +22,7 @@ struct tcb {
     uint64_t* thread_base_sp;
     uint64_t* thread_sp;
     uint64_t* kernel_base_sp;
-    struct context* context;
+    struct context context;
     uint64_t* fs_base;
     uint32_t state;
     uint32_t time_slice;
@@ -28,6 +31,9 @@ struct tcb {
     struct tcb* prev;
 };
 
+struct tcb* alloc_idle_thread(void);
+struct tcb* create_kernel_thread(void* entry, void* param);
+struct tcb* get_idle_thread(void);
 uint32_t get_new_tid(void);
 
 #endif // THREAD_H

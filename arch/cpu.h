@@ -1,6 +1,7 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include <arch/gdt.h>
 #include <memory/pmm.h>
 #include <libc/vector.h>
 #include <limine.h>
@@ -36,10 +37,17 @@ struct context {
 };
 
 struct core_local_info {
-    uint64_t* kernel_sp;
+    uint64_t* abort_stack;
+    uint32_t lapic_id;
+    struct tcb* idle_thread;
+    struct tcb* current_thread;
+    struct TSS tss;
 };
 
+struct tcb* get_thread_local(void);
+void set_thread_local(struct tcb* thread);
 struct core_local_info* get_core_local_info(void);
+void set_core_local_info(struct core_local_info* cpu_info);
 void enable_interrupts(void);
 void disable_interrupts(void);
 void init_cpu(void);

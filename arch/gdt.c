@@ -1,11 +1,12 @@
 #include <arch/gdt.h>
+#include <arch/lock.h>
 
 GDT_Descriptor gdtr;
 GDT gdt;
 
 size_t gdt_index = 0;
+static spinlock_t tss_lock = 0;
 
-// https://github.com/limine-bootloader/limine/blob/trunk/PROTOCOL.md
 void init_gdt() {
     GDT_Entry null_descriptor = {
         .limit_low = 0,
@@ -88,6 +89,29 @@ void init_gdt() {
 
 void add_gdt_entry(GDT_Entry entry) {
     gdt.gdt_entry[gdt_index++] = entry;
+}
+
+void load_tss_entry(struct TSS* tss) {
+    spinlock_acquire(&tss_lock);
+
+    uint64_t addr = (uint64_t)tss;
+    TSS_Entry tss_entry = {
+        .limit = sizeof(struct TSS),
+        .base_min = (uint16_t)(addr & 0xffff),
+        .base_low = (uint8_t)((addr >> 16) & 0xff),
+        .access = 0x89,
+        .flags = 0,
+        .base_high = (uint8_t)((addr >> 24) & 0xff),
+        .base_max = (uint32_t)((addr >> 32) & 0xffffffff),
+        .reserved = 0
+    };
+
+    gdt.tss_entry = tss_entry;
+    uint16_t tss_byte_offset = GDT_ENTRY_SIZE_BYTES * GDT_ENTRIES;
+
+    __asm__ volatile("ltr %%ax" ::"a"(tss_byte_offset));
+
+    spinlock_release(&tss_lock);
 }
 
 void load_gdt(void) {

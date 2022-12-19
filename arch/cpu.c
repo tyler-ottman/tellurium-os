@@ -3,8 +3,10 @@
 #include <arch/gdt.h>
 #include <arch/idt.h>
 #include <arch/lock.h>
+#include <arch/scheduler.h>
 #include <arch/terminal.h>
 #include <devices/lapic.h>
+#include <devices/msr.h>
 #include <devices/serial.h>
 #include <libc/kmalloc.h>
 #include <memory/vmm.h>
@@ -14,14 +16,24 @@ static volatile struct limine_smp_request kernel_smp_request = {
     .revision = 0
 };
 
-struct core_local_info* get_core_local_info() {
-    struct core_local_info* cpu_info = NULL;
-    __asm__ volatile ("mov %%gs:0x0, %0" : "=r" (cpu_info));
-    return cpu_info;
+struct tcb* get_thread_local() {
+    uint32_t fs_base = get_msr(FS_BASE);
+    return (struct tcb*)((uint64_t)fs_base);
 }
 
-static void set_core_local_info(struct core_local_info* cpu_info) {
-    // __asm__ volatile ("mov %0, %%gs:0x0" : "=r" (cpu_info));
+void set_thread_local(struct tcb* thread) {
+    uint64_t fs_base = (uint32_t)((uint64_t)thread);
+    set_msr(FS_BASE, fs_base);
+}
+
+struct core_local_info* get_core_local_info() {
+    uint64_t gs_base = get_msr(GS_BASE);
+    return (struct core_local_info*)((uint64_t)gs_base);
+}
+
+void set_core_local_info(struct core_local_info* cpu_info) {
+    uint32_t gs_base = (uint32_t)((uint64_t)cpu_info);
+    set_msr(GS_BASE, gs_base);
 }
 
 void enable_interrupts() {
@@ -41,17 +53,12 @@ void init_cpu(void) {
     bsp_id = smp_response->bsp_lapic_id;
     kprintf("CPU: %d available cores\n", core_count);
 
-    struct core_local_info* cpu_info = kmalloc(sizeof(struct core_local_info));
-    ASSERT(cpu_info != NULL);
-    kprintf("This is the address: %x\n", cpu_info);
-    set_core_local_info(cpu_info);
-
     struct limine_smp_info* core;
     for (size_t i = 0; i < core_count; i++) {
         core = smp_response->cpus[i];
         
         if (core->lapic_id == smp_response->bsp_lapic_id) {
-            core_init(core);
+            // core_init(core);
             continue;
         }
         
@@ -74,13 +81,23 @@ void core_init(struct limine_smp_info* core) {
     init_lapic();
 
     uint64_t* core_stack = palloc(1);
-    if (core_stack == NULL) {
-        kerror("cpu: could not allocate core stack\n");
-    }
+    ASSERT(core_stack != NULL);
+
+    struct core_local_info* cpu_info = kmalloc(sizeof(struct core_local_info));
+    ASSERT(cpu_info != NULL);
+    set_core_local_info(cpu_info);
+    cpu_info->abort_stack = core_stack;
+    cpu_info->lapic_id = core->lapic_id;
+    cpu_info->idle_thread = alloc_idle_thread();
+    cpu_info->current_thread = NULL;
+
+    __memset(&cpu_info->tss, 0, sizeof(struct TSS));
+    load_tss_entry(&cpu_info->tss);
 
     cores_ready++;
 
     if (core->lapic_id != bsp_id) {
+        schedule_next_thread();
         while(1) {}
     }
 }
