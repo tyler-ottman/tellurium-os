@@ -8,9 +8,8 @@ static spinlock_t tid_lock = 0;
 static uint32_t cur_tid = 1;
 
 static void idle_thread_spin(void) {
-    for(;;) {
-        __asm__ volatile ("pause");
-    }
+    kprintf("Idle Thread reached\n");
+    for(;;) {}
 }
 
 struct tcb* alloc_idle_thread(void) {
@@ -35,16 +34,22 @@ struct tcb* create_kernel_thread(void* entry, void* param) {
 
     thread->parent = get_kernel_process();
 
+    uint64_t stack_top;
     size_t stack_size = PAGE_SIZE_BYTES;
     thread->thread_base_sp = kmalloc(stack_size);
     ASSERT(thread->thread_base_sp != NULL);
-    thread->thread_sp = thread->thread_base_sp + stack_size;
+    stack_top = (uint64_t)thread->thread_base_sp + stack_size;
+    thread->thread_sp = (uint64_t*)stack_top;
     
-    thread->kernel_base_sp = NULL;
-    
+    thread->kernel_base_sp = kmalloc(stack_size);
+    ASSERT(thread->kernel_base_sp != NULL);
+    stack_top = (uint64_t)thread->kernel_base_sp + stack_size;
+    thread->kernel_base_sp = (uint64_t*)(stack_top);
+    kprintf("Kernel base: %x\n", thread->kernel_base_sp);
+
     struct context* context = &thread->context;
     __memset(context, 0, sizeof(struct context));
-    context->ds = GDT_KERNEL_DATA;
+    // context->ds = GDT_KERNEL_DATA;
     context->rdi = (uint64_t)param;
     context->rip = (uint64_t)entry;
     context->cs = GDT_KERNEL_CODE;

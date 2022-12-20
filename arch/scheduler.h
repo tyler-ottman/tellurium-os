@@ -9,5 +9,6 @@ void schedule_next_thread(void);
 void schedule_idle_thread(void);
 struct tcb* pop_thread_from_queue(void);
 void add_thread_to_queue(struct tcb* thread);
+void thread_entry(struct tcb* thread);
 
 #endif // SCHEDULER_H

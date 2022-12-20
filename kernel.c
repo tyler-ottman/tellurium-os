@@ -14,7 +14,6 @@
 #include <stddef.h>
 
 void init_system() {
-    disable_interrupts();
     init_terminal();
     init_gdt();
     init_idt();

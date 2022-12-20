@@ -12,7 +12,6 @@
 #define KERNEL_THREAD_STACK_SIZE    (2 * PAGE_SIZE_BYTES)
 
 struct context {
-    uint64_t ds;
     uint64_t rax;
     uint64_t rbx;
     uint64_t rcx;
@@ -39,6 +38,7 @@ struct context {
 struct core_local_info {
     uint64_t* abort_stack;
     uint32_t lapic_id;
+    uint8_t lapic_timer_vector;
     struct tcb* idle_thread;
     struct tcb* current_thread;
     struct TSS tss;

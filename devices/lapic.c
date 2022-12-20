@@ -1,4 +1,5 @@
 #include <devices/lapic.h>
+#include <arch/scheduler.h>
 #include <arch/cpu.h>
 
 uint32_t* lapic_addr;
@@ -30,24 +31,30 @@ void lapic_time_handler() {
 
     // lapic_write(LVT_INITIAL_COUNT, 0x30000000);    
     // enable_interrupts();
+    schedule_next_thread();
 }
 
 extern void* ISR_Timer_Interrupt[];
 void init_lapic() {
+    struct core_local_info* cpu_info = get_core_local_info();
+
     lapic_addr = get_lapic_addr();
 
     // Software enable local APIC
     lapic_enable();
+    enable_interrupts();
     
     // Add IDT entry for timer interrupts
-    uint8_t lapic_vector = allocate_vector();
-    add_descriptor(lapic_vector, ISR_Timer_Interrupt, 0x8e);
-    lapic_lvt_set_vector(LVT_TIMER, lapic_vector);
+    uint8_t timer_vector = allocate_vector();
+    cpu_info->lapic_timer_vector = timer_vector;
+
+    add_descriptor(timer_vector, ISR_Timer_Interrupt, 0x8e);
+    lapic_lvt_set_vector(LVT_TIMER, timer_vector);
 
     // Enable reception of timer interrupt
     lapic_lvt_enable(LVT_TIMER);
     
-    // lapic_write(LVT_INITIAL_COUNT, 0x50000000);
+    // lapic_write(LVT_INITIAL_COUNT, 0x10000000);
     // enable_interrupts();
 }
 

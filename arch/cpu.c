@@ -77,9 +77,7 @@ void core_init(struct limine_smp_info* core) {
     idt_load();
 
     load_pagemap(get_kernel_pagemap());
-
-    init_lapic();
-
+    
     uint64_t* core_stack = palloc(1);
     ASSERT(core_stack != NULL);
 
@@ -90,9 +88,14 @@ void core_init(struct limine_smp_info* core) {
     cpu_info->lapic_id = core->lapic_id;
     cpu_info->idle_thread = alloc_idle_thread();
     cpu_info->current_thread = NULL;
-
+    
     __memset(&cpu_info->tss, 0, sizeof(struct TSS));
     load_tss_entry(&cpu_info->tss);
+
+    init_lapic();
+
+    // LAPIC Timer IDT Entry uses stack stored in IST1
+    set_vector_ist(cpu_info->lapic_timer_vector, 1);
 
     cores_ready++;
 

@@ -22,6 +22,7 @@ struct tcb {
     uint64_t* thread_base_sp;
     uint64_t* thread_sp;
     uint64_t* kernel_base_sp;
+    uint64_t* kernel_sp;
     struct context context;
     uint64_t* fs_base;
     uint32_t state;

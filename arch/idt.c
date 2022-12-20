@@ -1,10 +1,12 @@
+#include <arch/lock.h>
 #include <arch/idt.h>
 
-// Load this to idtr register
+extern void* isr_table[];
+
 static IDT_Descriptor idtr;
+static spinlock_t idt_lock = 0;
 size_t cur_vector_idt;
 
-// Array of 256 IDT entries
 __attribute__((aligned(0x10))) static IDT_Entry idt_entry[256];
 
 uint8_t allocate_vector() {
@@ -15,14 +17,12 @@ uint8_t allocate_vector() {
     return cur_vector_idt++;
 }
 
-// Add IDT Descriptor to IDT
 void add_descriptor(uint8_t vector, void* gate_entry, uint8_t flags) {
-    // Load Descriptor at index vector into IDT
+    spinlock_acquire(&idt_lock);
+    
     IDT_Entry* descriptor_ptr = &idt_entry[vector];
 
-    // Address of entry to our descriptor
     uint64_t entry_addr = (uint64_t)gate_entry;
-    // kprintf("This is entry added: %x\n", entry_addr);
 
     descriptor_ptr->offset_low16 = entry_addr & 0xffff;
     descriptor_ptr->segment_selector = GDT_KERNEL_CODE;
@@ -33,9 +33,21 @@ void add_descriptor(uint8_t vector, void* gate_entry, uint8_t flags) {
     descriptor_ptr->reserved = 0;
 
     idt_load();
+
+    spinlock_release(&idt_lock);
 }
 
-extern void* isr_table[];
+void set_vector_ist(uint8_t vector, int ist) {
+    spinlock_acquire(&idt_lock);
+
+    IDT_Entry* idt_descriptor = &idt_entry[vector];
+
+    idt_descriptor->ist = ist;
+
+    idt_load();
+
+    spinlock_release(&idt_lock);
+}
 
 void idt_load() {
     __asm__ volatile ("lidt %0" : : "m"(idtr));
