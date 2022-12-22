@@ -19,6 +19,8 @@ void cache_insert(size_t chunk_size) {
     }
     
     struct cache* cache = palloc(1);
+    ASSERT(cache != NULL);
+
     cache->slabs_empty = cache->slabs_partial = cache->slabs_full = NULL;
     cache->chunk_size = chunk_size;
     cache->lock = 0;
@@ -61,6 +63,7 @@ void slab_spawn(struct cache* cache) {
     int header_size = sizeof(struct slab);
     
     struct slab* slab = palloc(1);
+    ASSERT(slab != NULL);
     __memset(slab, 0, header_size);
 
     int header_size_chunks = header_size / chunk_size;
@@ -228,7 +231,7 @@ void slab_free(void* addr) {
     if ((((uint64_t)addr) & 0xfff) == 0) { // Bypass slab de-allocator
         void* base = (void*)((uint64_t)addr - PAGE_SIZE_BYTES);
         struct page_metadata* metadata = (struct page_metadata*)(base);
-        pfree(metadata, metadata->pages_allocated);
+        pfree((void*)metadata, metadata->pages_allocated);
     } else { // Normal slab de-allocator
         slab_free_chunk(addr);
     }

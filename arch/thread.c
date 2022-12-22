@@ -9,7 +9,9 @@ static uint32_t cur_tid = 1;
 
 static void idle_thread_spin(void) {
     kprintf("Idle Thread reached\n");
-    for(;;) {}
+    for(;;) {
+        __asm__ volatile ("pause");
+    }
 }
 
 struct tcb* alloc_idle_thread(void) {

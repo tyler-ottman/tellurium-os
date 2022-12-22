@@ -73,6 +73,10 @@ void thread_entry(struct tcb* thread) {
     lapic_write(LVT_INITIAL_COUNT, 0x30000000);
     enable_interrupts();
 
+    struct pagemap* map = cpu_info->current_thread->parent->pmap;
+    uint64_t* pml4 = map->pml4_base;
+    pml4 = (uint64_t*)((uint64_t)pml4 - KERNEL_HHDM_OFFSET);
+    
     __asm__ volatile(
         "mov %0, %%rsp\n\t"
         "mov %1, %%rax\n\t"
@@ -95,6 +99,6 @@ void thread_entry(struct tcb* thread) {
         "addq $8, %%rsp\n\t"
         "iretq\n\t" ::
         "r" (&cpu_info->current_thread->context),
-        "r" (cpu_info->current_thread->parent->pmap->pml4_base)
+        "r" (pml4)
     );
 }

@@ -16,13 +16,20 @@ static volatile struct limine_smp_request kernel_smp_request = {
     .revision = 0
 };
 
+// Halt CPU activity
+void done() {
+    for (;;) {
+        __asm__("hlt");
+    }
+}
+
 struct tcb* get_thread_local() {
-    uint32_t fs_base = get_msr(FS_BASE);
+    uint64_t fs_base = get_msr(FS_BASE);
     return (struct tcb*)((uint64_t)fs_base);
 }
 
 void set_thread_local(struct tcb* thread) {
-    uint64_t fs_base = (uint32_t)((uint64_t)thread);
+    uint64_t fs_base = (uint64_t)((uint64_t)thread);
     set_msr(FS_BASE, fs_base);
 }
 
@@ -32,7 +39,7 @@ struct core_local_info* get_core_local_info() {
 }
 
 void set_core_local_info(struct core_local_info* cpu_info) {
-    uint32_t gs_base = (uint32_t)((uint64_t)cpu_info);
+    uint64_t gs_base = (uint64_t)((uint64_t)cpu_info);
     set_msr(GS_BASE, gs_base);
 }
 
@@ -91,9 +98,9 @@ void core_init(struct limine_smp_info* core) {
     
     __memset(&cpu_info->tss, 0, sizeof(struct TSS));
     load_tss_entry(&cpu_info->tss);
-
+    
     init_lapic();
-
+    // kprintf(RED "Before\n");
     // LAPIC Timer IDT Entry uses stack stored in IST1
     set_vector_ist(cpu_info->lapic_timer_vector, 1);
 

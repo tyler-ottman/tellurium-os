@@ -44,6 +44,7 @@ struct core_local_info {
     struct TSS tss;
 };
 
+void done(void);
 struct tcb* get_thread_local(void);
 void set_thread_local(struct tcb* thread);
 struct core_local_info* get_core_local_info(void);

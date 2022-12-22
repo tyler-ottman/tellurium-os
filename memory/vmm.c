@@ -13,7 +13,7 @@ static volatile struct limine_kernel_address_request kernel_addr_request = {
     .revision = 0
 };
 
-static volatile struct limine_hhdm_request kernel_hhdm_request = {
+volatile struct limine_hhdm_request kernel_hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,
     .revision = 0
 };
@@ -36,32 +36,27 @@ void map_section(uint64_t vaddr_base, uint64_t paddr_base, uint64_t len, uint64_
 void init_vmm() {
     struct limine_kernel_address_response* kernel_response = kernel_addr_request.response;
     struct limine_memmap_response* limine_memory_map = memory_map_request.response;
-    struct limine_hhdm_response* limine_hhdm = kernel_hhdm_request.response;
 
     uint64_t* limine_cr3;
     __asm__ volatile ("movq %%cr3, %0" : "=r"(limine_cr3));
 
     // Allocate frame for kernel pagemap
     k_pagemap = palloc(1);
-    if (!k_pagemap) {
-        kerror("VMM: Failed to allocate kernel pagemap\n");
-    }
-    
-    k_pagemap->pml4_base = palloc(1);
-    if (!k_pagemap->pml4_base) {
-        kerror("VMM: Failed to allocate kernel pml4\n");
-    }
+    ASSERT(k_pagemap != NULL);
 
+    k_pagemap->pml4_base = palloc(1);
+    ASSERT(k_pagemap->pml4_base != NULL);
+    
     uint64_t kernel_vaddr = kernel_response->virtual_base;
     uint64_t kernel_paddr = kernel_response->physical_base;
-
+    
     // map .text section
     uint64_t stext_vaddr = align_address((uint64_t)_stext, false);
     uint64_t etext_vaddr = align_address((uint64_t)_etext, true);
     uint64_t stext_paddr = stext_vaddr - kernel_vaddr + kernel_paddr;
     uint64_t text_len = etext_vaddr - stext_vaddr;
     map_section(stext_vaddr, stext_paddr, text_len, PML_PRESENT);
-
+    
     // map .rodata section
     uint64_t srodata_vaddr = align_address((uint64_t)_srodata, false);
     uint64_t erodata_vaddr = align_address((uint64_t)_erodata, true);
@@ -80,7 +75,7 @@ void init_vmm() {
 
     // identity map of lower 4 GBs
     struct limine_memmap_entry** entries = limine_memory_map->entries;
-    uint64_t hhdm = limine_hhdm->offset;
+    
     for (size_t idx = 0; idx < limine_memory_map->entry_count; idx++) {
         struct limine_memmap_entry* entry = entries[idx];
 
@@ -88,21 +83,24 @@ void init_vmm() {
         uint64_t end_paddr = align_address(entry->base + entry->length, true);
         uint64_t len = end_paddr - start_paddr;
 
-        map_section(start_paddr + hhdm, start_paddr, len, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
-        map_section(start_paddr, start_paddr, len, PML_WRITE | PML_PRESENT);
+        map_section(start_paddr + KERNEL_HHDM_OFFSET, start_paddr, len, PML_WRITE | PML_PRESENT);        
+        
+        // Todo: Remove remaining identity map
+        if (entry->type == LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE ||
+            entry->type == LIMINE_MEMMAP_FRAMEBUFFER) {
+            map_section(start_paddr, start_paddr, len, PML_WRITE | PML_PRESENT);
+        }
     }
-    
+
     uint64_t bitmap_addr = (uint64_t)get_bitmap_addr();
     size_t bitmap_size = get_bitmap_size();
-    map_section(bitmap_addr, bitmap_addr, bitmap_size, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
-
+    map_section(bitmap_addr, bitmap_addr - KERNEL_HHDM_OFFSET, bitmap_size, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
+    
     uint64_t lapic_addr = (uint64_t)get_lapic_addr();
-    map_section(lapic_addr, lapic_addr, 4096, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
+    map_section(lapic_addr + KERNEL_HHDM_OFFSET, lapic_addr, 4096, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
 
     // Hand over paging to OS
     load_pagemap(k_pagemap);
-
-    // print_levels(k_pagemap->pml4_base, 2);
 
     // Todo: Destroy Limine's page tables
 
@@ -111,7 +109,8 @@ void init_vmm() {
 }
 
 void load_pagemap(struct pagemap* map) {
-    uint64_t cr3_write = (uint64_t)(map->pml4_base);
+    uint64_t cr3_write = (uint64_t)map->pml4_base;
+    cr3_write -= KERNEL_HHDM_OFFSET;
     __asm__ volatile ("mov %0, %%cr3" : : "r"(cr3_write));
 }
 
@@ -126,22 +125,23 @@ uint64_t align_address(uint64_t addr, bool round_up) {
 }
 
 uint64_t* allocate_map(uint64_t* map_base, uint64_t map_entry, uint64_t flags) {
-    uint64_t* next_level_map = palloc(1);  
-    
+    uint64_t* next_level_map = palloc(1);
     if (!next_level_map) {
         return NULL;
     }
 
     frames_allocated++;
     __memset(next_level_map, 0, PAGE_SIZE);
-    map_base[map_entry] = ((uint64_t)next_level_map) | flags;
-    return (uint64_t*)((uint64_t)next_level_map & PML_PHYSICAL_ADDRESS);
+    uint64_t entry = (uint64_t)next_level_map - KERNEL_HHDM_OFFSET;
+    map_base[map_entry] = entry | flags;
+    return next_level_map;
 }
 
 bool get_next_page_map(uint64_t** new_map_base, uint64_t* map_base, uint64_t map_entry) {
     uint64_t next_map_entry = map_base[map_entry];
     if (next_map_entry & PML_PRESENT) {
         *new_map_base = (uint64_t*)(next_map_entry & PML_PHYSICAL_ADDRESS);
+        *new_map_base = (uint64_t*)((uint64_t)(*new_map_base) + KERNEL_HHDM_OFFSET);
         return true;
     }
 

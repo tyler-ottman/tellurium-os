@@ -21,13 +21,6 @@ void init_terminal() {
     terminal = terminal_request.response->terminals[0];
 }
 
-// Halt CPU activity
-void done(void) {
-    for (;;) {
-        __asm__("hlt");
-    }
-}
-
 void kerror(const char* err) {
     kprintf(LIGHT_RED"%s", err);
     done();

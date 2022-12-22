@@ -13,7 +13,7 @@ uint32_t lapic_read(size_t offset) {
         kerror(UNALIGNED_LAPIC);
     }
 
-    return *((uint32_t*)((uint64_t)lapic_addr + offset));
+    return *((uint32_t*)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET));
 }
 
 void lapic_write(size_t offset, uint32_t val) {
@@ -21,7 +21,7 @@ void lapic_write(size_t offset, uint32_t val) {
         kerror(UNALIGNED_LAPIC);
     }
 
-    *((uint32_t*)((uint64_t)lapic_addr + offset)) = val;
+    *((uint32_t*)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET)) = val;
 }
 
 void lapic_time_handler() {
@@ -29,17 +29,15 @@ void lapic_time_handler() {
 
     kprintf(MAGENTA"Timer Interrupt Handler\n");
 
-    // lapic_write(LVT_INITIAL_COUNT, 0x30000000);    
-    // enable_interrupts();
     schedule_next_thread();
 }
 
 extern void* ISR_Timer_Interrupt[];
 void init_lapic() {
     struct core_local_info* cpu_info = get_core_local_info();
-
+    
     lapic_addr = get_lapic_addr();
-
+    
     // Software enable local APIC
     lapic_enable();
     enable_interrupts();
@@ -47,15 +45,12 @@ void init_lapic() {
     // Add IDT entry for timer interrupts
     uint8_t timer_vector = allocate_vector();
     cpu_info->lapic_timer_vector = timer_vector;
-
+    
     add_descriptor(timer_vector, ISR_Timer_Interrupt, 0x8e);
     lapic_lvt_set_vector(LVT_TIMER, timer_vector);
 
     // Enable reception of timer interrupt
     lapic_lvt_enable(LVT_TIMER);
-    
-    // lapic_write(LVT_INITIAL_COUNT, 0x10000000);
-    // enable_interrupts();
 }
 
 void lapic_lvt_set_vector(uint32_t lvt, uint8_t vector) {

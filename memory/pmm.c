@@ -9,6 +9,7 @@ uint64_t bitmap_max_entries; // Number of page frame entries in bitmap
 uint64_t cached_index = 0; // List index in bitmap accessed
 uint8_t* bitmap; // Raw bitmap
 size_t bitmap_size_aligned;
+// static uint64_t
 
 uint8_t* get_bitmap_addr() {
     return bitmap;
@@ -62,6 +63,7 @@ uint64_t palign(size_t frames) {
 
 void init_pmm(void) {
     // Get memory map
+    kprintf("Kernel hhdm: %x\n", KERNEL_HHDM_OFFSET);
     struct limine_memmap_response* memory_map_response = memory_map_request.response;
     struct limine_memmap_entry** entries = memory_map_response->entries;
     struct limine_memmap_entry* entry;
@@ -89,7 +91,7 @@ void init_pmm(void) {
         entry = entries[idx];
         if (entry->type == LIMINE_MEMMAP_USABLE) {
             if (entry->length > bitmap_size_aligned) {
-                bitmap = (uint8_t*)entry->base;
+                bitmap = (uint8_t*)(entry->base + KERNEL_HHDM_OFFSET);
                 entry->base += bitmap_size_aligned;
                 entry->length -= bitmap_size_aligned;
                 break;
@@ -137,6 +139,7 @@ void* palloc_internal(size_t pages) {
                 bitmap_set(addr);
             }
             void* ret = (void*)(cached_index * PAGE_SIZE_BYTES);
+            ret = (void*)((uint64_t)ret + KERNEL_HHDM_OFFSET);
             cached_index += pages;
             return ret;
         }
@@ -147,10 +150,7 @@ void* palloc_internal(size_t pages) {
 
 void* palloc(size_t pages) {
     void* ret = (void*)palloc_internal(pages);
-    
     if (!ret) {
-        // https://wiki.osdev.org/Page_Frame_Allocation
-        // Information about caching index
         cached_index = 0;
         ret = (void*)palloc_internal(pages);
     }

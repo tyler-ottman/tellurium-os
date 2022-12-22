@@ -24,15 +24,13 @@ void init_system() {
     init_slab();
 }
 
-// The following will be our kernel's entry point.
 void _start(void) {
     init_system();
     init_kernel_process();
     
     init_cpu();
-
+    
     kprintf(LIGHT_GREEN"Init kernel: complete\n");
 
-    // We're done, just hang...
     done();
 }
