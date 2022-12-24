@@ -86,10 +86,10 @@ void init_vmm() {
         map_section(start_paddr + KERNEL_HHDM_OFFSET, start_paddr, len, PML_WRITE | PML_PRESENT);        
         
         // Todo: Remove remaining identity map
-        if (entry->type == LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE ||
-            entry->type == LIMINE_MEMMAP_FRAMEBUFFER) {
-            map_section(start_paddr, start_paddr, len, PML_WRITE | PML_PRESENT);
-        }
+        // if (entry->type == LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE ||
+        //     entry->type == LIMINE_MEMMAP_FRAMEBUFFER) {
+        //     map_section(start_paddr, start_paddr, len, PML_WRITE | PML_PRESENT);
+        // }
     }
 
     uint64_t bitmap_addr = (uint64_t)get_bitmap_addr();

@@ -1,3 +1,4 @@
+#include <arch/framebuffer.h>
 #include <arch/terminal.h>
 #include <arch/lock.h>
 
@@ -27,8 +28,9 @@ void kerror(const char* err) {
 }
 
 void terminal_putchar(const char chr) {
-    terminal_request.response->write(terminal, &chr, 1);
-    write_serial(chr, COM1);
+    // terminal_request.response->write(terminal, &chr, 1);
+    putchar(chr);
+    // write_serial(chr, COM1);
 }
 
 #define PRINTF_PAD_ZERO_MASK        0
@@ -39,7 +41,7 @@ int terminal_vfprintf(va_list valist, const char* format) {
     uint64_t base; // Default base for numbers
 
     // Push default color
-    terminal_request.response->write(terminal, CYAN, __strlen(CYAN));
+    // terminal_request.response->write(terminal, CYAN, __strlen(CYAN));
 
     while (*format) {
         flags = 0;

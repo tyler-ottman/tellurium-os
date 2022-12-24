@@ -1,5 +1,6 @@
 #include <acpi/acpi.h>
 #include <arch/cpu.h>
+#include <arch/framebuffer.h>
 #include <arch/gdt.h>
 #include <arch/idt.h>
 #include <arch/process.h>
@@ -15,7 +16,9 @@
 
 void init_system() {
     init_terminal();
+    init_framebuffer();
     init_gdt();
+    
     init_idt();
     init_acpi();
     init_pmm();
