@@ -4,9 +4,28 @@
 #include <libc/string.h>
 #include <limine.h>
 
+#define ANSI_ESC        '\033'
+
 static volatile struct limine_framebuffer_request framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST,
     .revision = 0
+};
+
+enum ansi_state {
+    ANSI_RESET,
+    ANSI_ESCAPE,
+    ANSI_BRACKET,
+    ANSI_PARSE,
+    ANSI_SEMICOLON,
+    ANSI_RB,            // Regular Background
+    ANSI_RT,            // Regular Text
+    ANSI_HIB,           // High Intensity Background
+    ANSI_HIT,           // High Intensity Text
+    ANSI_RB_TYPE,
+    ANSI_RT_TYPE,
+    ANSI_HIB_TYPE,
+    ANSI_HIT_TYPE,
+    ANSI_HIB0
 };
 
 struct frame_state {
@@ -16,6 +35,7 @@ struct frame_state {
     uint32_t h_cursor;
     uint32_t v_cursor;
     uint32_t color;
+    uint32_t ansi_state;
 };
 
 static struct limine_framebuffer_response* framebuffer_response;
@@ -36,6 +56,27 @@ static inline void newline() {
     }
 
     state.h_cursor = 0;
+}
+
+static bool is_ansi_changed(char c) {
+    bool ret = false;
+
+    switch (state.ansi_state) {
+    case ANSI_RESET:
+        if (c == ANSI_ESC) {
+            state.ansi_state = ANSI_BRACKET;
+            return true;
+        }
+        break;
+    
+    case ANSI_ESC:
+        if (c == '[') {
+            state.ansi_state = ANSI_BRACKET;
+            return true;
+        }
+        break;
+    }
+    return ret;
 }
 
 static bool state_changed(char c) {

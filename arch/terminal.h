@@ -29,10 +29,13 @@
 
 #define ASSERT(cond) {if (!(cond)) kerror("Assertion failed\n");}
 
+// typedef struct {
+    
+// } terminal;
+
 void init_terminal(void);
 void done(void);
 void kerror(const char* err);
 
 void terminal_putchar(const char chr);
-int terminal_vfprintf(va_list valist, const char* format);
 int kprintf(const char* format, ...);

@@ -18,7 +18,6 @@ void init_system() {
     init_terminal();
     init_framebuffer();
     init_gdt();
-    
     init_idt();
     init_acpi();
     init_pmm();
