@@ -84,7 +84,7 @@ void init_gdt() {
 
     load_gdt();
 
-    kprintf(LIGHT_GREEN"GDT: initialized at: %16x\n", gdtr.base);
+    kprintf(LIGHT_GREEN "GDT: initialized at: %16x\n", gdtr.base);
 }
 
 void add_gdt_entry(GDT_Entry entry) {

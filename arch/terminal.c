@@ -6,74 +6,233 @@
 #include <libc/print.h>
 #include <stdarg.h>
 
-#define WRITE_SERIAL(str) {                 \
-    size_t len = __strlen(str);             \
-    for (size_t i = 0; i < len; i++) {      \
-        write_serial(str[i], COM1);         \
-    }                                       \
-    write_serial('\n', COM1);               \
-}                                           \
+#define NUM_SET_TEXT_ATTRIBUTES     9
+#define NUM_RESET_TEXT_ATTRIBUTES   8
 
-// static volatile struct limine_terminal_request terminal_request = {
-//     .id = LIMINE_TERMINAL_REQUEST,
-//     .revision = 0
-// };
+#define FG_COLOR_DEFAULT            0xff00aaaa
+#define BG_COLOR_DEFAULT            0
+#define GRAYSCALE_FACTOR            (0xffffffff / 24)
 
-// static struct limine_terminal *terminal;
+enum SET_TEXT_ATTRIBUTE {
+    SET_RESET,
+    SET_STRIKETHROUGH       = 9,
+    SET_DOUBLE_UNDERLINE    = 21
+};
+
+enum RESET_TEXT_ATTRIBUTE {
+    RESET_BOLD              = 22,
+    RESET_STRIKETHROUGH     = 29
+};
+
+enum FG_NORMAL_CODE {
+    FG_BLACK                = 30,
+    FG_WHITE                = 37,
+    FG_PSEUDO_MODE,
+    FG_DEFAULT
+};
+
+enum BG_NORMAL_CODE {
+    BG_BLACK                = 40,
+    BG_WHITE                = 47,
+    BG_PSEUDO_MODE,
+    BG_DEFAULT,
+};
+
+enum FG_BRIGHT_CODE {
+    FG_BRIGHT_BLACK         = 90,
+    FG_BRIGHT_WHITE         = 97
+};
+
+enum BG_BRIGHT_CODE {
+    BG_BRIGHT_BLACK         = 100,
+    BG_BRIGHT_WHITE         = 107
+};
+
+enum ANSI_COLOR_MODE {
+    ANSI4,                  // 16 (4-bit) color mode
+    ANSI8           = 5,    // 256 (8-bit) color mode
+    ANSI24          = 2     // 24-bit color
+};
+
+enum ANSI_COLOR_STATE {
+    ANSI_COLOR_NORMAL,
+    ANSI_COLOR_FG,
+    ANSI_COLOR_BG,
+    PROCESS_ANSI8,
+    PROCESS_ANSI24
+};
+
+static uint32_t vga_to_rgb[] = {
+	0xff000000,
+	0xffaa0000,
+	0xff00aa00,
+	0xffaaaa00,
+	0xff0000aa,
+	0xffaa00aa,
+	0xff00aaaa,
+	0xffaaaaaa,
+	0xff555555,
+	0xffff5555,
+	0xff55ff55,
+	0xffffff55,
+	0xff5555ff,
+	0xffff55ff,
+	0xff55ffff,
+	0xffffffff,
+};
+
 static spinlock_t kprint_lock = 0;
 static terminal kterminal;
 
-enum TEXT_TYPE {
-    TEXT_RESET,
-    TEXT_BOLD,
-    TEXT_FAINT,
-    TEXT_ITALIC,
-    TEXT_UNDERLINE,
-    TEXT_RESERVED,
-    TEXT_BLINKING,
-    TEXT_INVERSE,
-    TEXT_HIDDEN,
-    TEXT_STRIKETHROUGH
-};
-
-void init_kterminal() {
-    // if (terminal_request.response == NULL
-    //  || terminal_request.response->terminal_count < 1) {
-    //     done();
-    // }
-
-    // terminal = terminal_request.response->terminals[0];
-    kterminal.is_ansi_state = 0;
-}
+void (*apply_set_attribute[NUM_SET_TEXT_ATTRIBUTES]) (terminal*);
+void (*apply_reset_attribute[NUM_RESET_TEXT_ATTRIBUTES]) (terminal*);
 
 void kerror(const char* err) {
     kprintf(LIGHT_RED"%s", err);
     done();
 }
 
-static void terminal_putchar(const char chr) {
-    // terminal_request.response->write(terminal, &chr, 1);
-    putchar(chr);
-    // write_serial(chr, COM1);
+void no_change_text_attribute(terminal* terminal) {}
+
+void reset_text_attribute(terminal* terminal) {
+    terminal->ansi_state = ANSI_COLOR_NORMAL;
+    terminal->fg_color = FG_COLOR_DEFAULT;
+    terminal->bg_color = BG_COLOR_DEFAULT;
+    __memset(&terminal->attributes, 0, sizeof(ansi_attributes));
 }
 
-static void parse_ansi_color(terminal* terminal) {
+static inline bool num_in_byte_bounds(int n) {
+    return (n >= 0 && n <= 255);
+}
 
+static inline bool is_valid_color_format(const int type) {
+    return (type == ANSI8 || type == ANSI24);
 }
 
 static void parse_sgr(terminal* terminal, char* sequence) {
     if (__strlen(sequence) == 0) {
         // Reset ANSI attributes
+        reset_text_attribute(terminal);
         return;
     }
 
     char *tok = __strtok(sequence, ";");
-    while (tok != NULL)
-    {
+    while (tok != NULL) {
         int n = __atoi((const char**)&tok);
 
-        switch (n) {
+        switch (terminal->ansi_state) {
+        
+        case ANSI_COLOR_NORMAL:
+
+            // Set text attributes
+            if (n >= SET_RESET && n <= SET_STRIKETHROUGH) {
+                (*apply_set_attribute[n])(terminal);
+            }
             
+            // Reset text attributes
+            else if (n >= RESET_BOLD && n <= RESET_STRIKETHROUGH) {
+                (*apply_reset_attribute[n - RESET_BOLD])(terminal);
+            }
+            
+            // Process 8-bit or 24-bit color foreground
+            else if (n == FG_PSEUDO_MODE) {
+                terminal->ansi_state = ANSI_COLOR_FG;
+            }
+
+            // Process 8-bit or 24-bit color background
+            else if (n == BG_PSEUDO_MODE) {
+                terminal->ansi_state = ANSI_COLOR_FG;
+            }
+
+            // Apply 16 color mode normal foreground
+            else if (n >= FG_BLACK && n <= FG_WHITE) {
+                terminal->fg_color = vga_to_rgb[n - FG_BLACK];
+            }
+
+            // Apply 16 color mode bright foreground
+            else if (n >= FG_BRIGHT_BLACK && n <= FG_BRIGHT_WHITE) {
+                terminal->fg_color = vga_to_rgb[n - FG_BRIGHT_BLACK + 8];
+            }
+
+            // Apply 16 color mode background
+            else if (n >= BG_BLACK && n <= BG_WHITE) {
+                terminal->bg_color = vga_to_rgb[n - BG_BLACK];
+            }
+
+            else if (n >= BG_BRIGHT_BLACK && n <= BG_BRIGHT_WHITE) {
+                terminal->bg_color = vga_to_rgb[n - BG_BRIGHT_BLACK + 8];
+            }
+
+            break;
+        
+        // Process FG/BG logic
+        case ANSI_COLOR_FG:
+        case ANSI_COLOR_BG:
+            if (!is_valid_color_format(n)) {
+                terminal->ansi_state = ANSI_COLOR_NORMAL;
+                break;
+            }
+            
+            terminal->apply_to_fg = terminal->ansi_state == ANSI_COLOR_FG;
+            terminal->ansi_state = n == ANSI8 ? PROCESS_ANSI8 : PROCESS_ANSI24;
+            break;
+
+        case PROCESS_ANSI8: {
+            uint32_t color = 0xff000000;
+            if (!num_in_byte_bounds(n)) {
+                terminal->ansi_state = ANSI_COLOR_NORMAL;
+                break;
+            }
+
+            uint8_t color_code = (uint8_t)n;
+
+            // Standard 16 VGA colors
+            if (color_code <= 15) {
+                color = vga_to_rgb[color_code];
+            } 
+            
+            // 8-bit color
+            else if (color_code > 15 && color_code <= 231) {
+                color_code -= 16;
+                uint8_t red = color_code / 36;
+                color_code -= 36 * red;
+                uint8_t green = color_code / 6;
+                color_code -= 6 * green;
+                uint8_t blue = color_code;
+                
+                // Apply scale from 3-bit to 8-bit
+                red *= 51, green *= 51, blue *= 51;
+                color |= (red << 16) | (green << 8) | blue;
+            }
+            
+            // grayscale
+            else {
+                color_code -= 232;
+                color = GRAYSCALE_FACTOR * color_code;
+            }
+            
+            // Apply color to FG/BG
+            if (terminal->apply_to_fg) {
+                terminal->fg_color = color;
+            } else {
+                terminal->bg_color = color;
+            }
+
+            terminal->ansi_state = ANSI_COLOR_NORMAL;
+            break;
+        }
+
+        case PROCESS_ANSI24: {
+            // do {
+            //     if (!num_in_byte_bounds(n)) {
+            //         terminal->ansi_state = ANSI_COLOR_NORMAL;
+            //         apply_color_to_fg = 
+            //     }
+            // }
+            terminal->ansi_state = ANSI_COLOR_NORMAL;
+            break;
+        }
+        
         }
 
         tok = __strtok(NULL, ";");
@@ -133,7 +292,7 @@ static void terminal_printf(terminal* terminal, const char* buf) {
             case '\v':
                 break;
             default:
-                putchar(*buf);
+                drawchar(terminal, *buf);
                 break;
             }
         }
@@ -153,9 +312,28 @@ int kprintf(const char* format, ...) {
     va_end(valist);
     ASSERT(err != -1);
 
+    reset_text_attribute(&kterminal);
     terminal_printf(&kterminal, buf);
 
     spinlock_release(&kprint_lock);
 
     return err;
+}
+
+void init_kterminal() {
+    for (int i = 0; i < NUM_SET_TEXT_ATTRIBUTES; i++) {
+        apply_set_attribute[i] = no_change_text_attribute;
+    }
+
+    for (int i = 0; i < NUM_RESET_TEXT_ATTRIBUTES; i++) {
+        apply_reset_attribute[i] = no_change_text_attribute;
+    }
+
+    apply_set_attribute[SET_RESET] = reset_text_attribute;
+
+    kterminal.fg_color = FG_COLOR_DEFAULT;
+    kterminal.bg_color = BG_COLOR_DEFAULT;
+    kterminal.apply_to_fg = false;
+    kterminal.is_ansi_state = 0;
+    kterminal.ansi_state = ANSI_COLOR_NORMAL;
 }

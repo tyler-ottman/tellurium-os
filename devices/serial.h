@@ -2,11 +2,13 @@
 
 #define COM1        0x3F8
 
-// PIC Ports
-#define PIC0        0x020
-#define PIC1        0x021
-#define PIC2        0x0a0
-#define PIC3        0x0a1
+#define WRITE_SERIAL(str) {                 \
+    size_t len = __strlen(str);             \
+    for (size_t i = 0; i < len; i++) {      \
+        write_serial(str[i], COM1);         \
+    }                                       \
+    write_serial('\n', COM1);               \
+}                                           \
 
 uint8_t inb(uint16_t port);
 

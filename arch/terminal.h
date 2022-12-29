@@ -24,24 +24,40 @@
 #define MAGENTA         RESET"\033[35m"
 #define CYAN            RESET"\033[36m"
 #define LIGHT_GRAY      RESET"\033[37m"
-#define GRAY            RESET"\033[1;30m"
-#define LIGHT_RED       RESET"\033[1;31m"
-#define LIGHT_GREEN     RESET"\033[1;323m"
-#define LIGHT_YELLOW    RESET"\033[1;33m"
-#define LIGHT_BLUE      RESET"\033[1;34m"
-#define LIGHT_MAGENTA   RESET"\033[1;35m"
-#define LIGHT_CYAN      RESET"\033[1;36m"
-#define WHITE           RESET"\033[1;37m"
+#define GRAY            RESET"\033[90m"
+#define LIGHT_RED       RESET"\033[91m"
+#define LIGHT_GREEN     RESET"\033[92m"
+#define LIGHT_YELLOW    RESET"\033[93m"
+#define LIGHT_BLUE      RESET"\033[94m"
+#define LIGHT_MAGENTA   RESET"\033[95m"
+#define LIGHT_CYAN      RESET"\033[96m"
+#define WHITE           RESET"\033[97m"
 
 #define ASSERT(cond) {if (!(cond)) kerror("Assertion failed\n");}
 
 typedef struct {
+    uint8_t reset: 1;
+    uint8_t bold: 1;
+    uint8_t faint: 1;
+    uint8_t italic: 1;
+    uint8_t blinking: 1;
+    uint8_t inverse: 1;
+    uint8_t hidden: 1;
+    uint8_t strikethrough: 1;
+} ansi_attributes;
+
+typedef struct {
+    uint32_t fg_color;
+    uint32_t bg_color;
+    uint64_t apply_to_fg;               // Internal sgr flag
     uint64_t is_ansi_state;
+    uint64_t ansi_state;
+    ansi_attributes attributes;
     char ansi_sequence[ANSI_SEQ_LEN];
 } terminal;
 
-void init_kterminal(void);
 void kerror(const char* err);
 int kprintf(const char* format, ...);
+void init_kterminal(void);
 
 #endif // TERMINAL_H

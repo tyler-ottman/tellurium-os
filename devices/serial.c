@@ -1,5 +1,11 @@
 #include <devices/serial.h>
 
+// PIC Ports
+#define PIC0        0x020
+#define PIC1        0x021
+#define PIC2        0x0a0
+#define PIC3        0x0a1
+
 uint8_t inb(uint16_t port) {
     uint8_t ret;
     __asm__ volatile ("inb %1, %0" : "=a"(ret) : "dN"(port));

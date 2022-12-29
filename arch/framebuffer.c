@@ -11,23 +11,6 @@ static volatile struct limine_framebuffer_request framebuffer_request = {
     .revision = 0
 };
 
-enum ansi_state {
-    ANSI_RESET,
-    ANSI_ESCAPE,
-    ANSI_BRACKET,
-    ANSI_PARSE,
-    ANSI_SEMICOLON,
-    ANSI_RB,            // Regular Background
-    ANSI_RT,            // Regular Text
-    ANSI_HIB,           // High Intensity Background
-    ANSI_HIT,           // High Intensity Text
-    ANSI_RB_TYPE,
-    ANSI_RT_TYPE,
-    ANSI_HIB_TYPE,
-    ANSI_HIT_TYPE,
-    ANSI_HIB0
-};
-
 struct frame_state {
     uint64_t cur_line_pixel;
     uint64_t width;
@@ -58,39 +41,6 @@ void newline() {
     state.h_cursor = 0;
 }
 
-static bool is_ansi_changed(char c) {
-    bool ret = false;
-
-    switch (state.ansi_state) {
-    case ANSI_RESET:
-        if (c == ANSI_ESC) {
-            state.ansi_state = ANSI_BRACKET;
-            return true;
-        }
-        break;
-    
-    case ANSI_ESC:
-        if (c == '[') {
-            state.ansi_state = ANSI_BRACKET;
-            return true;
-        }
-        break;
-    }
-    return ret;
-}
-
-static bool state_changed(char c) {
-    switch (c) {
-    case '\0':
-        return false; // todo, colors
-    case '\n':
-        newline();
-        return true;
-    }
-
-    return false;
-}
-
 void clear_screen() {
     for (size_t i = 0; i < state.width; i++) {
         for (size_t j = 0; j < state.width; j++) {
@@ -112,11 +62,7 @@ void scroll_screen() {
     __memset(last_line, 0x00, 4 * FONT_HEIGHT * state.width);
 }
 
-void putchar(char c) {
-    if ((c < 0x20) && state_changed(c)) { // Escape character
-        return;
-    }
-
+void drawchar(terminal* terminal, char c) {
     uint8_t* cur_char = font[(uint8_t)c];
     if (state.h_cursor >= state.width) {
         newline();
@@ -125,7 +71,7 @@ void putchar(char c) {
     for (int i = 0; i < FONT_HEIGHT; i++) {
         size_t start = state.cur_line_pixel + state.h_cursor + i * state.width;
         for (int j = 0; j < FONT_WIDTH; j++) {
-            pixel_buffer[start + j] = ((cur_char[i] >> j) & 1) ? state.color : 0;
+            pixel_buffer[start + j] = ((cur_char[i] >> j) & 1) ? terminal->fg_color : 0;
         }
     }
 
