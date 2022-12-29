@@ -1,3 +1,4 @@
+#include <arch/cpu.h>
 #include <arch/exception.h>
 
 __attribute__((noreturn))

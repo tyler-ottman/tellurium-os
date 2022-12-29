@@ -47,7 +47,7 @@ static inline bool is_scroll_needed() {
     return state.v_cursor + FONT_HEIGHT >= state.height;
 }
 
-static inline void newline() {
+void newline() {
     if (is_scroll_needed()) {
         scroll_screen();
     } else {

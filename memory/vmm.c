@@ -70,7 +70,7 @@ void init_vmm() {
     uint64_t sdata_paddr = sdata_vaddr - kernel_vaddr + kernel_paddr;
     uint64_t data_len = edata_vaddr - sdata_vaddr;
     map_section(sdata_vaddr, sdata_paddr, data_len, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
-    kprintf("GOT HERE\n");
+
     kprintf(".text: %016x - %016x, .rodata: %016x - %016x\n.data: %016x - %016x\n", stext_vaddr, etext_vaddr, srodata_vaddr, erodata_vaddr, sdata_vaddr, edata_vaddr);
 
     // identity map of lower 4 GBs

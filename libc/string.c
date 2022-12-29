@@ -1,4 +1,5 @@
 #include <libc/string.h>
+#include <stdbool.h>
 
 // https://github.com/bminor/newlib/blob/master/newlib/libc/stdlib/utoa.c
 char* __utoa(unsigned long value, char *str, int base) {
@@ -41,11 +42,90 @@ char* __itoa(int value, char* str) {
     return __utoa(value, str, 10);
 }
 
+char* __strcat(char* dest, char* src) {
+    char* base = dest + __strlen(dest);
+    while (*src) {
+        *(base++) = *(src++);
+    }
+    *(base++) = '\0';
+    return dest;
+}
+
+const char* __strchr(const char* str, int c) {
+    while (*str && *str != c) {
+        str++;
+    }
+
+    return (*str == c) ? str : NULL;
+}
+
+size_t __strcspn(const char* str1, const char* str2) {
+    size_t len = 0;
+    if (!str1 || !str2) {
+        return len;
+    }
+
+    while (*str1) {
+        if (__strchr(str2, *str1)) {
+            return len;
+        } else {
+            len++;
+            str1++;
+        }
+    }
+
+    return len;
+}
+
 size_t __strlen(const char* str) {
     const char* start = str;
     while(*str != '\0')
         str++;
     return (size_t)(str - start);
+}
+
+size_t __strspn(const char* str1, const char* str2) {
+    size_t len = 0;
+    if (!str1 || !str2) {
+        return len;
+    }
+
+    while (*str1) {
+        if (!__strchr(str2, *str1++)) {
+            break;
+        }
+
+        len++;
+    }
+
+    return len;
+}
+
+char* __strtok(char* str, const char* del) {
+    static char* old_str;
+    char* token;
+
+    if (str) {
+        old_str = str;
+    }
+
+    if (!old_str) {
+        return NULL;
+    }
+
+    old_str += __strspn(old_str, del);
+    if (*old_str == '\0') {
+        return old_str = NULL;
+    }
+
+    token = old_str;
+    old_str += __strcspn(old_str, del);
+    if (*old_str == '\0') {
+        old_str = NULL;
+    } else {
+        *old_str++ = '\0';
+    }
+    return token;
 }
 
 void* __memset(void* base, unsigned char val, size_t len) {

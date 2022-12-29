@@ -14,8 +14,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <libc/string.h>
+
 void init_system() {
-    init_terminal();
+    init_kterminal();
     init_framebuffer();
     init_gdt();
     init_idt();
