@@ -40,9 +40,13 @@ int __vsnprintf(char* buf, size_t n, const char* format, va_list valist) {
 
         // Check width of field
         if (__is_digit(*format)) {
-            // Atoi here increments the format pointer so it
-            // points passed the field width characters
-            width = __atoi(&format);
+            width = __atoi(format);
+
+            int temp_width = width;
+            while (temp_width != 0) {
+                temp_width /= 10;
+                format++;
+            }
         }
 
         switch (*format) {

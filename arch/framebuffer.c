@@ -71,7 +71,7 @@ void drawchar(terminal* terminal, char c) {
     for (int i = 0; i < FONT_HEIGHT; i++) {
         size_t start = state.cur_line_pixel + state.h_cursor + i * state.width;
         for (int j = 0; j < FONT_WIDTH; j++) {
-            pixel_buffer[start + j] = ((cur_char[i] >> j) & 1) ? terminal->fg_color : 0;
+            pixel_buffer[start + j] = ((cur_char[i] >> j) & 1) ? terminal->fg_color : terminal->bg_color;
         }
     }
 

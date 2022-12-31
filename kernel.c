@@ -18,7 +18,6 @@
 
 void init_system() {
     init_kterminal();
-    init_framebuffer();
     init_gdt();
     init_idt();
     init_acpi();
@@ -31,8 +30,6 @@ void init_system() {
 void _start(void) {
     init_system();
     init_kernel_process();
-    
-    init_cpu();
     
     kprintf(LIGHT_GREEN"Init kernel: complete\n");
 
