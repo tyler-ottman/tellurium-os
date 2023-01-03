@@ -11,7 +11,6 @@
 
 #define FG_COLOR_DEFAULT            0xff00aaaa
 #define BG_COLOR_DEFAULT            0
-#define GRAYSCALE_FACTOR            (0xffffffff / 24)
 
 enum SET_TEXT_ATTRIBUTE {
     SET_RESET,
@@ -113,11 +112,18 @@ void reset_text_attribute(terminal* terminal) {
     terminal->ansi_state = PROCESS_NORMAL;
     terminal->fg_color = FG_COLOR_DEFAULT;
     terminal->bg_color = BG_COLOR_DEFAULT;
-    __memset(&terminal->attributes, 0, sizeof(ansi_attributes));
 }
 
 static inline bool num_in_byte_bounds(int n) {
     return (n >= 0 && n <= 255);
+}
+
+static inline void apply_color(terminal* terminal, uint32_t color) {
+    if (terminal->apply_to_fg) {
+        terminal->fg_color = color;
+    } else {
+        terminal->bg_color = color;
+    }
 }
 
 static void parse_sgr(terminal* terminal, char* sequence) {
@@ -191,11 +197,7 @@ static void parse_sgr(terminal* terminal, char* sequence) {
 
             color = rgb256[n];
             
-            if (terminal->apply_to_fg) {
-                terminal->fg_color = color;
-            } else {
-                terminal->bg_color = color;
-            }
+            apply_color(terminal, color);
 
             terminal->ansi_state = PROCESS_NORMAL;
             break;
@@ -221,16 +223,11 @@ static void parse_sgr(terminal* terminal, char* sequence) {
                 }
             }
 
-            if (invalid_state) {
-                break;
+            if (!invalid_state) {
+                apply_color(terminal, color);
             }
 
-            if (terminal->apply_to_fg) {
-                terminal->fg_color = color;
-            } else {
-                terminal->bg_color = color;
-            }
-        
+            break;
         }
 
         tok = __strtok(NULL, ";");
@@ -244,8 +241,7 @@ static void terminal_parse_ansi(terminal* terminal) {
         return;
     }
 
-    ansi_sequence++;
-    size_t code_idx = __strlen(ansi_sequence) - 1;
+    size_t code_idx = __strlen(++ansi_sequence) - 1;
     char ansi_code = ansi_sequence[__strlen(ansi_sequence) - 1];
     ansi_sequence[code_idx] = '\0';
 
@@ -258,6 +254,8 @@ static void terminal_parse_ansi(terminal* terminal) {
 
 static void terminal_printf(terminal* terminal, const char* buf) {
     const char* start = buf;
+
+    draw_cursor(terminal, RESET_COLOR);
     
     while (*buf) {
         if (terminal->is_ansi_state) {
@@ -281,7 +279,7 @@ static void terminal_printf(terminal* terminal, const char* buf) {
                 terminal->is_ansi_state = true;
                 break;
             case '\n':
-                newline();
+                newline(terminal);
                 break;
             case '\r':
                 break;
@@ -297,13 +295,13 @@ static void terminal_printf(terminal* terminal, const char* buf) {
 
         buf++;
     }
+
+    draw_cursor(terminal, CURSOR_COLOR);
 }
 
 int kprintf(const char* format, ...) {
     char buf[BUF_MAX];
     va_list valist;
-    
-    spinlock_acquire(&kprint_lock);
 
     va_start(valist, format);
     int err = __vsnprintf(buf, BUF_MAX, format, valist);
@@ -311,8 +309,9 @@ int kprintf(const char* format, ...) {
     ASSERT(err != -1);
 
     reset_text_attribute(&kterminal);
-    terminal_printf(&kterminal, buf);
 
+    spinlock_acquire(&kprint_lock);
+    terminal_printf(&kterminal, buf);
     spinlock_release(&kprint_lock);
 
     return err;
@@ -352,6 +351,15 @@ void init_kterminal() {
 
     apply_set_attribute[SET_RESET] = reset_text_attribute;
 
+    kterminal.h_cursor = 0;
+    kterminal.v_cursor = 0;
+    kterminal.w_font_px = 8;
+    kterminal.h_font_px = 14;
+    kterminal.h_term_px = get_fb_height();
+    kterminal.w_term_px = get_fb_width();
+    kterminal.h_cursor_max = kterminal.w_term_px / kterminal.w_font_px;
+    kterminal.v_cursor_max = kterminal.h_term_px / kterminal.h_font_px;
+    
     kterminal.fg_color = FG_COLOR_DEFAULT;
     kterminal.bg_color = BG_COLOR_DEFAULT;
     kterminal.apply_to_fg = false;

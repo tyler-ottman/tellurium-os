@@ -72,7 +72,7 @@ void init_cpu(void) {
         core->goto_address = core_init;
     }
 
-    while (cores_ready != smp_response->cpu_count) {
+    while (cores_ready != smp_response->cpu_count - 1) {
         __asm__ volatile ("pause");
     }
 
@@ -107,7 +107,7 @@ void core_init(struct limine_smp_info* core) {
     cores_ready++;
 
     if (core->lapic_id != bsp_id) {
-        schedule_next_thread();
+        // schedule_next_thread();
         while(1) {}
     }
 }

@@ -36,28 +36,26 @@
 #define ASSERT(cond) {if (!(cond)) kerror("Assertion failed\n");}
 
 typedef struct {
-    uint8_t reset: 1;
-    uint8_t bold: 1;
-    uint8_t faint: 1;
-    uint8_t italic: 1;
-    uint8_t blinking: 1;
-    uint8_t inverse: 1;
-    uint8_t hidden: 1;
-    uint8_t strikethrough: 1;
-} ansi_attributes;
+    uint32_t h_cursor;
+    uint32_t v_cursor;
+    uint32_t h_cursor_max;
+    uint32_t v_cursor_max;
+    uint32_t h_font_px;
+    uint32_t w_font_px;
+    uint32_t h_term_px;
+    uint32_t w_term_px;
 
-typedef struct {
     uint32_t fg_color;
     uint32_t bg_color;
     uint64_t apply_to_fg;               // Internal sgr flag
     uint64_t is_ansi_state;
     uint64_t ansi_state;
-    ansi_attributes attributes;
     char ansi_sequence[ANSI_SEQ_LEN];
 } terminal;
 
 void kerror(const char* err);
 int kprintf(const char* format, ...);
+
 void init_kterminal(void);
 
 #endif // TERMINAL_H

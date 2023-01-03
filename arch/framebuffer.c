@@ -1,5 +1,5 @@
-#include <arch/bitmap_font.h>
 #include <arch/framebuffer.h>
+#include <arch/kterminal_font.h>
 #include <arch/terminal.h>
 #include <libc/string.h>
 #include <limine.h>
@@ -11,71 +11,88 @@ static volatile struct limine_framebuffer_request framebuffer_request = {
     .revision = 0
 };
 
-struct frame_state {
-    uint64_t cur_line_pixel;
-    uint64_t width;
-    uint64_t height;
-    uint32_t h_cursor;
-    uint32_t v_cursor;
-    uint32_t color;
-    uint32_t ansi_state;
-};
-
 static struct limine_framebuffer_response* framebuffer_response;
 static struct limine_framebuffer* framebuffer;
 static uint32_t* pixel_buffer;
-static struct frame_state state;
 
-static inline bool is_scroll_needed() {
-    return state.v_cursor + FONT_HEIGHT >= state.height;
+static inline bool is_scroll_needed(terminal* term) {
+    return term->v_cursor + 1 >= term->v_cursor_max;
 }
 
-void newline() {
-    if (is_scroll_needed()) {
-        scroll_screen();
+static inline uint32_t get_px_base(terminal* term) {
+    return term->h_font_px * term->w_term_px * term->v_cursor + term->w_font_px * term->h_cursor;
+}
+
+uint32_t get_fb_height() {
+    return framebuffer->height;
+}
+
+uint32_t get_fb_width() {
+    return framebuffer->width;
+}
+
+void newline(terminal* term) {
+    if (is_scroll_needed(term)) {
+        scroll_screen(term);
     } else {
-        state.cur_line_pixel += FONT_HEIGHT * state.width;
-        state.v_cursor += FONT_HEIGHT;
+        term->v_cursor++;
     }
 
-    state.h_cursor = 0;
+    term->h_cursor = 0;
 }
 
 void clear_screen() {
-    for (size_t i = 0; i < state.width; i++) {
-        for (size_t j = 0; j < state.width; j++) {
-            pixel_buffer[state.width * i + j] = 0;
+    for (size_t i = 0; i < framebuffer->height; i++) {
+        for (size_t j = 0; j < framebuffer->width; j++) {
+            pixel_buffer[framebuffer->width * i + j] = 0;
         }
     }
 }
 
-void scroll_screen() {
-    for (size_t i = 0; i < state.height - FONT_HEIGHT; i += FONT_HEIGHT) {
-        for (size_t j = 0; j < FONT_HEIGHT; j++) {
-            for (size_t k = 0; k < state.width; k++) {
-                pixel_buffer[(i + j) * state.width + k] = pixel_buffer[(i + j + FONT_HEIGHT) * state.width + k];
-            }
+void scroll_screen(terminal* term) {
+    uint32_t v_px_offset = term->h_font_px * term->w_term_px;
+    uint32_t px_base = 0; // Change later with windowing
+    for (size_t i = 0; i < term->h_term_px - term->h_font_px; i++) {
+        for (size_t j = 0; j < term->w_term_px; j++) {
+            pixel_buffer[px_base + j] = pixel_buffer[px_base + v_px_offset + j];
         }
+        px_base += term->w_term_px;
     }
 
-    uint32_t* last_line = &pixel_buffer[state.v_cursor * state.width];
-    __memset(last_line, 0x00, 4 * FONT_HEIGHT * state.width);
+    // Clear last line
+    for (size_t i = 0; i < term->h_font_px; i++) {
+        for (size_t j = 0; j < term->w_term_px; j++) {
+            pixel_buffer[px_base + j] = RESET_COLOR;
+        }
+        px_base += term->w_term_px;
+    }
 }
 
-void drawchar(terminal* terminal, char c) {
-    uint8_t* cur_char = font[(uint8_t)c];
-    if (state.h_cursor >= state.width) {
-        newline();
-    }
-
-    for (int i = 0; i < FONT_HEIGHT; i++) {
-        size_t start = state.cur_line_pixel + state.h_cursor + i * state.width;
-        for (int j = 0; j < FONT_WIDTH; j++) {
-            pixel_buffer[start + j] = ((cur_char[i] >> j) & 1) ? terminal->fg_color : terminal->bg_color;
+void drawchar(terminal* term, char c) {
+    uint8_t* cur_char = kterminal_font[(uint8_t)c];
+    uint32_t px_base = get_px_base(term);
+    for (size_t i = 0; i < term->h_font_px; i++) {
+        for (size_t j = 0; j < term->w_font_px; j++) {
+            pixel_buffer[px_base + j] = ((cur_char[i] >> j) & 1) ? term->fg_color : term->bg_color;
         }
+        px_base += term->w_term_px;
     }
 
-    state.h_cursor += FONT_WIDTH;
+    if (term->h_cursor + 1 >= term->h_cursor_max) {
+        newline(term);
+    } else {
+        term->h_cursor++;
+    }
+}
+
+void draw_cursor(terminal* term, uint32_t color) {
+    uint32_t px_base = get_px_base(term);
+    for (size_t i = 0; i < term->h_font_px; i++) {
+        for (size_t j = 0; j < term->w_font_px; j++) {
+            pixel_buffer[px_base + j] = color;
+        }
+        px_base += term->w_term_px;
+    }
 }
 
 void init_framebuffer() {
@@ -83,12 +100,5 @@ void init_framebuffer() {
     framebuffer = framebuffer_response->framebuffers[0];
     pixel_buffer = (uint32_t*)framebuffer->address;
 
-    state.cur_line_pixel = 0;
-    state.width = framebuffer->width;
-    state.height = framebuffer->height;
-    state.h_cursor = 0;
-    state.v_cursor = 0;
-    state.color = 0xffffffff;
-
-    clear_screen();
+    // clear_screen();
 }
