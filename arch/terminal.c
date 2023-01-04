@@ -3,14 +3,15 @@
 #include <arch/terminal.h>
 #include <arch/lock.h>
 #include <devices/serial.h>
+#include <libc/kmalloc.h>
 #include <libc/print.h>
 #include <stdarg.h>
 
 #define NUM_SET_TEXT_ATTRIBUTES     9
 #define NUM_RESET_TEXT_ATTRIBUTES   8
 
-#define FG_COLOR_DEFAULT            0xff00aaaa
-#define BG_COLOR_DEFAULT            0
+#define FG_COLOR_DEFAULT            0xff0096aa
+#define BG_COLOR_DEFAULT            RESET_COLOR
 
 enum SET_TEXT_ATTRIBUTE {
     SET_RESET,
@@ -318,24 +319,53 @@ int kprintf(const char* format, ...) {
 }
 
 static void print_color_palette() {
-    for (size_t i = 0; i < 16; i++) {
-        kprintf("\033[38;5;%i;48;5;%im%03i", i, i, i);
+    // for (size_t i = 0; i < 16; i++) {
+    //     kprintf("\033[38;5;%i;48;5;%im%03i", i, i, i);
+    // }
+
+    // kprintf("\n\n");
+    // for (size_t i = 0; i < 6; i ++) {
+    //     for (size_t j = 0; j < 36; j++) {
+    //         uint8_t color_id = 16 + 36 * i + j;
+    //         kprintf("\033[38;5;%i;48;5;%im%03i", color_id, color_id, color_id);
+    //     }
+    //     kprintf("\n");
+    // }
+
+    // kprintf("\n");
+    // for (size_t i = 232; i < 256; i++) {
+    //     kprintf("\033[38;5;%i;48;5;%im%03i", i, i, i);
+    // }
+    // kprintf("\n\n");
+}
+
+static terminal* alloc_terminal_internal(
+    terminal* term,
+    uint32_t w_font,
+    uint32_t h_font,
+    uint32_t w_term_px,
+    uint32_t h_term_px
+) {
+    if (!term) {
+        term = kmalloc(sizeof(terminal));
     }
 
-    kprintf("\n\n");
-    for (size_t i = 0; i < 6; i ++) {
-        for (size_t j = 0; j < 36; j++) {
-            uint8_t color_id = 16 + 36 * i + j;
-            kprintf("\033[38;5;%i;48;5;%im%03i", color_id, color_id, color_id);
-        }
-        kprintf("\n");
-    }
+    term->h_cursor = 0;
+    term->v_cursor = 0;
+    term->w_font_px = w_font;
+    term->h_font_px = h_font;
+    term->w_term_px = w_term_px;
+    term->h_term_px = h_term_px;
+    term->h_cursor_max = term->w_term_px / term->w_font_px;
+    term->v_cursor_max = term->h_term_px / term->h_font_px;
 
-    kprintf("\n");
-    for (size_t i = 232; i < 256; i++) {
-        kprintf("\033[38;5;%i;48;5;%im%03i", i, i, i);
-    }
-    kprintf("\n\n");
+    term->fg_color = FG_COLOR_DEFAULT;
+    term->bg_color = BG_COLOR_DEFAULT;
+    term->apply_to_fg = false;
+    term->is_ansi_state = false;
+    term->ansi_state = PROCESS_NORMAL;
+
+    return term;
 }
 
 void init_kterminal() {
@@ -351,20 +381,7 @@ void init_kterminal() {
 
     apply_set_attribute[SET_RESET] = reset_text_attribute;
 
-    kterminal.h_cursor = 0;
-    kterminal.v_cursor = 0;
-    kterminal.w_font_px = 8;
-    kterminal.h_font_px = 14;
-    kterminal.h_term_px = get_fb_height();
-    kterminal.w_term_px = get_fb_width();
-    kterminal.h_cursor_max = kterminal.w_term_px / kterminal.w_font_px;
-    kterminal.v_cursor_max = kterminal.h_term_px / kterminal.h_font_px;
-    
-    kterminal.fg_color = FG_COLOR_DEFAULT;
-    kterminal.bg_color = BG_COLOR_DEFAULT;
-    kterminal.apply_to_fg = false;
-    kterminal.is_ansi_state = 0;
-    kterminal.ansi_state = PROCESS_NORMAL;
+    alloc_terminal_internal(&kterminal, 8, 14, get_fb_width(), get_fb_height());
 
     print_color_palette();
 }

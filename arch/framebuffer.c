@@ -44,7 +44,7 @@ void newline(terminal* term) {
 void clear_screen() {
     for (size_t i = 0; i < framebuffer->height; i++) {
         for (size_t j = 0; j < framebuffer->width; j++) {
-            pixel_buffer[framebuffer->width * i + j] = 0;
+            pixel_buffer[framebuffer->width * i + j] = RESET_COLOR;
         }
     }
 }
@@ -100,5 +100,5 @@ void init_framebuffer() {
     framebuffer = framebuffer_response->framebuffers[0];
     pixel_buffer = (uint32_t*)framebuffer->address;
 
-    // clear_screen();
+    clear_screen();
 }
