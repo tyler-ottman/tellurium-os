@@ -2,6 +2,7 @@
 #define LAPIC_H
 
 #include <acpi/acpi.h>
+#include <arch/cpu.h>
 #include <arch/idt.h>
 #include <arch/terminal.h>
 #include <devices/msr.h>
@@ -23,7 +24,7 @@
 #define LVT_MASK                    0x00010000
 #define LVT_VECTOR                  0x000000ff
 
-void lapic_time_handler(void);
+void lapic_time_handler(struct context* ctx);
 bool is_lapic_aligned(size_t offset);
 uint32_t lapic_read(size_t offset);
 void lapic_write(size_t offset, uint32_t val);

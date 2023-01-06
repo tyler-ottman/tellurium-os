@@ -1,10 +1,27 @@
-; Used for loading entries for IDT
-; Array of function pointers for x86_64 exceptions
-global isr_table
-global ISR_Timer_Interrupt
 extern lapic_time_handler
 extern exception_handler
 
+%macro save_context 0
+    push r15
+    push r14
+    push r13
+    push r12
+    push r11
+    push r10
+    push r9
+    push r8
+    push rbp
+    push rdi
+    push rsi
+    push rdx
+    push rcx
+    push rbx
+    push rax
+    mov eax, ds
+    push rax
+%endmacro
+
+global isr_table
 isr_table:
 %assign i 0 
 %rep    21 
@@ -12,114 +29,40 @@ isr_table:
 %assign i i+1 
 %endrep
 
+%macro ISR_NO_ERR 1
+ISR_%1:
+    mov rdi, %1
+    call exception_handler
+    iretq
+%endmacro
 
-ISR_0:
-    mov rdi, 0x0
-    call exception_handler
-    iretq
-
-ISR_1:
-    mov rdi, 0x1
-    call exception_handler
-    iretq
-    
-ISR_2:
-    mov rdi, 0x2
-    call exception_handler
-    iretq
-    
-ISR_3:
-    mov rdi, 0x3
-    call exception_handler
-    iretq
-    
-ISR_4:
-    mov rdi, 0x4
-    call exception_handler
-    iretq
-    
-ISR_5:
-    mov rdi, 0x5
-    call exception_handler
-    iretq
-    
-ISR_6:
-    mov rdi, 0x6
-    call exception_handler
-    iretq
-    
-ISR_7:
-    mov rdi, 0x7
-    call exception_handler
-    iretq
-    
-ISR_8:
-    mov rdi, 0x8
-    call exception_handler
-    iretq
-    
-ISR_9:
-    mov rdi, 0x9
-    call exception_handler
-    iretq
-    
-ISR_10:
-    mov rdi, 0xa
-    call exception_handler
-    iretq
-    
-ISR_11:
-    mov rdi, 0xb
-    call exception_handler
-    iretq
-    
-ISR_12:
-    mov rdi, 0xc
-    call exception_handler
-    iretq
-    
-ISR_13:
-    mov rdi, 0xd
-    call exception_handler
-    iretq
-    
-ISR_14:
-    mov rdi, 0xe
-    call exception_handler
-    iretq
-    
-ISR_15:
-    mov rdi, 0xf
-    call exception_handler
-    iretq
-    
-ISR_16:
-    mov rdi, 0x10
-    call exception_handler
-    iretq
-    
-ISR_17:
-    mov rdi, 0x11
-    call exception_handler
-    iretq
-    
-ISR_18:
-    mov rdi, 0x12
-    call exception_handler
-    iretq
-    
-ISR_19:
-    mov rdi, 0x13
-    call exception_handler
-    iretq
-    
-ISR_20:
-    mov rdi, 0x14
-    call exception_handler
-    iretq
-
-
-
+global ISR_Timer_Interrupt
 ISR_Timer_Interrupt:
+    push 0
+    save_context
+    mov rdi, rsp
+    xor rbp, rbp
     call lapic_time_handler
     iretq
+
+ISR_NO_ERR 0
+ISR_NO_ERR 1
+ISR_NO_ERR 2
+ISR_NO_ERR 3
+ISR_NO_ERR 4
+ISR_NO_ERR 5
+ISR_NO_ERR 6
+ISR_NO_ERR 7
+ISR_NO_ERR 8
+ISR_NO_ERR 9
+ISR_NO_ERR 10
+ISR_NO_ERR 11
+ISR_NO_ERR 12
+ISR_NO_ERR 13
+ISR_NO_ERR 14
+ISR_NO_ERR 15
+ISR_NO_ERR 16
+ISR_NO_ERR 17
+ISR_NO_ERR 18
+ISR_NO_ERR 19
+ISR_NO_ERR 20

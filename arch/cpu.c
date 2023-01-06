@@ -79,6 +79,20 @@ void init_cpu(void) {
     kprintf(LIGHT_GREEN "SMP: All cores online\n");
 }
 
+#define NUM_REGISTERS (sizeof(struct context) / sizeof(uint64_t))
+static char* reg_names[NUM_REGISTERS] = {
+    "ds", "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp",
+    "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+    "err", "rip", "cs", "rflags", "rsp", "ss"
+};
+
+void print_context(struct context* context) {
+    uint64_t* registers = (uint64_t*)context;
+    for (size_t i = 0; i < NUM_REGISTERS; i++) {
+        kprintf("%s: %016x\n", reg_names[i], registers[i]);
+    }
+}
+
 void core_init(struct limine_smp_info* core) {
     load_gdt();
     idt_load();
@@ -107,7 +121,7 @@ void core_init(struct limine_smp_info* core) {
     cores_ready++;
 
     if (core->lapic_id != bsp_id) {
-        // schedule_next_thread();
+        schedule_next_thread();
         while(1) {}
     }
 }

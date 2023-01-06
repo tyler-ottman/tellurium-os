@@ -51,7 +51,7 @@ struct tcb* create_kernel_thread(void* entry, void* param) {
 
     struct context* context = &thread->context;
     __memset(context, 0, sizeof(struct context));
-    // context->ds = GDT_KERNEL_DATA;
+    context->ds = GDT_KERNEL_DATA;
     context->rdi = (uint64_t)param;
     context->rip = (uint64_t)entry;
     context->cs = GDT_KERNEL_CODE;

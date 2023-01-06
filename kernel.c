@@ -27,6 +27,8 @@ void init_system() {
     init_slab();
 }
 
+int a = 0;
+
 void _start(void) {
     init_system();
     init_kernel_process();

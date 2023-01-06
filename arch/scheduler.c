@@ -79,7 +79,10 @@ void thread_entry(struct tcb* thread) {
     
     __asm__ volatile(
         "mov %0, %%rsp\n\t"
-        "mov %1, %%rax\n\t"
+        "pop %%rax\n\t"
+        "mov %%rax, %%ds\n\t"
+        "mov %1, %%r15\n\t"
+        "pop %%rax\n\t"
         "pop %%rbx\n\t"
         "pop %%rcx\n\t"
         "pop %%rdx\n\t"
@@ -93,9 +96,8 @@ void thread_entry(struct tcb* thread) {
         "pop %%r12\n\t"
         "pop %%r13\n\t"
         "pop %%r14\n\t"
+        "mov %%r15, %%cr3\n\t"
         "pop %%r15\n\t"
-        "mov %%rax, %%cr3\n\t"
-        "pop %%rax\n\t"
         "addq $8, %%rsp\n\t"
         "iretq\n\t" ::
         "r" (&cpu_info->current_thread->context),

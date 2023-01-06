@@ -12,6 +12,7 @@
 #define KERNEL_THREAD_STACK_SIZE    (2 * PAGE_SIZE_BYTES)
 
 struct context {
+    uint64_t ds;
     uint64_t rax;
     uint64_t rbx;
     uint64_t rcx;
@@ -51,6 +52,7 @@ struct core_local_info* get_core_local_info(void);
 void set_core_local_info(struct core_local_info* cpu_info);
 void enable_interrupts(void);
 void disable_interrupts(void);
+void print_context(struct context* context);
 void init_cpu(void);
 void core_init(struct limine_smp_info* core);
 
