@@ -23,12 +23,12 @@ void done() {
     }
 }
 
-struct tcb* get_thread_local() {
+thread_t* get_thread_local() {
     uint64_t fs_base = get_msr(FS_BASE);
-    return (struct tcb*)((uint64_t)fs_base);
+    return (thread_t*)((uint64_t)fs_base);
 }
 
-void set_thread_local(struct tcb* thread) {
+void set_thread_local(thread_t* thread) {
     uint64_t fs_base = (uint64_t)((uint64_t)thread);
     set_msr(FS_BASE, fs_base);
 }
@@ -79,14 +79,14 @@ void init_cpu(void) {
     kprintf(LIGHT_GREEN "SMP: All cores online\n");
 }
 
-#define NUM_REGISTERS (sizeof(struct context) / sizeof(uint64_t))
+#define NUM_REGISTERS (sizeof(ctx_t) / sizeof(uint64_t))
 static char* reg_names[NUM_REGISTERS] = {
     "ds", "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp",
     "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
     "err", "rip", "cs", "rflags", "rsp", "ss"
 };
 
-void print_context(struct context* context) {
+void print_context(ctx_t* context) {
     uint64_t* registers = (uint64_t*)context;
     for (size_t i = 0; i < NUM_REGISTERS; i++) {
         kprintf("%s: %016x\n", reg_names[i], registers[i]);
@@ -114,7 +114,7 @@ void core_init(struct limine_smp_info* core) {
     load_tss_entry(&cpu_info->tss);
     
     init_lapic();
-    // kprintf(RED "Before\n");
+
     // LAPIC Timer IDT Entry uses stack stored in IST1
     set_vector_ist(cpu_info->lapic_timer_vector, 1);
 

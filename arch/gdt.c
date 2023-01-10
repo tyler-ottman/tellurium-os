@@ -1,5 +1,6 @@
 #include <arch/gdt.h>
 #include <arch/lock.h>
+#include <arch/terminal.h>
 
 GDT_Descriptor gdtr;
 GDT gdt;

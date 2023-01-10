@@ -24,12 +24,12 @@ void lapic_write(size_t offset, uint32_t val) {
     *((uint32_t*)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET)) = val;
 }
 
-void lapic_time_handler(struct context* ctx) {
+void lapic_time_handler(ctx_t* ctx) {
     lapic_eoi();
 
     struct core_local_info* cpu_info = get_core_local_info();
-    struct tcb* current_thread = cpu_info->current_thread;
-    __memcpy(&current_thread->context, ctx, sizeof(struct context));
+    thread_t* current_thread = cpu_info->current_thread;
+    __memcpy(&current_thread->context, ctx, sizeof(ctx_t));
     // print_context(ctx);
 
     kprintf(MAGENTA"Timer Handle\n");

@@ -136,6 +136,7 @@ static void parse_sgr(terminal* terminal, char* sequence) {
     }
 
     char *tok = __strtok(sequence, ";");
+    bool invalid_state;
     while (tok != NULL) {
         int n = __atoi(tok);
 
@@ -204,7 +205,7 @@ static void parse_sgr(terminal* terminal, char* sequence) {
             break;
 
         case PROCESS_ANSI24:
-            bool invalid_state = false;
+            invalid_state = false;
 
             for (int i = 2; i >= 0; i--) {
                 n = __atoi(tok);

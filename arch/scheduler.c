@@ -7,15 +7,15 @@
 
 static spinlock_t queue_lock = 0;
 
-static struct tcb* head = NULL;
-static struct tcb* tail = NULL;
+static thread_t* head = NULL;
+static thread_t* tail = NULL;
 
 static bool is_queue_empty() {
     return head == NULL;
 }
 
 void schedule_next_thread() {
-    struct tcb* next_thread = pop_thread_from_queue();
+    thread_t* next_thread = pop_thread_from_queue();
 
     if (next_thread == NULL) {
         next_thread = get_idle_thread();
@@ -24,7 +24,7 @@ void schedule_next_thread() {
     thread_entry(next_thread);
 }
 
-struct tcb* pop_thread_from_queue() {
+thread_t* pop_thread_from_queue() {
     spinlock_acquire(&queue_lock);
 
     if (is_queue_empty()) {
@@ -32,7 +32,7 @@ struct tcb* pop_thread_from_queue() {
         return NULL;
     }
 
-    struct tcb* thread = head;
+    thread_t* thread = head;
     if (thread->next == NULL) {
         tail = NULL;
     } else {
@@ -47,7 +47,7 @@ struct tcb* pop_thread_from_queue() {
     return thread;
 }
 
-void add_thread_to_queue(struct tcb* thread) {
+void add_thread_to_queue(thread_t* thread) {
     spinlock_acquire(&queue_lock);
 
     if (is_queue_empty()) {
@@ -63,7 +63,7 @@ void add_thread_to_queue(struct tcb* thread) {
     spinlock_release(&queue_lock);
 }
 
-void thread_entry(struct tcb* thread) {
+void thread_entry(thread_t* thread) {
     struct core_local_info* cpu_info = get_core_local_info();
     
     cpu_info->current_thread = thread;

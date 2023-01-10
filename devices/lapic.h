@@ -24,7 +24,7 @@
 #define LVT_MASK                    0x00010000
 #define LVT_VECTOR                  0x000000ff
 
-void lapic_time_handler(struct context* ctx);
+void lapic_time_handler(ctx_t* ctx);
 bool is_lapic_aligned(size_t offset);
 uint32_t lapic_read(size_t offset);
 void lapic_write(size_t offset, uint32_t val);
