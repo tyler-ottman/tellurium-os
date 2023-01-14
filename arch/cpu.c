@@ -23,6 +23,12 @@ void done() {
     }
 }
 
+// For debugging
+int a = 0;
+void breakpoint() {
+    a++;
+}
+
 thread_t* get_thread_local() {
     uint64_t fs_base = get_msr(FS_BASE);
     return (thread_t*)((uint64_t)fs_base);
@@ -107,8 +113,10 @@ void core_init(struct limine_smp_info* core) {
     set_core_local_info(cpu_info);
     cpu_info->abort_stack = core_stack;
     cpu_info->lapic_id = core->lapic_id;
-    cpu_info->idle_thread = alloc_idle_thread();
     cpu_info->current_thread = NULL;
+
+    cpu_info->idle_thread = alloc_idle_thread();
+    cpu_info->idle_thread->state = RUNNABLE;
     
     __memset(&cpu_info->tss, 0, sizeof(struct TSS));
     load_tss_entry(&cpu_info->tss);

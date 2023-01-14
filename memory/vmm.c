@@ -93,6 +93,11 @@ void init_vmm() {
     uint64_t lapic_addr = (uint64_t)get_lapic_addr();
     map_section(lapic_addr + KERNEL_HHDM_OFFSET, lapic_addr, 4096, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
 
+    // Mark upper half as kernel only
+    for (size_t i = 256; i < 512; i++) {
+        k_pagemap->pml4_base[i] &= ~(PML_USER);
+    }
+
     // Hand over paging to OS
     load_pagemap(k_pagemap);
 

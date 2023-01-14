@@ -58,6 +58,11 @@ void init_lapic() {
     lapic_lvt_enable(LVT_TIMER);
 }
 
+void lapic_schedule_time() {
+    lapic_write(LVT_INITIAL_COUNT, 0x30000000);
+    enable_interrupts();
+}
+
 void lapic_lvt_set_vector(uint32_t lvt, uint8_t vector) {
     lapic_write(lvt, (lapic_read(lvt) & ~(LVT_VECTOR)) | vector);
 }

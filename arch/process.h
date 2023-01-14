@@ -17,7 +17,13 @@ enum process_state {
 };
 
 enum thread_state {
-    CREATED =   0
+    CREATED,
+    RUNNABLE,
+    BLOCKED,
+    WAITING,
+    DELAYED,
+    RUNNING,
+    ZOMBIE
 };
 
 struct pcb {
@@ -36,6 +42,7 @@ typedef struct tcb {
     uint64_t* thread_sp;
     uint64_t* kernel_base_sp;
     uint64_t* kernel_sp;
+    void (*thread_entry)(void*);
     struct ctx context;
     uint64_t* fs_base;
     uint32_t state;

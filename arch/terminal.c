@@ -320,24 +320,24 @@ int kprintf(const char* format, ...) {
 }
 
 static void print_color_palette() {
-    // for (size_t i = 0; i < 16; i++) {
-    //     kprintf("\033[38;5;%i;48;5;%im%03i", i, i, i);
-    // }
+    for (size_t i = 0; i < 16; i++) {
+        kprintf("\033[38;5;%i;48;5;%im%03i", i, i, i);
+    }
 
-    // kprintf("\n\n");
-    // for (size_t i = 0; i < 6; i ++) {
-    //     for (size_t j = 0; j < 36; j++) {
-    //         uint8_t color_id = 16 + 36 * i + j;
-    //         kprintf("\033[38;5;%i;48;5;%im%03i", color_id, color_id, color_id);
-    //     }
-    //     kprintf("\n");
-    // }
+    kprintf("\n\n");
+    for (size_t i = 0; i < 6; i ++) {
+        for (size_t j = 0; j < 36; j++) {
+            uint8_t color_id = 16 + 36 * i + j;
+            kprintf("\033[38;5;%i;48;5;%im%03i", color_id, color_id, color_id);
+        }
+        kprintf("\n");
+    }
 
-    // kprintf("\n");
-    // for (size_t i = 232; i < 256; i++) {
-    //     kprintf("\033[38;5;%i;48;5;%im%03i", i, i, i);
-    // }
-    // kprintf("\n\n");
+    kprintf("\n");
+    for (size_t i = 232; i < 256; i++) {
+        kprintf("\033[38;5;%i;48;5;%im%03i", i, i, i);
+    }
+    kprintf("\n\n");
 }
 
 static terminal* alloc_terminal_internal(
@@ -384,5 +384,5 @@ void init_kterminal() {
 
     alloc_terminal_internal(&kterminal, 8, 14, get_fb_width(), get_fb_height());
 
-    print_color_palette();
+    // print_color_palette();
 }

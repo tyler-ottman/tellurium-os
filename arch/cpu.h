@@ -1,7 +1,6 @@
 #ifndef CPU_H
 #define CPU_H
 
-// #include <arch/gdt.h>
 #include <libc/vector.h>
 #include <limine.h>
 

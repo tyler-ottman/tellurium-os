@@ -29,6 +29,7 @@ bool is_lapic_aligned(size_t offset);
 uint32_t lapic_read(size_t offset);
 void lapic_write(size_t offset, uint32_t val);
 void init_lapic(void);
+void lapic_schedule_time(void);
 void lapic_lvt_set_vector(uint32_t lvt, uint8_t vector);
 void lapic_lvt_enable(uint32_t lvt);
 void lapic_lvt_disable(uint32_t lvt);

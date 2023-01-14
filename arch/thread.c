@@ -10,6 +10,7 @@ static uint32_t cur_tid = 1;
 
 static void idle_thread_spin(void) {
     kprintf("Idle Thread reached\n");
+
     for(;;) {
         __asm__ volatile ("pause");
     }
@@ -69,7 +70,7 @@ thread_t* create_kernel_thread(void* entry, void* param) {
 
     uint64_t stack_top;
     size_t stack_size = PAGE_SIZE_BYTES;
-    thread->thread_base_sp = kmalloc(stack_size);\
+    thread->thread_base_sp = kmalloc(stack_size);
     if (!thread->thread_base_sp) {
         thread_destroy(thread);
         return NULL;
@@ -83,7 +84,7 @@ thread_t* create_kernel_thread(void* entry, void* param) {
         return NULL;
     }
     stack_top = (uint64_t)thread->kernel_base_sp + stack_size;
-    thread->kernel_base_sp = (uint64_t*)(stack_top);
+    thread->kernel_sp = (uint64_t*)(stack_top);
 
     ctx_t* context = &thread->context;
     __memset(context, 0, sizeof(ctx_t));

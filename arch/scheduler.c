@@ -65,18 +65,26 @@ void add_thread_to_queue(thread_t* thread) {
 
 void thread_entry(thread_t* thread) {
     struct core_local_info* cpu_info = get_core_local_info();
+    set_thread_local(thread);
     
     cpu_info->current_thread = thread;
     set_thread_local(cpu_info->current_thread);
-    cpu_info->tss.ist1 = (uint64_t)thread->kernel_base_sp;
+    cpu_info->tss.ist1 = (uint64_t)thread->kernel_sp;
 
-    lapic_write(LVT_INITIAL_COUNT, 0x30000000);
-    enable_interrupts();
+    if (thread->state != CREATED) {
+        thread_switch(cpu_info);
+    }
 
+    thread_init_entry(cpu_info);
+}
+
+void thread_switch(struct core_local_info* cpu_info) {
     struct pagemap* map = cpu_info->current_thread->parent->pmap;
     uint64_t* pml4 = map->pml4_base;
     pml4 = (uint64_t*)((uint64_t)pml4 - KERNEL_HHDM_OFFSET);
-    
+
+    lapic_schedule_time();
+
     __asm__ volatile(
         "mov %0, %%rsp\n\t"
         "pop %%rax\n\t"
@@ -103,4 +111,8 @@ void thread_entry(thread_t* thread) {
         "r" (&cpu_info->current_thread->context),
         "r" (pml4)
     );
+}
+
+void thread_init_entry(struct core_local_info* cpu_info) {
+    
 }

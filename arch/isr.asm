@@ -33,17 +33,8 @@ isr_table:
 ISR_%1:
     mov rdi, %1
     call exception_handler
-    iretq
+    iret
 %endmacro
-
-global ISR_Timer_Interrupt
-ISR_Timer_Interrupt:
-    push 0
-    save_context
-    mov rdi, rsp
-    xor rbp, rbp
-    call lapic_time_handler
-    iretq
 
 ISR_NO_ERR 0
 ISR_NO_ERR 1
@@ -66,3 +57,19 @@ ISR_NO_ERR 17
 ISR_NO_ERR 18
 ISR_NO_ERR 19
 ISR_NO_ERR 20
+
+global ISR_Timer_Interrupt
+extern breakpoint
+ISR_Timer_Interrupt:
+    sub rsp, 8
+    save_context
+
+    ; Load kernel data selector
+    mov ax, 0x30
+    mov ss, ax
+    mov ds, ax
+
+    mov rdi, rsp
+    xor rbp, rbp
+    call lapic_time_handler
+    iret

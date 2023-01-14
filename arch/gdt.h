@@ -5,9 +5,11 @@
 #include <arch/cpu.h>
 #include <libc/string.h>
 
-#define GDT_ENTRIES             8
+#define GDT_ENTRIES             10
 #define GDT_KERNEL_CODE         0x28
 #define GDT_KERNEL_DATA         0x30
+#define GDT_USER_CODE           0x38
+#define GDT_USER_DATA           0x40
 
 #define GDT_ENTRY_SIZE_BYTES    8
 
