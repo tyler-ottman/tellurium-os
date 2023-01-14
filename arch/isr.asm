@@ -1,4 +1,5 @@
 extern lapic_time_handler
+extern lapic_ipi_handler
 extern exception_handler
 
 %macro save_context 0
@@ -19,6 +20,12 @@ extern exception_handler
     push rax
     mov eax, ds
     push rax
+%endmacro
+
+%macro load_kernel_data 0
+    mov ax, 0x30
+    mov ss, ax
+    mov ds, ax
 %endmacro
 
 global isr_table
@@ -58,18 +65,28 @@ ISR_NO_ERR 18
 ISR_NO_ERR 19
 ISR_NO_ERR 20
 
-global ISR_Timer_Interrupt
 extern breakpoint
-ISR_Timer_Interrupt:
+global ISR_Timer
+ISR_Timer:
     sub rsp, 8
     save_context
 
-    ; Load kernel data selector
-    mov ax, 0x30
-    mov ss, ax
-    mov ds, ax
+    load_kernel_data
 
     mov rdi, rsp
     xor rbp, rbp
     call lapic_time_handler
+    iret
+
+global ISR_IPI
+ISR_IPI:
+    sub rsp, 8
+    call breakpoint
+    save_context
+
+    load_kernel_data
+
+    mov rdi, rsp
+    xor rbp, rbp
+    call lapic_ipi_handler
     iret

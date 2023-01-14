@@ -55,6 +55,7 @@ typedef struct ctx {
 struct core_local_info {
     uint64_t* abort_stack;
     uint32_t lapic_id;
+    uint32_t lapic_ipi_vector;
     uint8_t lapic_timer_vector;
     struct tcb* idle_thread;
     struct tcb* current_thread;

@@ -24,6 +24,11 @@ void schedule_next_thread() {
     thread_entry(next_thread);
 }
 
+void schedule_yield() {
+    struct core_local_info* info = get_core_local_info();
+    lapic_send_ipi(info->lapic_id, info->lapic_ipi_vector);
+}
+
 thread_t* pop_thread_from_queue() {
     spinlock_acquire(&queue_lock);
 

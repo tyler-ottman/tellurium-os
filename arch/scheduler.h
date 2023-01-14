@@ -5,7 +5,7 @@
 #include <arch/process.h>
 
 void schedule_next_thread(void);
-void schedule_yield(ctx_t context);
+void schedule_yield(void);
 thread_t* pop_thread_from_queue(void);
 void add_thread_to_queue(thread_t* thread);
 void thread_entry(thread_t* thread);

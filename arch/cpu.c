@@ -128,6 +128,8 @@ void core_init(struct limine_smp_info* core) {
 
     cores_ready++;
 
+    // lapic_send_ipi(cpu_info->lapic_id, cpu_info->lapic_ipi_vector);
+
     if (core->lapic_id != bsp_id) {
         schedule_next_thread();
         while(1) {}
