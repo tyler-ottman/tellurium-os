@@ -6,6 +6,9 @@
 #include <arch/terminal.h>
 #include <libc/string.h>
 #include <stdbool.h>
+#include <stdint.h>
+
+#define MMIO_NUM_DEVS 10
 
 #define ENTRY_LAPIC                 0
 #define ENTRY_IO_APIC               1
@@ -17,6 +20,8 @@
 
 #define RSDP_64 36
 #define RSDP_32 20
+
+#define HPET_4KB_PROTECTION         1
 
 struct RSDP {
     uint64_t signature;
@@ -50,6 +55,19 @@ struct RSDT {
 struct XSDT {
     struct SDT sdt;
     char* entries[];
+} __attribute__ ((packed));
+
+struct HPET {
+    struct SDT sdt;
+    uint32_t event_timer_block_id;
+    uint8_t address_space_id;
+    uint8_t register_bit_width;
+    uint8_t register_bit_offset;
+    uint8_t reserved;
+    uint64_t hpet_address;
+    uint8_t hpet_number;
+    uint16_t main_counter_min_clock_tick;
+    uint8_t page_protection;
 } __attribute__ ((packed));
 
 struct MADT {
@@ -93,13 +111,24 @@ struct local_apic_addr_override {
     uint32_t local_apic_addr;
 } __attribute__ ((packed));
 
+typedef struct mmio_dev {
+    uint64_t addr;
+    uint64_t size_bytes;
+} mmio_dev_t;
+
+typedef struct mmio_dev_info {
+    mmio_dev_t devices[MMIO_NUM_DEVS];
+    size_t num_devs;
+} mmio_dev_info_t;
+
 size_t get_sdt_entry_size(const struct RSDP* rsdp);
 size_t get_rsdp_size(const struct RSDP* rsdp);
 struct MADT* get_madt(void);
+
 uint32_t* get_lapic_addr(void);
 size_t get_core_count(void);
-bool is_xsdt(const struct RSDP* rsdp);\
-
+mmio_dev_info_t get_dev_info(void);
+bool is_xsdt(const struct RSDP* rsdp);
 bool verify_checksum(const uint8_t* data, size_t num_bytes);
 void init_apic_info(const struct MADT* madt);
 uint64_t find_lapic_addr(const struct MADT* madt);

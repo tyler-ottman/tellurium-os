@@ -97,19 +97,19 @@ static uint32_t rgb256[] = {
 };
 
 static spinlock_t kprint_lock = 0;
-static terminal kterminal;
+static terminal_t kterminal;
 
-void (*apply_set_attribute[NUM_SET_TEXT_ATTRIBUTES]) (terminal*);
-void (*apply_reset_attribute[NUM_RESET_TEXT_ATTRIBUTES]) (terminal*);
+void (*apply_set_attribute[NUM_SET_TEXT_ATTRIBUTES]) (terminal_t*);
+void (*apply_reset_attribute[NUM_RESET_TEXT_ATTRIBUTES]) (terminal_t*);
 
 void kerror(const char* err) {
     kprintf(LIGHT_RED"%s", err);
     done();
 }
 
-void no_change_text_attribute(terminal* terminal) {}
+void no_change_text_attribute(terminal_t* terminal) {}
 
-void reset_text_attribute(terminal* terminal) {
+void reset_text_attribute(terminal_t* terminal) {
     terminal->ansi_state = PROCESS_NORMAL;
     terminal->fg_color = FG_COLOR_DEFAULT;
     terminal->bg_color = BG_COLOR_DEFAULT;
@@ -119,7 +119,7 @@ static inline bool num_in_byte_bounds(int n) {
     return (n >= 0 && n <= 255);
 }
 
-static inline void apply_color(terminal* terminal, uint32_t color) {
+static inline void apply_color(terminal_t* terminal, uint32_t color) {
     if (terminal->apply_to_fg) {
         terminal->fg_color = color;
     } else {
@@ -127,7 +127,7 @@ static inline void apply_color(terminal* terminal, uint32_t color) {
     }
 }
 
-static void parse_sgr(terminal* terminal, char* sequence) {
+static void parse_sgr(terminal_t* terminal, char* sequence) {
     uint32_t color = 0;
     if (__strlen(sequence) == 0) {
         // Reset ANSI attributes
@@ -236,7 +236,7 @@ static void parse_sgr(terminal* terminal, char* sequence) {
     }
 }
 
-static void terminal_parse_ansi(terminal* terminal) {
+static void terminal_parse_ansi(terminal_t* terminal) {
     char* ansi_sequence = terminal->ansi_sequence;
 
     if (ansi_sequence[0] != '[') {
@@ -254,7 +254,7 @@ static void terminal_parse_ansi(terminal* terminal) {
     }
 }
 
-static void terminal_printf(terminal* terminal, const char* buf) {
+static void terminal_printf(terminal_t* terminal, const char* buf) {
     const char* start = buf;
 
     draw_cursor(terminal, RESET_COLOR);
@@ -340,15 +340,15 @@ static void print_color_palette() {
     kprintf("\n\n");
 }
 
-static terminal* alloc_terminal_internal(
-    terminal* term,
+static terminal_t* alloc_terminal_internal(
+    terminal_t* term,
     uint32_t w_font,
     uint32_t h_font,
     uint32_t w_term_px,
     uint32_t h_term_px
 ) {
     if (!term) {
-        term = kmalloc(sizeof(terminal));
+        term = kmalloc(sizeof(terminal_t));
     }
 
     term->h_cursor = 0;

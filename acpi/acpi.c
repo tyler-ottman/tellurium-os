@@ -5,8 +5,11 @@ static volatile struct limine_rsdp_request kernel_rsdp_request = {
     .revision = 0
 };
 
+static mmio_dev_info_t dev_info;
+
 static struct RSDP* rsdp = NULL;
 static struct MADT* madt = NULL;
+static struct HPET* hpet = NULL;
 static struct RSDT* rsdt = NULL;
 static struct XSDT* xsdt = NULL;
 
@@ -38,6 +41,10 @@ size_t get_core_count() {
     return core_count;
 }
 
+mmio_dev_info_t get_dev_info() {
+    return dev_info;
+}
+
 bool is_xsdt(const struct RSDP* rsdp) {
     return rsdp->revision >= 2;
 }
@@ -60,7 +67,7 @@ void init_apic_info(const struct MADT* madt) {
             if (lapic->flags & 0x3) {
                 core_count++;
                 local_apic_ID[local_apic_index++] = lapic->apic_id;
-                kprintf("ACPI: Lapic %x detected\n", lapic->apic_id);
+                // kprintf("ACPI: Lapic %x detected\n", lapic->apic_id);
             }
         } else if (type == ENTRY_IO_APIC) {
             struct io_apic* io_apic = (struct io_apic*)record;
@@ -108,7 +115,47 @@ void* find_sdt(const char* sig) {
     return NULL;
 }
 
+void add_mmio_device(mmio_dev_t mmio_dev) {
+    dev_info.devices[dev_info.num_devs++] = mmio_dev;
+}
+
+bool init_dev_hpet() {
+    hpet = find_sdt("HPET");
+    if (!hpet || !verify_checksum((const uint8_t*)hpet, hpet->sdt.length)) {
+        return false;
+    }
+    
+    hpet->page_protection = HPET_4KB_PROTECTION;
+
+    mmio_dev_t dev_lapic = {
+        .addr = hpet->hpet_address,
+        .size_bytes = 4096
+    };
+
+    add_mmio_device(dev_lapic);
+    return true;
+}
+
+bool init_dev_lapic() {
+    madt = find_sdt("APIC");
+    if (!madt || !verify_checksum((const uint8_t*)madt, madt->sdt.length)) {
+        kerror(INVALID_SDT("MADT"));
+    }
+
+    lapic_addr = find_lapic_addr(madt);
+    init_apic_info(madt);
+
+    mmio_dev_t dev_hpet = {
+        .addr = lapic_addr,
+        .size_bytes = 4096
+    };
+
+    add_mmio_device(dev_hpet);
+    return true;
+}
+
 void init_acpi() {
+    dev_info.num_devs = 0;
     struct limine_rsdp_response* rsdp_response = kernel_rsdp_request.response;
 
     rsdp = rsdp_response->address;
@@ -125,13 +172,13 @@ void init_acpi() {
         kerror(INVALID_SDT("RSDT"));
     }
 
-    madt = find_sdt("APIC");
-    if (!madt || !verify_checksum((const uint8_t*)madt, madt->sdt.length)) {
-        kerror(INVALID_SDT("MADT"));
+    if (!init_dev_lapic()) {
+        kerror("LAPIC not present\n");
     }
 
-    lapic_addr = find_lapic_addr(madt);
-    init_apic_info(madt);
+    // if (!init_dev_hpet()) {
+    //     kerror("HPET not present\n"); // Todo: use PIT if no HPET
+    // }
 
-    kprintf(LIGHT_GREEN"ACPI: Initialized\n");
+    kprintf(INFO GREEN"ACPI: Initialized\n");
 }

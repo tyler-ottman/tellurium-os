@@ -11,10 +11,10 @@
 void clear_screen(void);
 uint32_t get_fb_width(void);
 uint32_t get_fb_height(void);
-void newline(terminal* term);
-void scroll_screen(terminal* term);
-void drawchar(terminal* terminal, char c);
-void draw_cursor(terminal* term, uint32_t color);
+void newline(terminal_t* term);
+void scroll_screen(terminal_t* term);
+void drawchar(terminal_t* terminal, char c);
+void draw_cursor(terminal_t* term, uint32_t color);
 void init_framebuffer(void);
 
 #endif // FRAMEBUFFER_H

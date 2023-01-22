@@ -66,5 +66,5 @@ void init_idt(void) {
 
     cur_vector_idt = 32;
 
-    kprintf(LIGHT_GREEN"IDT: initialized at: %16x\n", idtr.offset);
+    kprintf(INFO GREEN "IDT: Initialized at: %16x\n", idtr.offset);
 }

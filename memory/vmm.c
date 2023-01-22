@@ -1,3 +1,4 @@
+#include <acpi/acpi.h>
 #include <memory/vmm.h>
 
 // Using linker script to find kernel sections
@@ -71,7 +72,7 @@ void init_vmm() {
     uint64_t data_len = edata_vaddr - sdata_vaddr;
     map_section(sdata_vaddr, sdata_paddr, data_len, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
 
-    kprintf(".text: %016x - %016x, .rodata: %016x - %016x\n.data: %016x - %016x\n", stext_vaddr, etext_vaddr, srodata_vaddr, erodata_vaddr, sdata_vaddr, edata_vaddr);
+    // kprintf(".text: %016x - %016x, .rodata: %016x - %016x\n.data: %016x - %016x\n", stext_vaddr, etext_vaddr, srodata_vaddr, erodata_vaddr, sdata_vaddr, edata_vaddr);
 
     // identity map of lower 4 GBs
     struct limine_memmap_entry** entries = limine_memory_map->entries;
@@ -90,8 +91,13 @@ void init_vmm() {
     size_t bitmap_size = get_bitmap_size();
     map_section(bitmap_addr, bitmap_addr - KERNEL_HHDM_OFFSET, bitmap_size, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
     
-    uint64_t lapic_addr = (uint64_t)get_lapic_addr();
-    map_section(lapic_addr + KERNEL_HHDM_OFFSET, lapic_addr, 4096, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
+    // Map MMIO devices
+    mmio_dev_info_t dev_info = get_dev_info();
+    for (size_t i = 0; i < dev_info.num_devs; i++) {
+        mmio_dev_t dev = dev_info.devices[i];
+        uint64_t dev_addr = dev.addr;
+        map_section(dev_addr + KERNEL_HHDM_OFFSET, dev_addr, dev.size_bytes, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
+    }
 
     // Mark upper half as kernel only
     for (size_t i = 256; i < 512; i++) {
@@ -103,8 +109,8 @@ void init_vmm() {
 
     // Todo: Destroy Limine's page tables
 
-    kprintf("VMM: tellurium-os using %d frames\n", frames_allocated);
-    kprintf(LIGHT_GREEN "VMM: Initialized\n");
+    // kprintf("VMM: tellurium-os using %d frames\n", frames_allocated);
+    kprintf(INFO GREEN "VMM: Initialized\n");
 }
 
 void load_pagemap(struct pagemap* map) {

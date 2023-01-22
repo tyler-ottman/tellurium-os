@@ -33,9 +33,11 @@
 #define LIGHT_CYAN      RESET"\033[96m"
 #define WHITE           RESET"\033[97m"
 
+#define INFO            GREEN"["LIGHT_GREEN"INFO"GREEN"] "
+
 #define ASSERT(cond) {if (!(cond)) kerror("Assertion failed\n");}
 
-typedef struct {
+typedef struct terminal {
     uint32_t h_cursor;
     uint32_t v_cursor;
     uint32_t h_cursor_max;
@@ -51,7 +53,7 @@ typedef struct {
     uint64_t is_ansi_state;
     uint64_t ansi_state;
     char ansi_sequence[ANSI_SEQ_LEN];
-} terminal;
+} terminal_t;
 
 void kerror(const char* err);
 int kprintf(const char* format, ...);

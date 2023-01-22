@@ -29,6 +29,12 @@ void breakpoint() {
     a++;
 }
 
+void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
+    __asm__ volatile (
+        "cpuid" : "=a" (a), "=b" (b), "=c" (c), "=d" (d) : "a" (in_a)
+    );
+}
+
 thread_t* get_thread_local() {
     uint64_t fs_base = get_msr(FS_BASE);
     return (thread_t*)((uint64_t)fs_base);
@@ -64,7 +70,7 @@ void init_cpu(void) {
     struct limine_smp_response* smp_response = kernel_smp_request.response;
     size_t core_count = get_core_count();
     bsp_id = smp_response->bsp_lapic_id;
-    kprintf("CPU: %d available cores\n", core_count);
+    kprintf(INFO GREEN "CPU: %d available cores\n", core_count);
 
     struct limine_smp_info* core;
     for (size_t i = 0; i < core_count; i++) {
@@ -82,7 +88,7 @@ void init_cpu(void) {
         __asm__ volatile ("pause");
     }
 
-    kprintf(LIGHT_GREEN "SMP: All cores online\n");
+    kprintf(INFO GREEN "SMP: All cores online\n");
 }
 
 #define NUM_REGISTERS (sizeof(ctx_t) / sizeof(uint64_t))
@@ -131,7 +137,7 @@ void core_init(struct limine_smp_info* core) {
     // lapic_send_ipi(cpu_info->lapic_id, cpu_info->lapic_ipi_vector);
 
     if (core->lapic_id != bsp_id) {
-        schedule_next_thread();
+        // schedule_next_thread();
         while(1) {}
     }
 }

@@ -22,9 +22,9 @@ void init_system() {
     init_idt();
     init_acpi();
     init_pmm();
+    init_slab();
     init_vmm();
     init_serial();
-    init_slab();
 }
 
 void _start(void) {
@@ -33,7 +33,7 @@ void _start(void) {
 
     init_cpu();
 
-    kprintf(LIGHT_GREEN"Init kernel: complete\n");
+    kprintf(INFO GREEN "Kernel: Initialized\n");
 
     done();
 }

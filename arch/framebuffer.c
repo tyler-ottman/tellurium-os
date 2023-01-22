@@ -15,11 +15,11 @@ static struct limine_framebuffer_response* framebuffer_response;
 static struct limine_framebuffer* framebuffer;
 static uint32_t* pixel_buffer;
 
-static inline bool is_scroll_needed(terminal* term) {
+static inline bool is_scroll_needed(terminal_t* term) {
     return term->v_cursor + 1 >= term->v_cursor_max;
 }
 
-static inline uint32_t get_px_base(terminal* term) {
+static inline uint32_t get_px_base(terminal_t* term) {
     return term->h_font_px * term->w_term_px * term->v_cursor + term->w_font_px * term->h_cursor;
 }
 
@@ -31,7 +31,7 @@ uint32_t get_fb_width() {
     return framebuffer->width;
 }
 
-void newline(terminal* term) {
+void newline(terminal_t* term) {
     if (is_scroll_needed(term)) {
         scroll_screen(term);
     } else {
@@ -49,7 +49,7 @@ void clear_screen() {
     }
 }
 
-void scroll_screen(terminal* term) {
+void scroll_screen(terminal_t* term) {
     uint32_t v_px_offset = term->h_font_px * term->w_term_px;
     uint32_t px_base = 0; // Change later with windowing
     for (size_t i = 0; i < term->h_term_px - term->h_font_px; i++) {
@@ -68,7 +68,7 @@ void scroll_screen(terminal* term) {
     }
 }
 
-void drawchar(terminal* term, char c) {
+void drawchar(terminal_t* term, char c) {
     uint8_t* cur_char = kterminal_font[(uint8_t)c];
     uint32_t px_base = get_px_base(term);
     for (size_t i = 0; i < term->h_font_px; i++) {
@@ -85,7 +85,7 @@ void drawchar(terminal* term, char c) {
     }
 }
 
-void draw_cursor(terminal* term, uint32_t color) {
+void draw_cursor(terminal_t* term, uint32_t color) {
     uint32_t px_base = get_px_base(term);
     for (size_t i = 0; i < term->h_font_px; i++) {
         for (size_t j = 0; j < term->w_font_px; j++) {
