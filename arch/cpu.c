@@ -16,6 +16,8 @@ static volatile struct limine_smp_request kernel_smp_request = {
     .revision = 0
 };
 
+static spinlock_t init_lock = 0;
+
 // Halt CPU activity
 void done() {
     for (;;) {
@@ -132,7 +134,9 @@ void core_init(struct limine_smp_info* core) {
     // LAPIC Timer IDT Entry uses stack stored in IST1
     set_vector_ist(cpu_info->lapic_timer_vector, 1);
 
+    spinlock_acquire(&init_lock);
     cores_ready++;
+    spinlock_release(&init_lock);
 
     // lapic_send_ipi(cpu_info->lapic_id, cpu_info->lapic_ipi_vector);
 

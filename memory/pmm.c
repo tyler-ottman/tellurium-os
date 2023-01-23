@@ -1,3 +1,4 @@
+#include <arch/lock.h>
 #include <memory/pmm.h>
 
 volatile struct limine_memmap_request memory_map_request = {
@@ -9,6 +10,8 @@ uint64_t bitmap_max_entries; // Number of page frame entries in bitmap
 uint64_t cached_index = 0; // List index in bitmap accessed
 uint8_t* bitmap; // Raw bitmap
 size_t bitmap_size_aligned;
+
+spinlock_t pmm_lock = 0;
 
 static char* debug_limine_mmap_type[] = {
     "LIMINE_MEMMAP_USABLE",
@@ -159,19 +162,27 @@ void* palloc_internal(size_t pages) {
 }
 
 void* palloc(size_t pages) {
+    spinlock_acquire(&pmm_lock);
+
     void* ret = (void*)palloc_internal(pages);
     if (!ret) {
         cached_index = 0;
         ret = (void*)palloc_internal(pages);
     }
 
+    spinlock_release(&pmm_lock);
+
     return ret;
 }
 
 void pfree(void* base, size_t pages) {
+    spinlock_acquire(&pmm_lock);
+
     uint64_t addr = (uint64_t)base;
     for (size_t idx = 0; idx < pages; idx++) {
         bitmap_reset(addr);
         addr += PAGE_SIZE_BYTES;
     }
+
+    spinlock_release(&pmm_lock);
 }
