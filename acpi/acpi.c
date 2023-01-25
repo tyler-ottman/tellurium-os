@@ -176,9 +176,9 @@ void init_acpi() {
         kerror("LAPIC not present\n");
     }
 
-    // if (!init_dev_hpet()) {
-    //     kerror("HPET not present\n"); // Todo: use PIT if no HPET
-    // }
+    if (!init_dev_hpet()) {
+        kerror("HPET not present\n"); // Todo: use PIT if no HPET
+    }
 
     kprintf(INFO GREEN"ACPI: Initialized\n");
 }

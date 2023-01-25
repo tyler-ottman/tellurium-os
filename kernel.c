@@ -20,9 +20,10 @@ void init_system() {
     init_kterminal();
     init_gdt();
     init_idt();
-    init_acpi();
     init_pmm();
     init_slab();
+    init_kterminal_doublebuffer();
+    init_acpi();
     init_vmm();
     init_serial();
 }

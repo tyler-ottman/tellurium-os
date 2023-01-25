@@ -4,6 +4,7 @@
 #include <limine.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <libc/string.h>
 #include <libc/ctype.h>
 #include <libc/stdlib.h>
@@ -38,6 +39,7 @@
 #define ASSERT(cond) {if (!(cond)) kerror("Assertion failed\n");}
 
 typedef struct terminal {
+    uint32_t *buffer;
     uint32_t h_cursor;
     uint32_t v_cursor;
     uint32_t h_cursor_max;
@@ -58,6 +60,7 @@ typedef struct terminal {
 void kerror(const char* err);
 int kprintf(const char* format, ...);
 
+void init_kterminal_doublebuffer(void);
 void init_kterminal(void);
 
 #endif // TERMINAL_H
