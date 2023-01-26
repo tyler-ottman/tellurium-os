@@ -14,6 +14,7 @@ uint32_t fb_get_width(void);
 uint32_t fb_get_height(void);
 uint32_t *fb_get_framebuffer(void);
 uint16_t fb_get_bpp(void);
+uint64_t fb_get_pitch(void);
 void fb_load_buffer(terminal_t *term);
 void newline(terminal_t* term);
 void scroll_screen(terminal_t* term);

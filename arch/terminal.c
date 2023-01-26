@@ -304,7 +304,9 @@ static void terminal_printf(terminal_t* terminal, const char* buf) {
 
     draw_cursor(terminal, CURSOR_COLOR);
 
-    fb_load_buffer(terminal);
+    if (terminal->is_double_buffer) {
+        fb_load_buffer(terminal);
+    }
 }
 
 int kprintf(const char* format, ...) {
@@ -350,8 +352,8 @@ static terminal_t *alloc_terminal_internal(
     terminal_t *term,
     uint32_t w_font,
     uint32_t h_font,
-    uint32_t w_term_px,
-    uint32_t h_term_px,
+    uint64_t w_term_px,
+    uint64_t h_term_px,
     bool use_raw_fb
 ) {
     if (!term) {
@@ -373,6 +375,8 @@ static terminal_t *alloc_terminal_internal(
         term->buffer = kmalloc(term->w_term_px * term->h_term_px);
     }
 
+    term->w_fb_px = fb_get_pitch() / (fb_get_bpp() / 8);
+    term->is_double_buffer = !use_raw_fb;
     term->fg_color = FG_COLOR_DEFAULT;
     term->bg_color = BG_COLOR_DEFAULT;
     term->apply_to_fg = false;
@@ -382,12 +386,14 @@ static terminal_t *alloc_terminal_internal(
     return term;
 }
 
+/* Bootstrapping process, not used in user applications */
 void init_kterminal_doublebuffer() {
     terminal_t *term = get_kterminal();
-    int buf_size = 4 * kterminal.w_term_px * kterminal.h_term_px;
+    int buf_size = 4 * kterminal.w_fb_px * kterminal.h_term_px;
     uint32_t *term_buf = kmalloc(buf_size);
     __memcpy(term_buf, term->buffer, buf_size);
     term->buffer = term_buf;
+    term->is_double_buffer = true;
 }
 
 void init_kterminal() {
@@ -404,6 +410,6 @@ void init_kterminal() {
     apply_set_attribute[SET_RESET] = reset_text_attribute;
 
     alloc_terminal_internal(&kterminal, 8, 14, fb_get_width(), fb_get_height(), true);
-    
+
     // print_color_palette();
 }

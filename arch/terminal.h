@@ -4,6 +4,7 @@
 #include <limine.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <libc/string.h>
 #include <libc/ctype.h>
@@ -40,14 +41,16 @@
 
 typedef struct terminal {
     uint32_t *buffer;
+    bool is_double_buffer;
     uint32_t h_cursor;
     uint32_t v_cursor;
     uint32_t h_cursor_max;
     uint32_t v_cursor_max;
     uint32_t h_font_px;
     uint32_t w_font_px;
-    uint32_t h_term_px;
-    uint32_t w_term_px;
+    uint64_t h_term_px;
+    uint64_t w_term_px;
+    uint64_t w_fb_px;
 
     uint32_t fg_color;
     uint32_t bg_color;
