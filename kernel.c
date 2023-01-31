@@ -5,6 +5,7 @@
 #include <arch/idt.h>
 #include <arch/process.h>
 #include <arch/terminal.h>
+#include <devices/hpet.h>
 #include <devices/lapic.h>
 #include <devices/serial.h>
 #include <limine.h>
@@ -24,6 +25,7 @@ void init_system() {
     init_slab();
     init_kterminal_doublebuffer();
     init_acpi();
+    init_hpet();
     init_vmm();
     init_serial();
 }

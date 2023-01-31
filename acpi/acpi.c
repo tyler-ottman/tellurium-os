@@ -20,6 +20,8 @@ uint32_t local_apic_ID[128];
 uint32_t io_apic_ID[128];
 uint64_t io_apic_addr = 0;
 static uint64_t lapic_addr = 0;
+static uint64_t hpet_addr = 0;
+static bool is_hpet_present = true;
 
 size_t get_rsdp_size(const struct RSDP* rsdp) {
     return rsdp->revision >= 2 ? RSDP_64 : RSDP_32;
@@ -33,8 +35,16 @@ struct MADT* get_madt() {
     return madt;
 }
 
+bool acpi_hpet_present() {
+    return is_hpet_present;
+}
+
 uint32_t* get_lapic_addr() {
     return (uint32_t*)lapic_addr; 
+}
+
+uint32_t *get_hpet_addr() {
+    return (uint32_t*)hpet_addr;
 }
 
 size_t get_core_count() {
@@ -126,6 +136,7 @@ bool init_dev_hpet() {
     }
     
     hpet->page_protection = HPET_4KB_PROTECTION;
+    hpet_addr = hpet->hpet_address;
 
     mmio_dev_t dev_lapic = {
         .addr = hpet->hpet_address,
@@ -177,6 +188,7 @@ void init_acpi() {
     }
 
     if (!init_dev_hpet()) {
+        is_hpet_present = false;
         kerror("HPET not present\n"); // Todo: use PIT if no HPET
     }
 
