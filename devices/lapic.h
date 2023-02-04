@@ -31,6 +31,7 @@ uint32_t lapic_read(size_t offset);
 void lapic_write(size_t offset, uint32_t val);
 void lapic_time_handler(ctx_t* ctx);
 void lapic_ipi_handler(ctx_t* ctx);
+void lapic_calibrate(bool hpet_present);
 void init_lapic(void);
 void lapic_schedule_time(void);
 void lapic_send_ipi(uint32_t lapic_id, uint32_t vector);

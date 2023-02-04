@@ -1,3 +1,4 @@
+#include <devices/hpet.h>
 #include <devices/lapic.h>
 #include <arch/scheduler.h>
 #include <arch/cpu.h>
@@ -55,6 +56,26 @@ void lapic_ipi_handler(ctx_t* ctx) {
     schedule_next_thread();
 }
 
+void lapic_calibrate(bool hpet_present) {
+    size_t samples = 0xffffff;
+    if (hpet_present) {
+        hpet_timer_disable();
+        hpet_set_timer(0);
+
+        lapic_write(LVT_INITIAL_COUNT, samples);
+        hpet_timer_enable();
+        while (lapic_read(LVT_CURRENT_COUNT) != 0) {}
+
+        hpet_timer_disable();
+        size_t period = hpet_get_period();
+        size_t delta = hpet_get_timer();
+
+        kprintf("Here: %d\n", delta);
+    } else { // PIT
+
+    }
+}
+
 void init_lapic() {
     struct core_local_info* cpu_info = get_core_local_info();
     
@@ -70,6 +91,8 @@ void init_lapic() {
     
     add_descriptor(timer_vector, ISR_Timer, 0x8e);
     lapic_lvt_set_vector(LVT_TIMER, timer_vector);
+
+    lapic_calibrate(acpi_hpet_present());
 
     // Enable reception of timer interrupt
     lapic_lvt_enable(LVT_TIMER);
