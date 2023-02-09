@@ -1,3 +1,4 @@
+#include <arch/cpu.h>
 #include <libc/ctype.h>
 #include <libc/print.h>
 #include <libc/stdlib.h>
@@ -12,6 +13,7 @@ int __vsnprintf(char* buf, size_t n, const char* format, va_list valist) {
     uint64_t width; // Field width in format specifier
     uint64_t base; // Default base for numbers
     uint64_t cur_idx = 0;
+    char str_num[256];
 
     while (*format) {
         flags = 0;
@@ -68,10 +70,9 @@ int __vsnprintf(char* buf, size_t n, const char* format, va_list valist) {
             // Assume 64-bit for now
             if ((*format == 'i') || (*format == 'd')) { // Signed Integer
                 // Todo, signed
-                uint64_t val = va_arg(valist, long long);\
+                uint64_t val = va_arg(valist, uint64_t);
 
                 // Get string representation of number
-                char str_num[256];
                 __itoa(val, str_num);
 
                 // Calculate padding taking into account length of string
@@ -104,7 +105,6 @@ int __vsnprintf(char* buf, size_t n, const char* format, va_list valist) {
                 uint64_t val = va_arg(valist, long long);
 
                 // Get string representation of number
-                char str_num[256];
                 __utoa(val, str_num, base);
 
                 // Calculate padding taking into account length of string

@@ -57,12 +57,14 @@ struct core_local_info {
     uint32_t lapic_id;
     uint32_t lapic_ipi_vector;
     uint8_t lapic_timer_vector;
+    uint64_t lapic_freq;
     struct tcb* idle_thread;
     struct tcb* current_thread;
     struct TSS tss;
 };
 
 void done(void);
+void breakpoint(void);
 void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d);
 struct tcb* get_thread_local(void);
 void set_thread_local(struct tcb* thread);

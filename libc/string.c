@@ -1,11 +1,12 @@
+#include <arch/cpu.h>
 #include <libc/string.h>
 #include <stdbool.h>
 
 // https://github.com/bminor/newlib/blob/master/newlib/libc/stdlib/utoa.c
-char* __utoa(unsigned long value, char *str, int base) {
+char* __utoa(uint64_t value, char *str, int base) {
   const char digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
   int i, j;
-  unsigned remainder;
+  uint64_t remainder;
   char c;
 
   /* Check base is supported. */
@@ -32,7 +33,7 @@ char* __utoa(unsigned long value, char *str, int base) {
   return str;
 }
 
-char* __itoa(int value, char* str) {
+char* __itoa(int64_t value, char* str) {
     if (value < 0) {
         value *= -1;
         *(str++) = '-';

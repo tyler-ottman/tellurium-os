@@ -7,6 +7,7 @@ extern void* ISR_Timer[];
 extern void* ISR_IPI[];
 
 uint32_t* lapic_addr;
+static uint64_t lapic_freq = 0;
 
 bool is_lapic_aligned(size_t offset) {
     return offset < 0x400 || (offset % 16 == 0);
@@ -57,20 +58,24 @@ void lapic_ipi_handler(ctx_t* ctx) {
 }
 
 void lapic_calibrate(bool hpet_present) {
-    size_t samples = 0xffffff;
+    size_t lapic_samples = 0xffffff;
     if (hpet_present) {
         hpet_timer_disable();
         hpet_set_timer(0);
 
-        lapic_write(LVT_INITIAL_COUNT, samples);
+        lapic_write(LVT_INITIAL_COUNT, lapic_samples);
         hpet_timer_enable();
         while (lapic_read(LVT_CURRENT_COUNT) != 0) {}
 
         hpet_timer_disable();
-        size_t period = hpet_get_period();
-        size_t delta = hpet_get_timer();
 
-        kprintf("Here: %d\n", delta);
+        uint64_t hpet_period_fs = hpet_get_period();
+        uint64_t hpet_samples = hpet_get_timer();
+
+        uint64_t lapic_period = (hpet_samples * hpet_period_fs) / lapic_samples;
+        uint64_t lapic_freq = FEMTO / lapic_period;
+
+        get_core_local_info()->lapic_freq = lapic_freq / lapic_period;
     } else { // PIT
 
     }

@@ -2,9 +2,10 @@
 #define STRING_H
 
 #include <stddef.h>
+#include <stdint.h>
 
-char* __utoa(unsigned long value, char* str, int base);
-char* __itoa(int value, char* str);
+char* __utoa(uint64_t value, char* str, int base);
+char* __itoa(int64_t value, char* str);
 char* __strcat(char* dest, char* src);
 const char* __strchr(const char* str, int c);
 size_t __strcspn(const char* str1, const char* str2);
