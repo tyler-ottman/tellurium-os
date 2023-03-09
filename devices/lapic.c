@@ -1,3 +1,4 @@
+#include <arch/lock.h>
 #include <devices/hpet.h>
 #include <devices/lapic.h>
 #include <arch/scheduler.h>
@@ -7,7 +8,7 @@ extern void* ISR_Timer[];
 extern void* ISR_IPI[];
 
 uint32_t* lapic_addr;
-static uint64_t lapic_freq = 0;
+static spinlock_t calibrate_lock = 0;
 
 bool is_lapic_aligned(size_t offset) {
     return offset < 0x400 || (offset % 16 == 0);
@@ -58,6 +59,8 @@ void lapic_ipi_handler(ctx_t* ctx) {
 }
 
 void lapic_calibrate(bool hpet_present) {
+    spinlock_acquire(&calibrate_lock);
+
     size_t lapic_samples = 0xffffff;
     if (hpet_present) {
         hpet_timer_disable();
@@ -75,10 +78,13 @@ void lapic_calibrate(bool hpet_present) {
         uint64_t lapic_period = (hpet_samples * hpet_period_fs) / lapic_samples;
         uint64_t lapic_freq = FEMTO / lapic_period;
 
-        get_core_local_info()->lapic_freq = lapic_freq / lapic_period;
+        get_core_local_info()->lapic_freq = lapic_freq;
+        // kprintf("lapic freq: %d\n", lapic_freq);
     } else { // PIT
 
     }
+
+    spinlock_release(&calibrate_lock);
 }
 
 void init_lapic() {
@@ -107,8 +113,9 @@ void init_lapic() {
     cpu_info->lapic_ipi_vector = ipi_vector;
 }
 
-void lapic_schedule_time() {
-    lapic_write(LVT_INITIAL_COUNT, 0x30000000);
+void lapic_schedule_time(uint64_t us) {
+    uint64_t ticks = us * (get_core_local_info()->lapic_freq / 1000000);
+    lapic_write(LVT_INITIAL_COUNT, ticks);
     enable_interrupts();
 }
 

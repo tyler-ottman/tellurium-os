@@ -128,11 +128,14 @@ struct MADT* get_madt(void);
 bool acpi_hpet_present(void);
 uint32_t *get_lapic_addr(void);
 uint32_t *get_hpet_addr(void);
+uint32_t *get_ioapic_addr(void);
+
 size_t get_core_count(void);
 mmio_dev_info_t get_dev_info(void);
 bool is_xsdt(const struct RSDP *rsdp);
 bool verify_checksum(const uint8_t *data, size_t num_bytes);
 void init_apic_info(const struct MADT *madt);
+uint64_t acpi_find_ioapic_addr(const struct MADT *madt);
 uint64_t find_lapic_addr(const struct MADT *madt);
 
 void* find_sdt(const char *sig);

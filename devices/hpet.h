@@ -7,7 +7,8 @@
 #define HPET_GENERAL_CONFIG                 0x10
 #define HPET_MAIN_COUNTER                   0xF0
 
-#define FEMTO                               1000000000000000
+#define FEMTO                               (uint64_t)1000000000000000
+#define NANO                                (uint64_t)1000000000
 
 uint32_t hpet_get_period(void);
 uint32_t hpet_get_timer(void);

@@ -1,5 +1,9 @@
 #include <stdint.h>
 
+#define PIT_COUNTER0        0x40
+#define PIT_COUNTER1        0x41
+#define PIT_COUNTER2        0x42
+#define PIT_CONTROL_WORD    0x43
 #define COM1        0x3F8
 
 #define WRITE_SERIAL(str) {                 \

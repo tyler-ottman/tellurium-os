@@ -88,7 +88,7 @@ void thread_switch(struct core_local_info* cpu_info) {
     uint64_t* pml4 = map->pml4_base;
     pml4 = (uint64_t*)((uint64_t)pml4 - KERNEL_HHDM_OFFSET);
 
-    lapic_schedule_time();
+    lapic_schedule_time(1000000);
 
     __asm__ volatile(
         "mov %0, %%rsp\n\t"

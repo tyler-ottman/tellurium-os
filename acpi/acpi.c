@@ -47,6 +47,10 @@ uint32_t *get_hpet_addr() {
     return (uint32_t*)hpet_addr;
 }
 
+uint32_t *get_ioapic_addr() {
+    return (uint32_t *)io_apic_addr;
+}
+
 size_t get_core_count() {
     return core_count;
 }
@@ -96,13 +100,26 @@ uint64_t find_lapic_addr(const struct MADT* madt) {
     for (size_t offset = 0x2c; offset < madt->sdt.length;) {
         struct MADT_record* record = (struct MADT_record*)((uint8_t*)madt + offset); 
         if (record->entry_type == LOCAL_APIC_ADDR_OVERRIDE) {
-            struct local_apic_addr_override* io_apic = (struct local_apic_addr_override*)record;
-            return io_apic->local_apic_addr; 
+            struct local_apic_addr_override* lapic64 = (struct local_apic_addr_override*)record;
+            return lapic64->local_apic_addr; 
         }
         
         offset += record->record_length;
     }
     return madt->local_interrupt_ctrl_addr;
+}
+
+uint64_t acpi_find_ioapic_addr(const struct MADT *madt) {
+    for (size_t offset = 0x2c; offset < madt->sdt.length;) {
+        struct MADT_record *record = (struct MADT_record *)((uint8_t *)madt + offset);
+        if (record->entry_type == ENTRY_IO_APIC) {
+            struct io_apic *io_apic = (struct io_apic *)record;
+            return io_apic->io_apic_address;
+        }
+
+        offset += record->record_length;
+    }
+    return 0;
 }
 
 void* find_sdt(const char* sig) {
@@ -125,11 +142,11 @@ void* find_sdt(const char* sig) {
     return NULL;
 }
 
-void add_mmio_device(mmio_dev_t mmio_dev) {
+static void add_mmio_device(mmio_dev_t mmio_dev) {
     dev_info.devices[dev_info.num_devs++] = mmio_dev;
 }
 
-bool init_dev_hpet() {
+static bool init_dev_hpet() {
     hpet = find_sdt("HPET");
     if (!hpet || !verify_checksum((const uint8_t*)hpet, hpet->sdt.length)) {
         return false;
@@ -147,13 +164,19 @@ bool init_dev_hpet() {
     return true;
 }
 
-bool init_dev_lapic() {
+static bool init_madt_devices() {
     madt = find_sdt("APIC");
     if (!madt || !verify_checksum((const uint8_t*)madt, madt->sdt.length)) {
         kerror(INVALID_SDT("MADT"));
     }
 
     lapic_addr = find_lapic_addr(madt);
+    io_apic_addr = acpi_find_ioapic_addr(madt);
+
+    if (!lapic_addr || !io_apic_addr) {
+        return false;
+    }
+
     init_apic_info(madt);
 
     mmio_dev_t dev_hpet = {
@@ -161,7 +184,14 @@ bool init_dev_lapic() {
         .size_bytes = 4096
     };
 
+    mmio_dev_t dev_ioapic = {
+        .addr = io_apic_addr,
+        .size_bytes = 4096
+    };
+
     add_mmio_device(dev_hpet);
+    add_mmio_device(dev_ioapic);
+
     return true;
 }
 
@@ -183,8 +213,8 @@ void init_acpi() {
         kerror(INVALID_SDT("RSDT"));
     }
 
-    if (!init_dev_lapic()) {
-        kerror("LAPIC not present\n");
+    if (!init_madt_devices()) {
+        kerror("MADT Device Initialization Failure\n");
     }
 
     if (!init_dev_hpet()) {

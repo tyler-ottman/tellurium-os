@@ -6,7 +6,9 @@
 #include <arch/process.h>
 #include <arch/terminal.h>
 #include <devices/hpet.h>
+#include <devices/ioapic.h>
 #include <devices/lapic.h>
+#include <devices/pit.h>
 #include <devices/serial.h>
 #include <limine.h>
 #include <memory/pmm.h>
@@ -26,6 +28,8 @@ void init_system() {
     init_kterminal_doublebuffer();
     init_acpi();
     init_hpet();
+    init_ioapic();
+    init_pit();
     init_vmm();
     init_serial();
 }

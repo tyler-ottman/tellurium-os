@@ -33,7 +33,7 @@ void lapic_time_handler(ctx_t* ctx);
 void lapic_ipi_handler(ctx_t* ctx);
 void lapic_calibrate(bool hpet_present);
 void init_lapic(void);
-void lapic_schedule_time(void);
+void lapic_schedule_time(uint64_t us);
 void lapic_send_ipi(uint32_t lapic_id, uint32_t vector);
 void lapic_lvt_set_vector(uint32_t lvt, uint8_t vector);
 void lapic_lvt_enable(uint32_t lvt);
