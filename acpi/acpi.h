@@ -129,6 +129,7 @@ bool acpi_hpet_present(void);
 uint32_t *get_lapic_addr(void);
 uint32_t *get_hpet_addr(void);
 uint32_t *get_ioapic_addr(void);
+uint32_t *get_lapic_ids(void);
 
 size_t get_core_count(void);
 mmio_dev_info_t get_dev_info(void);

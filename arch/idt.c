@@ -10,11 +10,14 @@ size_t cur_vector_idt;
 __attribute__((aligned(0x10))) static IDT_Entry idt_entry[256];
 
 uint8_t allocate_vector() {
+    spinlock_acquire(&idt_lock);
     if (cur_vector_idt >= 256) {
         kerror("IDT: Exceeded available IDT entries\n");
     }
+    uint8_t vector = cur_vector_idt++;
+    spinlock_release(&idt_lock);
 
-    return cur_vector_idt++;
+    return vector;
 }
 
 void add_descriptor(uint8_t vector, void* gate_entry, uint8_t flags) {

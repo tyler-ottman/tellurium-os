@@ -51,6 +51,10 @@ uint32_t *get_ioapic_addr() {
     return (uint32_t *)io_apic_addr;
 }
 
+uint32_t *get_lapic_ids() {
+    return local_apic_ID;
+}
+
 size_t get_core_count() {
     return core_count;
 }
