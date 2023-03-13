@@ -118,6 +118,7 @@ uint64_t acpi_find_ioapic_addr(const struct MADT *madt) {
         struct MADT_record *record = (struct MADT_record *)((uint8_t *)madt + offset);
         if (record->entry_type == ENTRY_IO_APIC) {
             struct io_apic *io_apic = (struct io_apic *)record;
+            kprintf("gsi: %x\n", io_apic->global_sys_interrupt_base);
             return io_apic->io_apic_address;
         }
 

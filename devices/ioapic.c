@@ -31,26 +31,40 @@ typedef struct redtab {
     uint8_t destination_field: 8;
 }__attribute__ ((__packed__)) redtab_t;
 
+typedef struct ioapic_version {
+    uint8_t apic_version: 8;
+    uint8_t reserved0: 8;
+    uint8_t max_red_entry: 8;
+    uint8_t reserved1: 8;
+}__attribute__ ((__packed__)) ioapic_version_t;
+
 static spinlock_t ioapic_lock = 0;
 static uint32_t *ioapic_addr = NULL;
 
 static void ioapic_select_reg(uint8_t offset) {
-    *((uint32_t *)((uint64_t)ioapic_addr + IOAPIC_REGSEL)) = offset;
+    uint64_t base = (uint64_t)ioapic_addr + IOAPIC_REGSEL;
+    *((volatile uint32_t *)base) = offset;
 }
 
 void ioapic_write(uint8_t offset, uint32_t val) {
     spinlock_acquire(&ioapic_lock);
+    
     ioapic_select_reg(offset);
-    *((uint32_t *)((uint64_t)ioapic_addr + IOAPIC_IOWIN)) = val;
+    uint64_t base = (uint64_t)ioapic_addr + IOAPIC_IOWIN;
+    *((volatile uint32_t *)base) = val;
+
     spinlock_release(&ioapic_lock);
 }
 
 uint32_t ioapic_read(uint8_t offset) {
     spinlock_acquire(&ioapic_lock);
+    
     ioapic_select_reg(offset);
-    uint64_t reg = *((uint32_t *)((uint64_t)ioapic_addr + IOAPIC_IOWIN));
+    uint64_t base = (uint64_t)ioapic_addr + IOAPIC_IOWIN;
+    uint32_t data = *((volatile uint32_t *)base);
+    
     spinlock_release(&ioapic_lock);
-    return reg;
+    return data;
 }
 
 static bool ioapic_read_redtab(int entry, redtab_t *redtab) {
@@ -96,6 +110,12 @@ void init_ioapic() {
     if (!ioapic_addr) {
         kerror(INFO "IOAPIC: ioapic address undefined\n");
     }
+
+    kprintf("ioapic address: %x\n", ioapic_addr);
+    uint32_t reg_version = ioapic_read(IOAPIC_VER);
+    ioapic_version_t *ver = (ioapic_version_t *)&reg_version;
+
+    kprintf("max entry: %x\n", ver->max_red_entry);
 
     // Arbitrarily choose last APIC ID to send keyboard IRQs
     uint32_t *apic_ids = get_lapic_ids();
