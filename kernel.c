@@ -9,6 +9,7 @@
 #include <devices/ioapic.h>
 #include <devices/lapic.h>
 #include <devices/pit.h>
+#include <devices/ps2.h>
 #include <devices/serial.h>
 #include <limine.h>
 #include <memory/pmm.h>
@@ -28,7 +29,7 @@ void init_system() {
     init_kterminal_doublebuffer();
     init_acpi();
     init_hpet();
-    init_ioapic();
+    init_ps2();
     init_pit();
     init_vmm();
     init_serial();

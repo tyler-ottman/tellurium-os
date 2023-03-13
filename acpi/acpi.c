@@ -5,6 +5,13 @@ static volatile struct limine_rsdp_request kernel_rsdp_request = {
     .revision = 0
 };
 
+typedef struct ioapic_version {
+    uint8_t apic_version: 8;
+    uint8_t reserved0: 8;
+    uint8_t max_red_entry: 8;
+    uint8_t reserved1: 8;
+}__attribute__ ((__packed__)) ioapic_version_t;
+
 static mmio_dev_info_t dev_info;
 
 static struct RSDP* rsdp = NULL;
@@ -14,11 +21,15 @@ static struct RSDT* rsdt = NULL;
 static struct XSDT* xsdt = NULL;
 
 size_t core_count = 0;
+
+// List of Local APIC IDs
 size_t local_apic_index = 0;
+uint32_t local_apic_ID[LAPIC_NUM_DEVS];
+
+// List of I/O APIC structs
 size_t io_apic_index = 0;
-uint32_t local_apic_ID[128];
-uint32_t io_apic_ID[128];
-uint64_t io_apic_addr = 0;
+io_apic_t *ioapics[IOAPIC_NUM_DEVS];
+
 static uint64_t lapic_addr = 0;
 static uint64_t hpet_addr = 0;
 static bool is_hpet_present = true;
@@ -47,12 +58,30 @@ uint32_t *get_hpet_addr() {
     return (uint32_t*)hpet_addr;
 }
 
-uint32_t *get_ioapic_addr() {
-    return (uint32_t *)io_apic_addr;
-}
-
 uint32_t *get_lapic_ids() {
     return local_apic_ID;
+}
+
+io_apic_t **acpi_get_ioapics() {
+    return ioapics;
+}
+
+size_t acpi_get_num_ioapics() {
+    return io_apic_index;
+}
+
+int acpi_get_gsi_base(uint32_t *ioapic_addr) {
+    if (!ioapic_addr) {
+        return -1;
+    }
+    for (size_t i = 0; i < io_apic_index; i++) {
+        io_apic_t *ioapic = ioapics[i];
+        if ((uint64_t)ioapic->io_apic_address == (uint64_t)ioapic_addr) {
+            io_apic_t *ioapic = ioapics[i];
+            return ioapic->global_sys_interrupt_base;
+        }
+    }
+    return -1;
 }
 
 size_t get_core_count() {
@@ -75,6 +104,26 @@ bool verify_checksum(const uint8_t* data, size_t num_bytes) {
     return !checksum;
 }
 
+int acpi_irq_to_gsi(int irq) {
+    if (!madt) {
+        return -1;
+    }
+
+    for (size_t offset = 0x2c; offset < madt->sdt.length;) {
+        struct MADT_record* record = (struct MADT_record*)((uint8_t*)madt + offset);
+        if (record->entry_type == ENTRY_IOAPIC_INT_OVERRIDE) {
+            ioapic_int_src_override_t *src = (ioapic_int_src_override_t *)record;
+            if (src->irq_source == irq) {
+                return src->global_sys_interrupt;
+            }
+        }
+        offset += record->record_length;
+    }
+
+    // Legacy IRQ number is gsi
+    return irq;
+}
+
 void init_apic_info(const struct MADT* madt) {
     for (size_t offset = 0x2c; offset < madt->sdt.length;) {
         struct MADT_record* record = (struct MADT_record*)((uint8_t*)madt + offset);
@@ -84,16 +133,18 @@ void init_apic_info(const struct MADT* madt) {
             struct proc_lapic* lapic = (struct proc_lapic*)record;
             if (lapic->flags & 0x3) {
                 core_count++;
+                if (local_apic_index >= core_count) {
+                    kerror(INFO "ACPI: cores exceed local APIC IDs list");
+                }
                 local_apic_ID[local_apic_index++] = lapic->apic_id;
                 // kprintf("ACPI: Lapic %x detected\n", lapic->apic_id);
             }
         } else if (type == ENTRY_IO_APIC) {
-            struct io_apic* io_apic = (struct io_apic*)record;
-            io_apic_addr = io_apic->io_apic_address;
-            io_apic_ID[io_apic_index++] = io_apic->io_apic_id;
-        } else if (type == ENTRY_INT_OVERRIDE) {
-            // struct int_src_override* override = (struct int_src_override*)record;
-            // kprintf("ACPI: ENTRY_INT_OVERRIDE: %x\n", override->global_sys_interrupt);
+            io_apic_t *ioapic = (io_apic_t *)record;
+            if (io_apic_index >= IOAPIC_NUM_DEVS) {
+                kerror(INFO "ACPI: I/O APIC devices exceed I/O APIC device list");
+            }
+            ioapics[io_apic_index++] = ioapic;
         }
         
         offset += record->record_length;
@@ -111,20 +162,6 @@ uint64_t find_lapic_addr(const struct MADT* madt) {
         offset += record->record_length;
     }
     return madt->local_interrupt_ctrl_addr;
-}
-
-uint64_t acpi_find_ioapic_addr(const struct MADT *madt) {
-    for (size_t offset = 0x2c; offset < madt->sdt.length;) {
-        struct MADT_record *record = (struct MADT_record *)((uint8_t *)madt + offset);
-        if (record->entry_type == ENTRY_IO_APIC) {
-            struct io_apic *io_apic = (struct io_apic *)record;
-            kprintf("gsi: %x\n", io_apic->global_sys_interrupt_base);
-            return io_apic->io_apic_address;
-        }
-
-        offset += record->record_length;
-    }
-    return 0;
 }
 
 void* find_sdt(const char* sig) {
@@ -169,6 +206,21 @@ static bool init_dev_hpet() {
     return true;
 }
 
+static void init_devs_ioapic() {
+    for (size_t offset = 0x2c; offset < madt->sdt.length;) {
+        struct MADT_record *record = (struct MADT_record *)((uint8_t *)madt + offset);
+        if (record->entry_type == ENTRY_IO_APIC) {
+            struct io_apic *io_apic = (struct io_apic *)record;
+            mmio_dev_t dev_ioapic = {
+                .addr = io_apic->io_apic_address,
+                .size_bytes = 4096
+            };
+            add_mmio_device(dev_ioapic);
+        }
+        offset += record->record_length;
+    }
+}
+
 static bool init_madt_devices() {
     madt = find_sdt("APIC");
     if (!madt || !verify_checksum((const uint8_t*)madt, madt->sdt.length)) {
@@ -176,26 +228,19 @@ static bool init_madt_devices() {
     }
 
     lapic_addr = find_lapic_addr(madt);
-    io_apic_addr = acpi_find_ioapic_addr(madt);
-
-    if (!lapic_addr || !io_apic_addr) {
+    if (!lapic_addr) {
         return false;
     }
 
     init_apic_info(madt);
+    init_devs_ioapic();
 
     mmio_dev_t dev_hpet = {
         .addr = lapic_addr,
         .size_bytes = 4096
     };
 
-    mmio_dev_t dev_ioapic = {
-        .addr = io_apic_addr,
-        .size_bytes = 4096
-    };
-
     add_mmio_device(dev_hpet);
-    add_mmio_device(dev_ioapic);
 
     return true;
 }

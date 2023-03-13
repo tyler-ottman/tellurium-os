@@ -8,11 +8,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define MMIO_NUM_DEVS 10
+#define MMIO_NUM_DEVS               20
+#define IOAPIC_NUM_DEVS             10
+#define LAPIC_NUM_DEVS              128
 
 #define ENTRY_LAPIC                 0
 #define ENTRY_IO_APIC               1
-#define ENTRY_INT_OVERRIDE          2
+#define ENTRY_IOAPIC_INT_OVERRIDE   2
 #define LOCAL_APIC_ADDR_OVERRIDE    5
 
 #define UNALIGNED_LAPIC "ACPI: Unaligned lapic register\n"
@@ -89,21 +91,21 @@ struct proc_lapic {
     uint32_t flags;
 } __attribute__ ((packed));
 
-struct io_apic {
+typedef struct io_apic {
     struct MADT_record metadata;
     uint8_t io_apic_id;
     uint8_t reserved;
     uint32_t io_apic_address;
     uint32_t global_sys_interrupt_base;
-} __attribute__ ((packed));
+} __attribute__ ((packed)) io_apic_t;
 
-struct int_src_override {
+typedef struct ioapic_int_src_override {
     struct MADT_record metadata;
     uint8_t bus;
-    uint8_t source;
+    uint8_t irq_source;
     uint32_t global_sys_interrupt;
     uint16_t flags;
-} __attribute__ ((packed));
+} __attribute__ ((packed)) ioapic_int_src_override_t;
 
 struct local_apic_addr_override {
     struct MADT_record metadata;
@@ -128,15 +130,17 @@ struct MADT* get_madt(void);
 bool acpi_hpet_present(void);
 uint32_t *get_lapic_addr(void);
 uint32_t *get_hpet_addr(void);
-uint32_t *get_ioapic_addr(void);
 uint32_t *get_lapic_ids(void);
+io_apic_t **acpi_get_ioapics(void);
+size_t acpi_get_num_ioapics(void);
+int acpi_get_gsi_base(uint32_t *ioapic_addr);
 
 size_t get_core_count(void);
 mmio_dev_info_t get_dev_info(void);
 bool is_xsdt(const struct RSDP *rsdp);
 bool verify_checksum(const uint8_t *data, size_t num_bytes);
 void init_apic_info(const struct MADT *madt);
-uint64_t acpi_find_ioapic_addr(const struct MADT *madt);
+int acpi_irq_to_gsi(int irq);
 uint64_t find_lapic_addr(const struct MADT *madt);
 
 void* find_sdt(const char *sig);

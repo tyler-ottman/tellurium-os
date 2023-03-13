@@ -39,27 +39,53 @@ typedef struct ioapic_version {
 }__attribute__ ((__packed__)) ioapic_version_t;
 
 static spinlock_t ioapic_lock = 0;
-static uint32_t *ioapic_addr = NULL;
+// static uint32_t *ioapic_addr = NULL;
 
-static void ioapic_select_reg(uint8_t offset) {
+static uint32_t *ioapic_get_addr(size_t irq) {
+    int gsi = acpi_irq_to_gsi(irq); // Get corresponding gsi from IRQ
+    
+    struct MADT *madt = get_madt();
+    if (!madt) {
+        return NULL;
+    }
+
+    io_apic_t **ioapics = acpi_get_ioapics();
+    for (size_t i = 0; i < acpi_get_num_ioapics(); i++) {
+        io_apic_t *ioapic = ioapics[i];
+        uint32_t *ioapic_addr = (uint32_t *)(uint64_t)ioapic->io_apic_address;
+        uint32_t ioapic_ver = ioapic_read(ioapic_addr, IOAPIC_VER);
+        ioapic_version_t *ver = (ioapic_version_t *)&ioapic_ver;
+
+        // Desired GSI resides in selected I/O APIC
+        int gsi_b = ioapic->global_sys_interrupt_base;
+        int gsi_max = ver->max_red_entry;
+        if (gsi >= gsi_b && gsi <= gsi_max) {
+            return ioapic_addr;
+        }
+    }
+
+    return NULL;
+}
+
+static void ioapic_select_reg(uint32_t *ioapic_addr, uint8_t offset) {
     uint64_t base = (uint64_t)ioapic_addr + IOAPIC_REGSEL;
     *((volatile uint32_t *)base) = offset;
 }
 
-void ioapic_write(uint8_t offset, uint32_t val) {
+void ioapic_write(uint32_t *ioapic_addr, uint8_t offset, uint32_t val) {
     spinlock_acquire(&ioapic_lock);
     
-    ioapic_select_reg(offset);
+    ioapic_select_reg(ioapic_addr, offset);
     uint64_t base = (uint64_t)ioapic_addr + IOAPIC_IOWIN;
     *((volatile uint32_t *)base) = val;
 
     spinlock_release(&ioapic_lock);
 }
 
-uint32_t ioapic_read(uint8_t offset) {
+uint32_t ioapic_read(uint32_t *ioapic_addr, uint8_t offset) {
     spinlock_acquire(&ioapic_lock);
     
-    ioapic_select_reg(offset);
+    ioapic_select_reg(ioapic_addr, offset);
     uint64_t base = (uint64_t)ioapic_addr + IOAPIC_IOWIN;
     uint32_t data = *((volatile uint32_t *)base);
     
@@ -67,57 +93,48 @@ uint32_t ioapic_read(uint8_t offset) {
     return data;
 }
 
-static bool ioapic_read_redtab(int entry, redtab_t *redtab) {
+static bool ioapic_read_redtab(uint32_t *ioapic_addr, int entry, redtab_t *redtab) {
     if (entry >= 24 || entry < 0) {
         return false;
     }
 
     uint32_t offset = IOAPIC_REDTAB_ENTRY(entry);
-    uint64_t reg = ((uint64_t)ioapic_read(offset + 1) << 32) | ioapic_read(offset);
+    uint32_t low = ioapic_read(ioapic_addr, offset);
+    uint32_t high = ioapic_read(ioapic_addr, offset + 1);
+    uint64_t reg = ((uint64_t)high << 32) | low;
 
     __memcpy(redtab, &reg, 8);
 
     return true;
 }
 
-static bool ioapic_write_redtab(int entry, redtab_t *redtab) {
+static bool ioapic_write_redtab(uint32_t *ioapic_addr, int entry, redtab_t *redtab) {
     if (entry >= 24 || entry < 0) {
         return false;
     }
     
     uint32_t offset = IOAPIC_REDTAB_ENTRY(entry);
     uint64_t reg = *((uint64_t *)redtab);
-    ioapic_write(offset + 1, reg >> 32);
-    ioapic_write(offset, (uint32_t)reg);
+    ioapic_write(ioapic_addr, offset + 1, reg >> 32);
+    ioapic_write(ioapic_addr, offset, (uint32_t)reg);
 
     return true;
 }
 
-void ioapic_map_irq(uint8_t apic_id, bool mask, uint8_t delivery, uint8_t vector) {
-    redtab_t redtab_keyboard;
+void ioapic_map_irq(uint32_t irq, uint8_t apic_id, bool mask, uint8_t delivery, uint8_t vector) {
+    // Get I/O APIC address legacy irq
+    uint32_t *ioapic_addr = ioapic_get_addr(irq);
+    if (!ioapic_addr) {
+        kerror(INFO "IOAPIC: ioapic not found\n");
+    }
 
-    ioapic_read_redtab(IOAPIC_KEYBOARD_ENTRY, &redtab_keyboard);
+    redtab_t redtab_keyboard;
+    int irq_redtab_entry = acpi_irq_to_gsi(irq) - acpi_get_gsi_base(ioapic_addr);
+    ioapic_read_redtab(ioapic_addr, irq_redtab_entry, &redtab_keyboard);
     redtab_keyboard.destination_field = apic_id;
     redtab_keyboard.interrupt_mask = mask;
     redtab_keyboard.destination_mode = 0;
     redtab_keyboard.delivery_mode = delivery;
     redtab_keyboard.vector = vector;
-    ioapic_write_redtab(IOAPIC_KEYBOARD_ENTRY, &redtab_keyboard);
-}
-
-void init_ioapic() {
-    ioapic_addr = get_ioapic_addr();
-    if (!ioapic_addr) {
-        kerror(INFO "IOAPIC: ioapic address undefined\n");
-    }
-
-    kprintf("ioapic address: %x\n", ioapic_addr);
-    uint32_t reg_version = ioapic_read(IOAPIC_VER);
-    ioapic_version_t *ver = (ioapic_version_t *)&reg_version;
-
-    kprintf("max entry: %x\n", ver->max_red_entry);
-
-    // Arbitrarily choose last APIC ID to send keyboard IRQs
-    uint32_t *apic_ids = get_lapic_ids();
-    ioapic_map_irq(apic_ids[get_core_count() - 1], true, 0, allocate_vector());
+    ioapic_write_redtab(ioapic_addr, irq_redtab_entry, &redtab_keyboard);
 }
