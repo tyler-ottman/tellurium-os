@@ -1,4 +1,5 @@
 #include <acpi/acpi.h>
+#include <arch/cpu.h>
 #include <arch/idt.h>
 #include <arch/lock.h>
 #include <arch/terminal.h>
@@ -121,13 +122,14 @@ static bool ioapic_write_redtab(uint32_t *ioapic_addr, int entry, redtab_t *redt
     return true;
 }
 
-void ioapic_map_irq(uint32_t irq, uint8_t apic_id, bool mask, uint8_t delivery, uint8_t vector) {
+void ioapic_map_irq(uint32_t irq, uint8_t apic_id, bool mask, uint8_t delivery, uint8_t vector, void *gate_entry, uint8_t flags) {
     // Get I/O APIC address legacy irq
     uint32_t *ioapic_addr = ioapic_get_addr(irq);
     if (!ioapic_addr) {
         kerror(INFO "IOAPIC: ioapic not found\n");
     }
 
+    // Redirect IRQ to IDT vector
     redtab_t redtab_keyboard;
     int irq_redtab_entry = acpi_irq_to_gsi(irq) - acpi_get_gsi_base(ioapic_addr);
     ioapic_read_redtab(ioapic_addr, irq_redtab_entry, &redtab_keyboard);
@@ -137,4 +139,6 @@ void ioapic_map_irq(uint32_t irq, uint8_t apic_id, bool mask, uint8_t delivery, 
     redtab_keyboard.delivery_mode = delivery;
     redtab_keyboard.vector = vector;
     ioapic_write_redtab(ioapic_addr, irq_redtab_entry, &redtab_keyboard);
+
+    add_descriptor(vector, gate_entry, flags);
 }

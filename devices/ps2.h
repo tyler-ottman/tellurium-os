@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+void ps2_handler(ctx_t* ctx);
+void ps2_write(uint8_t port, uint8_t value);
+uint8_t ps2_read_config(void);
+void ps2_write_config(uint8_t value);
+uint8_t ps2_read(uint8_t port);
 void init_ps2(void);
 
 #endif // PS2_H

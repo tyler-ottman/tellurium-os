@@ -1,5 +1,6 @@
 extern lapic_time_handler
 extern lapic_ipi_handler
+extern ps2_handler
 extern exception_handler
 
 %macro save_context 0
@@ -89,4 +90,16 @@ ISR_IPI:
     mov rdi, rsp
     xor rbp, rbp
     call lapic_ipi_handler
+    iret
+
+global ISR_ps2
+ISR_ps2:
+    sub rsp, 8
+    save_context
+
+    load_kernel_data
+
+    mov rdi, rsp
+    xor rbp, rbp
+    call ps2_handler
     iret

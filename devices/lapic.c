@@ -39,7 +39,7 @@ void lapic_time_handler(ctx_t* ctx) {
         __memcpy(&current_thread->context, ctx, sizeof(ctx_t));
     }
     
-    kprintf(MAGENTA"Timer Handle\n");
+    // kprintf(MAGENTA"Timer Handle\n");
 
     schedule_next_thread();
 }

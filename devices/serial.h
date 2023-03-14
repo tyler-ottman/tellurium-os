@@ -4,6 +4,8 @@
 #define PIT_COUNTER1        0x41
 #define PIT_COUNTER2        0x42
 #define PIT_CONTROL_WORD    0x43
+#define PS2_DATA_REG        0x60
+#define PS2_CMD_STATUS_REG  0x64
 #define COM1        0x3F8
 
 #define WRITE_SERIAL(str) {                 \
