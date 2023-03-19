@@ -10,12 +10,12 @@
 extern void *ISR_ps2[];
 
 void ps2_handler(ctx_t *ctx) {
-    // disable_interrupts();
-    kprintf("%c", inb(PS2_DATA_REG));
-
+    uint8_t c = inb(PS2_DATA_REG);
+    if (c < 0x80) {
+        kprintf("%c", inb(PS2_DATA_REG));
+    }
     struct core_local_info* cpu_info = get_core_local_info();
     thread_t *current_thread = cpu_info->current_thread;
-    // kprintf("thread: %x\n", current_thread);
     if (current_thread) {
         __memcpy(&current_thread->context, ctx, sizeof(ctx_t));
     }
@@ -66,6 +66,7 @@ void init_ps2() {
 
     // Arbitrarily choose first APIC ID to send keyboard IRQs
     uint32_t *apic_ids = get_lapic_ids();
-    ioapic_map_irq(1, apic_ids[get_core_count() - 1], false, 0, allocate_vector(), ISR_ps2, 0x8e);
-    enable_interrupts();
+    ioapic_map_irq(1, apic_ids[0], false, 0, allocate_vector(), ISR_ps2, 0x8e);
+    // ioapic_map_irq(1, apic_ids[get_core_count() - 1], false, 0, allocate_vector(), ISR_ps2, 0x8e);
+    inb(0x60);
 }

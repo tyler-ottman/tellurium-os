@@ -93,6 +93,7 @@ void init_cpu(void) {
     kprintf(INFO GREEN "SMP: All cores online\n");
 
     core_init(smp_response->cpus[bsp_id]);
+
     schedule_next_thread();
 }
 

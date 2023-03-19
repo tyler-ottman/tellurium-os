@@ -70,7 +70,6 @@ void add_thread_to_queue(thread_t* thread) {
 
 void thread_entry(thread_t* thread) {
     struct core_local_info* cpu_info = get_core_local_info();
-    set_thread_local(thread);
     
     cpu_info->current_thread = thread;
     set_thread_local(cpu_info->current_thread);
@@ -87,8 +86,7 @@ void thread_switch(struct core_local_info* cpu_info) {
     struct pagemap* map = cpu_info->current_thread->parent->pmap;
     uint64_t* pml4 = map->pml4_base;
     pml4 = (uint64_t*)((uint64_t)pml4 - KERNEL_HHDM_OFFSET);
-
-    lapic_schedule_time(1000000);
+    lapic_schedule_time(1000);
 
     __asm__ volatile(
         "mov %0, %%rsp\n\t"

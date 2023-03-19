@@ -94,7 +94,7 @@ void init_lapic() {
     
     // Software enable local APIC
     lapic_enable();
-    enable_interrupts();
+    // enable_interrupts();
     
     // Add IDT entry for timer interrupts
     uint8_t timer_vector = allocate_vector();

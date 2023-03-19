@@ -141,4 +141,5 @@ void ioapic_map_irq(uint32_t irq, uint8_t apic_id, bool mask, uint8_t delivery, 
     ioapic_write_redtab(ioapic_addr, irq_redtab_entry, &redtab_keyboard);
 
     add_descriptor(vector, gate_entry, flags);
+    set_vector_ist(vector, 1);
 }
