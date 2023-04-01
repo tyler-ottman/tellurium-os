@@ -19,7 +19,7 @@
 #include <stddef.h>
 
 #include <libc/string.h>
-
+#include <libc/doubly_linked_list.h>
 void init_system() {
     init_kterminal();
     init_gdt();
@@ -44,4 +44,10 @@ void _start(void) {
     kprintf(INFO GREEN "Kernel: Initialized\n");
 
     done();
+}
+
+void kmain(void *param) {
+    kprintf(INFO "kmain: init complete\n");
+
+    while(1) {}
 }
