@@ -17,6 +17,7 @@ uint16_t fb_get_bpp(void);
 uint64_t fb_get_pitch(void);
 void fb_load_buffer(terminal_t *term);
 void newline(terminal_t* term);
+void backspace(terminal_t *term);
 void scroll_screen(terminal_t* term);
 void drawchar(terminal_t* terminal, char c);
 void draw_cursor(terminal_t* term, uint32_t color);

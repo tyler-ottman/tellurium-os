@@ -62,10 +62,18 @@ void newline(terminal_t* term) {
     term->h_cursor = 0;
 }
 
+void backspace(terminal_t *term) {
+    if (term->h_cursor == 0 && term->v_cursor != 0) {
+        term->v_cursor--;
+    } else if (term->h_cursor != 0) {
+        term->h_cursor--;
+    }
+}
+
 void clear_screen(terminal_t *term) {
     for (size_t i = 0; i < framebuffer->height; i++) {
         for (size_t j = 0; j < framebuffer->width; j++) {
-            term->buffer[framebuffer->width * i + j] = RESET_COLOR;
+            term->buffer[framebuffer->width * i + j] = term->bg_color_default;
         }
     }
 }
@@ -83,7 +91,7 @@ void scroll_screen(terminal_t* term) {
     // Clear last line
     for (size_t i = 0; i < term->h_font_px; i++) {
         for (size_t j = 0; j < term->w_term_px; j++) {
-            term->buffer[px_base + j] = RESET_COLOR;
+            term->buffer[px_base + j] = term->bg_color_default;
         }
         px_base += term->w_fb_px;
     }

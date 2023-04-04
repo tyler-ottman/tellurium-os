@@ -115,8 +115,8 @@ void no_change_text_attribute(terminal_t* terminal) {}
 
 void reset_text_attribute(terminal_t* terminal) {
     terminal->ansi_state = PROCESS_NORMAL;
-    terminal->fg_color = FG_COLOR_DEFAULT;
-    terminal->bg_color = BG_COLOR_DEFAULT;
+    terminal->fg_color = terminal->fg_color_default;
+    terminal->bg_color = terminal->bg_color_default;
 }
 
 static inline bool num_in_byte_bounds(int n) {
@@ -261,8 +261,8 @@ static void terminal_parse_ansi(terminal_t* terminal) {
 static void terminal_printf(terminal_t* terminal, const char* buf) {
     const char* start = buf;
 
-    draw_cursor(terminal, RESET_COLOR);
-    
+    draw_cursor(terminal, terminal->bg_color);
+
     while (*buf) {
         if (terminal->is_ansi_state) {
             char next_ansi[2] = {*buf, '\0'};
@@ -280,6 +280,11 @@ static void terminal_printf(terminal_t* terminal, const char* buf) {
         } else {
             switch (*buf) {
             case '\b':
+                if (terminal->h_cursor == 0 && terminal->v_cursor != 0) {
+                    terminal->v_cursor--;
+                } else if (terminal->h_cursor != 0) {
+                    terminal->h_cursor--;
+                }
                 break;
             case '\033':
                 terminal->is_ansi_state = true;
@@ -290,6 +295,9 @@ static void terminal_printf(terminal_t* terminal, const char* buf) {
             case '\r':
                 break;
             case '\t':
+                for (int i = 0; i < 4; i++) {
+                    drawchar(terminal, ' ');
+                }
                 break;
             case '\v':
                 break;
@@ -302,7 +310,7 @@ static void terminal_printf(terminal_t* terminal, const char* buf) {
         buf++;
     }
 
-    draw_cursor(terminal, CURSOR_COLOR);
+    draw_cursor(terminal, terminal->cursor_color);
 
     if (terminal->is_double_buffer) {
         fb_load_buffer(terminal);
@@ -318,7 +326,7 @@ int kprintf(const char* format, ...) {
     va_end(valist);
     ASSERT(err != -1);
 
-    reset_text_attribute(&kterminal);
+    // reset_text_attribute(&kterminal);
 
     spinlock_acquire(&kprint_lock);
     terminal_printf(&kterminal, buf);
@@ -354,6 +362,8 @@ static terminal_t *alloc_terminal_internal(
     uint32_t h_font,
     uint64_t w_term_px,
     uint64_t h_term_px,
+    uint64_t fg_color_default,
+    uint64_t bg_color_default,
     bool use_raw_fb
 ) {
     if (!term) {
@@ -377,8 +387,11 @@ static terminal_t *alloc_terminal_internal(
 
     term->w_fb_px = fb_get_pitch() / (fb_get_bpp() / 8);
     term->is_double_buffer = !use_raw_fb;
-    term->fg_color = FG_COLOR_DEFAULT;
-    term->bg_color = BG_COLOR_DEFAULT;
+    term->fg_color_default = fg_color_default;
+    term->bg_color_default = bg_color_default;
+    term->fg_color = term->fg_color_default;
+    term->bg_color = term->bg_color_default;
+    term->cursor_color = CURSOR_COLOR;
     term->apply_to_fg = false;
     term->is_ansi_state = false;
     term->ansi_state = PROCESS_NORMAL;
@@ -409,7 +422,9 @@ void init_kterminal() {
 
     apply_set_attribute[SET_RESET] = reset_text_attribute;
 
-    alloc_terminal_internal(&kterminal, 8, 14, fb_get_width(), fb_get_height(), true);
+    alloc_terminal_internal(&kterminal, 8, 14, fb_get_width(), fb_get_height(), FG_COLOR_DEFAULT, BG_COLOR_DEFAULT, true);
+
+    clear_screen(&kterminal);
 
     // print_color_palette();
 }

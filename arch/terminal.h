@@ -51,9 +51,13 @@ typedef struct terminal {
     uint64_t h_term_px;
     uint64_t w_term_px;
     uint64_t w_fb_px;
+    uint32_t *line_last_char;
 
+    uint32_t fg_color_default;
+    uint32_t bg_color_default;
     uint32_t fg_color;
     uint32_t bg_color;
+    uint32_t cursor_color;
     uint64_t apply_to_fg;               // Internal sgr flag
     uint64_t is_ansi_state;
     uint64_t ansi_state;
