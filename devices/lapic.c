@@ -41,6 +41,10 @@ void lapic_time_handler(ctx_t* ctx) {
     
     // kprintf(MAGENTA"Timer Handle\n");
 
+    if (cpu_info->idle_thread != cpu_info->current_thread) {
+        schedule_add_thread(cpu_info->current_thread);
+    }
+
     schedule_next_thread();
 }
 
@@ -52,8 +56,14 @@ void lapic_ipi_handler(ctx_t* ctx) {
     if (current_thread) {
         __memcpy(&current_thread->context, ctx, sizeof(ctx_t));
     }
-    
-    kprintf(MAGENTA"IPI Handle\n");
+
+    if (current_thread->state == ZOMBIE) { // Thread completed execution, terminate
+        thread_destroy(current_thread);
+    } else { // Add thread back to queue
+        schedule_add_thread(current_thread);
+    }
+
+    // kprintf(MAGENTA"IPI Handle\n");
 
     schedule_next_thread();
 }
@@ -119,9 +129,13 @@ void lapic_schedule_time(uint64_t us) {
     enable_interrupts();
 }
 
-void lapic_send_ipi(uint32_t lapic_id, uint32_t vector) {
+void lapic_send_ipi(uint32_t lapic_id, uint32_t vector) {    
     lapic_write(LAPIC_ICR1, lapic_id << 24);
     lapic_write(LAPIC_ICR0, vector); // Writing to lower half invokes IPI
+    
+    for (;;) {
+        __asm__ volatile ("pause");
+    }
 }
 
 void lapic_lvt_set_vector(uint32_t lvt, uint8_t vector) {

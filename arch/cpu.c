@@ -16,6 +16,8 @@ static volatile struct limine_smp_request kernel_smp_request = {
     .revision = 0
 };
 
+extern void kmain(void);
+
 static spinlock_t init_lock = 0;
 
 // Halt CPU activity
@@ -90,9 +92,13 @@ void init_cpu(void) {
         __asm__ volatile ("pause");
     }
 
+    core_init(smp_response->cpus[bsp_id]);
+
     kprintf(INFO GREEN "SMP: All cores online\n");
 
-    core_init(smp_response->cpus[bsp_id]);
+    void *kmain_entry = (void *)((uint64_t)kmain);
+    thread_t *thread_kmain = (thread_t *)create_kernel_thread(kmain_entry, NULL);
+    schedule_add_thread(thread_kmain);
 
     schedule_next_thread();
 }
@@ -138,11 +144,12 @@ void core_init(struct limine_smp_info* core) {
     // LAPIC Timer IDT Entry uses stack stored in IST1
     set_vector_ist(cpu_info->lapic_timer_vector, 1);
 
+    // LAPIC IPI IDT Entry
+    set_vector_ist(cpu_info->lapic_ipi_vector, 1);
+
     spinlock_acquire(&init_lock);
     cores_ready++;
     spinlock_release(&init_lock);
-
-    // lapic_send_ipi(cpu_info->lapic_id, cpu_info->lapic_ipi_vector);
 
     if (core->lapic_id != bsp_id) {
         schedule_next_thread();

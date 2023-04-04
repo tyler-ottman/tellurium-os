@@ -5,6 +5,8 @@
 #include <libc/vector.h>
 #include <memory/pmm.h>
 
+extern void thread_wrapper(struct core_local_info *cpu_info);
+
 static spinlock_t tid_lock = 0;
 static uint32_t cur_tid = 1;
 
@@ -89,17 +91,20 @@ thread_t* create_kernel_thread(void* entry, void* param) {
     ctx_t* context = &thread->context;
     __memset(context, 0, sizeof(ctx_t));
     context->ds = GDT_KERNEL_DATA;
-    context->rdi = (uint64_t)param;
-    context->rip = (uint64_t)entry;
+    context->rsi = (uint64_t)param;
+    context->rdi = (uint64_t)entry;
+    context->rip = (uint64_t)thread_wrapper;
+
     context->cs = GDT_KERNEL_CODE;
     context->rflags = RFLAGS_RESERVED_MASK | RFLAGS_INTERRUPT_MASK;
     context->rsp = (uint64_t)thread->thread_sp;
     context->ss = GDT_KERNEL_DATA;
 
     thread->state = CREATED;
+    thread->isKernel = true;
 
-    thread->next = NULL;
     thread->prev = NULL;
+    thread->next = NULL;
 
     return thread;
 }

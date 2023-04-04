@@ -84,6 +84,10 @@ void ps2_handler(ctx_t *ctx) {
         __memcpy(&current_thread->context, ctx, sizeof(ctx_t));
     }
     
+    if (cpu_info->idle_thread != cpu_info->current_thread) {
+        schedule_add_thread(cpu_info->current_thread);
+    }
+
     lapic_eoi();
     schedule_next_thread();
 }

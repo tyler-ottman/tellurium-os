@@ -3,6 +3,7 @@
 
 #include <arch/cpu.h>
 #include <libc/vector.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #define KERNEL_PROCESS_ID       0
@@ -47,9 +48,10 @@ typedef struct tcb {
     uint64_t* fs_base;
     uint32_t state;
     uint32_t time_slice;
+    bool isKernel;
 
-    struct tcb* next;
-    struct tcb* prev;
+    struct tcb *prev;
+    struct tcb *next;
 } thread_t;
 
 struct pcb* get_kernel_process(void);
@@ -59,5 +61,6 @@ thread_t* alloc_idle_thread(void);
 thread_t* create_kernel_thread(void* entry, void* param);
 thread_t* get_idle_thread(void);
 uint32_t get_new_tid(void);
+void thread_destroy(thread_t *thread);
 
 #endif // PROCESS_H
