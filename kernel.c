@@ -17,9 +17,8 @@
 #include <memory/vmm.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <vfs/vfs.h>
 
-#include <libc/string.h>
-#include <libc/doubly_linked_list.h>
 void init_system() {
     init_kterminal();
     init_gdt();
@@ -47,7 +46,6 @@ void _start(void) {
 }
 
 void kmain(void *param) {
+    vfs_init();
     kprintf(INFO "kmain: init complete\n");
-
-    while(1) {}
 }
