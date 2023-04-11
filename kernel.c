@@ -47,5 +47,7 @@ void _start(void) {
 
 void kmain(void *param) {
     vfs_init();
+
+    vfs_create(vfs_get_root(), "/proc");
     kprintf(INFO "kmain: init complete\n");
 }
