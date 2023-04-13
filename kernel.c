@@ -53,7 +53,7 @@ void kmain(void *param) {
     
     vfs_create(vfs_get_root(), "/tmp");
     vfs_mount(vfs_get_root(), "/tmp", "tmpfs");
-
+    
     // vfs_create(vfs_get_root(), "/mnt");
     // vfs_create(vfs_get_root(), "/proc");
     // vfs_print_tree(vfs_get_root(), 4);
