@@ -17,7 +17,8 @@
 #include <memory/vmm.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <vfs/vfs.h>
+#include <fs/tmpfs.h>
+#include <fs/vfs.h>
 
 void init_system() {
     init_kterminal();
@@ -48,6 +49,13 @@ void _start(void) {
 void kmain(void *param) {
     vfs_init();
 
-    vfs_create(vfs_get_root(), "/proc");
+    tmpfs_init();
+    
+    vfs_create(vfs_get_root(), "/tmp");
+    vfs_mount(vfs_get_root(), "/tmp", "tmpfs");
+
+    // vfs_create(vfs_get_root(), "/mnt");
+    // vfs_create(vfs_get_root(), "/proc");
+    // vfs_print_tree(vfs_get_root(), 4);
     kprintf(INFO "kmain: init complete\n");
 }

@@ -10,7 +10,7 @@ static inline bool index_in_bounds(struct vector* vector, int n) {
 void vector_alloc(struct vector* vector) {
     vector->cur_elements = 0;
     vector->max_elements = VECTOR_INIT_SIZE;
-    vector->elements = kmalloc(vector->max_elements);
+    vector->elements = kmalloc(vector->max_elements * sizeof(void *));
 }
 
 void vector_free(struct vector* vector) {

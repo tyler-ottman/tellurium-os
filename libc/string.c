@@ -60,6 +60,20 @@ const char* __strchr(const char* str, int c) {
     return (*str == c) ? str : NULL;
 }
 
+const char *__strncpy(char *dest, const char *src, size_t n) {
+    if (!dest) {
+        return NULL;
+    }
+
+    char *start = dest;
+    while (*src && n--) {
+        *dest++ = *src++;
+    }
+
+    *dest = '\0';
+    return start;
+}
+
 size_t __strcspn(const char* str1, const char* str2) {
     size_t len = 0;
     if (!str1 || !str2) {
@@ -83,6 +97,19 @@ size_t __strlen(const char* str) {
     while(*str != '\0')
         str++;
     return (size_t)(str - start);
+}
+
+size_t __strncmp(const char *str1, const char *str2, size_t n) {
+    if (n == 0) {
+        return 0;
+    }
+
+    for (; n != 0; n--) {
+        if (*str1++ != *str2++) {
+            return (*--str1 - *--str2);
+        }
+    }
+    return 0;
 }
 
 size_t __strspn(const char* str1, const char* str2) {

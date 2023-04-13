@@ -9,7 +9,7 @@
 #define VECTOR_CLEAR(vec) vector_clear(&vec)
 #define VECTOR_FREE(vec) vector_free(&vec)
 #define VECTOR_GET(vec, n) vector_get(&vec, n)
-#define VECTOR_PUSH_BACK(vec, val) vector_push_back(&vec, (void*)val)
+#define VECTOR_PUSH_BACK(vec, val) vector_push_back(&(vec), (void*)val)
 #define VECTOR_POP_BACK(vec) vector_pop_back(&vec)
 #define VECTOR_REMOVE(vec, n) vector_remove(&vec, n)
 #define VECTOR_RESIZE(vec, n) vector_resize(&vec, n)

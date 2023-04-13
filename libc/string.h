@@ -10,6 +10,8 @@ char* __strcat(char* dest, char* src);
 const char* __strchr(const char* str, int c);
 size_t __strcspn(const char* str1, const char* str2);
 size_t __strlen(const char* start);
+size_t __strncmp(const char *str1, const char *str2, size_t n);
+const char *__strncpy(char *dest, const char *src, size_t n);
 size_t __strspn(const char* str1, const char* str2);
 char* __strtok(char* str, const char* del);
 void* __memset(void* base, unsigned char val, size_t len);
