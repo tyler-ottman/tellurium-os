@@ -4,6 +4,8 @@
 #include <libc/string.h>
 #include <fs/vfs.h>
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 static spinlock_t vfs_lock = 0;
 static vnode_t *v_root;
 
@@ -59,68 +61,51 @@ static int v_get_leaf_name(char *leaf_name, const char *path) {
     return 1;
 }
 
-static vnode_t *vnode_from_path(vnode_t *v_base, const char *path) {
-    // Prune and verify base vnode
-    int index = 0;
-    for (size_t i = 0; i < __strlen(path); i++) {
-        if (path[i] == '/') {
-            index = i;
-            break;
-        }
+static vnode_t *vfs_path_to_node(vnode_t *v_base, char *path) {
+    if (__strlen(path) == 0) {
+        return v_base == v_root ? v_root : NULL;
     }
 
-    // First directory in path doesn't match base vnode's name
-    if (__strncmp(v_base->v_name, path, index) != 0) {
+    if (*path == '/' && v_base != v_root) {
         return NULL;
     }
 
-    if (__strlen(path) == 0) {
-        return ((v_base == v_root) ? v_root : NULL);
+    // Skip over first directory
+    char *tok;
+    if (*path != '/') {
+        tok = __strtok_r(path, "/", &path);
+        int len = MAX(__strlen(tok), __strlen(v_base->v_name));
+        if (__strncmp(tok, v_base->v_name, len)) {
+            return NULL;
+        }
     }
 
     vnode_t *cur_vnode = v_base;
-    const char *path_base = path + ++index;
-
     for (;;) {
+        tok = __strtok_r(path, "/", &path);
+        
         // Path traversal complete, terminate
-        if (path_base >= (path + __strlen(path))) {
-            break;
+        if (!tok) {
+            break; 
         }
-
-        // Get next node name
-        char v_name[VNODE_NAME_MAX] = {0};
-        int index = 0;
-        for (size_t i = 0; i < __strlen(path_base); i++) {
-            if (path_base[i] == '/') {
-                index = i;
-                break;
-            }
-        }
-
-        // Last vnode in path
-        if (index == 0) {
-            index = __strlen(path_base);
-        }
-
-        __memcpy(v_name, path_base, index);
 
         // Check if name of child is present on current node
         vnode_t *next_child = NULL;
         int num_children = VECTOR_SIZE(cur_vnode->v_children);
         for (int i = 0; i < num_children; i++) {
             vnode_t *child = VECTOR_GET(cur_vnode->v_children, i);
-            if (__strncmp(v_name, child->v_name, __strlen(v_name)) == 0) {
+            int len = MAX(__strlen(tok), __strlen(child->v_name));
+            if ((__strlen(tok) == __strlen(child->v_name)) &&
+                (!__strncmp(tok, child->v_name, len))) {
                 next_child = VECTOR_GET(cur_vnode->v_children, i);
                 break;
             }
         }
 
-        if (next_child == NULL) {
+        if (!next_child) {
             return NULL; // TODO: create directories if they don't exist
         }
 
-        // Update path pointer and current vnode
-        path_base += __strlen(v_name) + 1;
         cur_vnode = next_child;
     }
 
@@ -148,6 +133,7 @@ vnode_t *vnode_create(vnode_t *parent, const char *v_name, int v_type) {
     node->v_type = v_type;
     node->v_mp = NULL;
     node->v_parent = parent;
+
     if (node->v_type == VDIR) {
         VECTOR_ALLOC(node->v_children);
     }
@@ -168,14 +154,13 @@ int vfs_create(vnode_t *v_base, const char *vfs_path) {
     if (!v_get_leaf_name(dir_name, vfs_path)) {
         goto vfs_create_fail;
     }
-
+    
     char v_parent_path[VNODE_NAME_MAX] = {0};
     __strncpy(v_parent_path, vfs_path, __strlen(vfs_path) - __strlen(dir_name) - 1);
-    vnode_t *v_parent = vnode_from_path(v_base, v_parent_path);
+    vnode_t *v_parent = vfs_path_to_node(v_base, v_parent_path);
     if (!v_parent) {
         goto vfs_create_fail;
     }
-
 
     vnode_t *node = vnode_create(v_parent, dir_name, VDIR);
     if (!node) {
@@ -206,7 +191,7 @@ vnode_t *vfs_mount(vnode_t *base, const char *path, const char *fs_name) {
     }
     
     // Get vnode where fs will be mounted
-    vnode_t *mountpoint = vnode_from_path(base, path);
+    vnode_t *mountpoint = vfs_path_to_node(base, (char *)path);
     if (!mountpoint || mountpoint->v_type != VDIR) {
         goto vfs_mount_fail;
     }
@@ -247,7 +232,9 @@ fs_t *vfs_get_filesystem(const char *fs_name) {
 int vfs_open(struct vnode **ret_vnode, vnode_t *base, const char *path) {
     spinlock_acquire(&vfs_lock);
 
-    vnode_t *vnode = vnode_from_path(base, path);
+    vnode_t *vnode = vfs_path_to_node(base, (char *)path);
+    
+    // Node not present in VFS, consult lower level FS to query existence of node
     if (vnode == NULL) {
         spinlock_release(&vfs_lock);
         return 0;

@@ -139,7 +139,7 @@ static void parse_sgr(terminal_t* terminal, char* sequence) {
         return;
     }
 
-    char *tok = __strtok(sequence, ";");
+    char *tok = __strtok_r(sequence, ";", &sequence);
     bool invalid_state;
     while (tok != NULL) {
         int n = __atoi(tok);
@@ -221,7 +221,7 @@ static void parse_sgr(terminal_t* terminal, char* sequence) {
 
                 color |= (n << (8 * (2 - i)));
 
-                tok = __strtok(NULL, ";");
+                tok = __strtok_r(NULL, ";", &sequence);
                 if (!tok && i) {
                     terminal->ansi_state = PROCESS_NORMAL;
                     invalid_state = true;
@@ -236,7 +236,7 @@ static void parse_sgr(terminal_t* terminal, char* sequence) {
             break;
         }
 
-        tok = __strtok(NULL, ";");
+        tok = __strtok_r(NULL, ";", &sequence);
     }
 }
 

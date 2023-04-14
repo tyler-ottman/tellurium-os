@@ -156,6 +156,36 @@ char* __strtok(char* str, const char* del) {
     return token;
 }
 
+// https://codebrowser.dev/glibc/glibc/string/strtok_r.c.html
+char *__strtok_r(char *str, const char *del, char **old_ptr) {
+    char *end;
+    if (str == NULL) {
+        str = *old_ptr;
+    }
+  
+    if (*str == '\0') {
+        *old_ptr = str;
+        return NULL;
+    }
+
+    str += __strspn(str, del);
+    if (*str == '\0') {
+        *old_ptr = str;
+        return NULL;
+    }
+
+    end = str + __strcspn(str, del);
+    if (*end == '\0') {
+        *old_ptr = end;
+        return str;
+    }
+  
+    *end = '\0';
+    *old_ptr = end + 1;
+  
+    return str;
+}
+
 void* __memset(void* base, unsigned char val, size_t len) {
     char* ptr = (char*)base;
     

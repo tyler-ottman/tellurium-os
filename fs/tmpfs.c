@@ -30,7 +30,8 @@ static int tmpfs_read(void *buff, vnode_t *node, size_t size, size_t offset) {
         size = node->stat.st_size - offset;
     }
 
-    __memcpy(buff, node->fs_data + offset, size);
+    uint64_t addr = (uint64_t)node->fs_data + offset;
+    __memcpy(buff, (void *)addr, size);
 
     return 1;
 }
@@ -48,7 +49,8 @@ static int tmpfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {
         node->stat.st_size = offset + size;
     }
 
-    __memcpy(node->fs_data + offset, buff, size);
+    uint64_t addr = (uint64_t)node->fs_data + offset;
+    __memcpy((void *)addr, buff, size);
     if (offset + size > node->stat.st_size) {
         node->stat.st_size = offset + size;
     }
@@ -59,7 +61,7 @@ static int tmpfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {
 static int tmpfs_create(vnode_t *node) {
     void *data = palloc(1);
     if (!data) {
-        return NULL;
+        return 0;
     }
 
     node->fs_data = data;
