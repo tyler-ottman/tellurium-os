@@ -140,8 +140,7 @@ void init_ps2() {
     // Arbitrarily choose first APIC ID to send keyboard IRQs
     uint32_t *apic_ids = get_lapic_ids();
     ioapic_map_irq(1, apic_ids[0], false, 0, allocate_vector(), ISR_ps2, 0x8e);
-    // ioapic_map_irq(1, apic_ids[get_core_count() - 1], false, 0, allocate_vector(), ISR_ps2, 0x8e);
     inb(0x60);
 
-
+    init_keyboard_state();
 }

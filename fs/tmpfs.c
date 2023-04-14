@@ -5,14 +5,15 @@
 #include <memory/pmm.h>
 
 static int tmpfs_mount(vnode_t *mp, vnode_t *device) {
-    vnode_t *tmpfs_root = vnode_create(mp, "tmpfs_root", VDIR);
-    if (!tmpfs_root) {
-        return 0;
-    }
+    // vnode_t *tmpfs_root = vnode_create(mp, "tmpfs_root", VDIR);
+    // if (!tmpfs_root) {
+    //     return 0;
+    // }
 
-    VECTOR_PUSH_BACK(tmpfs_root->v_parent->v_children, tmpfs_root);
-    tmpfs_root->v_mp = mp;
-    tmpfs_root->vfsops = get_tmpfs_ops();
+    // VECTOR_PUSH_BACK(tmpfs_root->v_parent->v_children, tmpfs_root);
+    // tmpfs_root->v_mp = mp;
+    // tmpfs_root->vfsops = get_tmpfs_ops();
+    mp->vfsops = get_tmpfs_ops();
 
     return 1;
 }
