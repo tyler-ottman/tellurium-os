@@ -62,6 +62,15 @@ static int v_get_leaf_name(char *leaf_name, const char *path) {
 }
 
 static vnode_t *vfs_path_to_node(vnode_t *v_base, char *path) {
+    if (__strlen(path) > VNODE_PATH_MAX) {
+        return NULL;
+    }
+
+    // Place path on stack
+    char buff[VNODE_PATH_MAX];
+    __strncpy(buff, path, __strlen(path));
+    path = buff;
+
     if (__strlen(path) == 0) {
         return v_base == v_root ? v_root : NULL;
     }
@@ -113,6 +122,14 @@ static vnode_t *vfs_path_to_node(vnode_t *v_base, char *path) {
 }
 
 static vnode_t *vfs_get_mountpoint(vnode_t *v_base, char *path, char **relpath) {
+    if (__strlen(path) > VNODE_PATH_MAX) {
+        return NULL;
+    }
+
+    // Place path on stack
+    char buff[VNODE_PATH_MAX];
+    __strncpy(buff, path, __strlen(path));
+    path = buff;
     if (!__strlen(path) || (*path == '/' && v_base != v_root)) {
         return NULL;
     }
@@ -176,7 +193,7 @@ struct vnode *vfs_get_root(void) {
     return v_root;
 }
 
-vnode_t *vnode_create(vnode_t *parent, const char *v_name, int v_type) {
+vnode_t *vfs_alloc_node(vnode_t *parent, const char *v_name, int v_type) {
     vnode_t *node = kmalloc(sizeof(vnode_t));
     if (!node) {
         return NULL;
@@ -201,66 +218,6 @@ vnode_t *vnode_create(vnode_t *parent, const char *v_name, int v_type) {
     return node;
 }
 
-int vfs_create(vnode_t *v_base, const char *vfs_path) {
-    spinlock_acquire(&vfs_lock);
-
-    char dir_name[VNODE_NAME_MAX] = {0};
-    if (!v_get_leaf_name(dir_name, vfs_path)) {
-        goto vfs_create_fail;
-    }
-    
-    char v_parent_path[VNODE_NAME_MAX] = {0};
-    __strncpy(v_parent_path, vfs_path, __strlen(vfs_path) - __strlen(dir_name) - 1);
-    vnode_t *v_parent = vfs_path_to_node(v_base, v_parent_path);
-    if (!v_parent) {
-        goto vfs_create_fail;
-    }
-
-    vnode_t *node = vnode_create(v_parent, dir_name, VDIR);
-    if (!node) {
-        return 0;
-    }
-
-    VECTOR_PUSH_BACK(v_parent->v_children, node);
-
-    // vnodes not required to be mounted to fs
-    if (v_parent->vfsops) {
-        v_parent->vfsops->create(node);
-    }
-
-    spinlock_release(&vfs_lock);
-    return 1;
-
-vfs_create_fail:
-    spinlock_release(&vfs_lock);
-    return 0;  
-}
-
-vnode_t *vfs_mount(vnode_t *base, const char *path, const char *fs_name) {
-    spinlock_acquire(&vfs_lock);
-
-    fs_t *fs = vfs_get_filesystem(fs_name);
-    if (fs == NULL) {
-        goto vfs_mount_fail;
-    }
-    
-    // Get vnode where fs will be mounted
-    vnode_t *mountpoint = vfs_path_to_node(base, (char *)path);
-    if (!mountpoint || mountpoint->v_type != VDIR) {
-        goto vfs_mount_fail;
-    }
-
-    // Now mount fs to mountpoint
-    fs->vfsops->mount(mountpoint, NULL);
-    spinlock_release(&vfs_lock);
-
-    return mountpoint;
-
-vfs_mount_fail:
-    spinlock_release(&vfs_lock);
-    return NULL;
-}
-
 int vfs_add_filesystem(const char *fs_name, vfsops_t *fs_ops) {
     if (fs_count == FS_MAX || __strlen(fs_name) > VNODE_NAME_MAX) {
         return 0;
@@ -281,6 +238,31 @@ fs_t *vfs_get_filesystem(const char *fs_name) {
         }
     }
     return NULL;
+}
+
+int vfs_mount(vnode_t *base, const char *path, const char *fs_name) {
+    spinlock_acquire(&vfs_lock);
+
+    fs_t *fs = vfs_get_filesystem(fs_name);
+    if (fs == NULL) {
+        goto vfs_mount_fail;
+    }
+    
+    // Get vnode where fs will be mounted
+    vnode_t *mountpoint = vfs_path_to_node(base, (char *)path);
+    if (!mountpoint || mountpoint->v_type != VDIR) {
+        goto vfs_mount_fail;
+    }
+
+    // Now mount fs to mountpoint
+    fs->vfsops->mount(mountpoint, NULL);
+    spinlock_release(&vfs_lock);
+
+    return 1;
+
+vfs_mount_fail:
+    spinlock_release(&vfs_lock);
+    return 0;
 }
 
 int vfs_open(struct vnode **ret_vnode, vnode_t *base, const char *path) {
@@ -346,8 +328,46 @@ int vfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {
     return res;
 }
 
+int vfs_create(vnode_t *v_base, const char *vfs_path, int type) {
+    spinlock_acquire(&vfs_lock);
+
+    char dir_name[VNODE_NAME_MAX] = {0};
+    if (!v_get_leaf_name(dir_name, vfs_path)) {
+        goto vfs_create_fail;
+    }
+    
+    char v_parent_path[VNODE_NAME_MAX] = {0};
+    __strncpy(v_parent_path, vfs_path, __strlen(vfs_path) - __strlen(dir_name) - 1);
+    vnode_t *v_parent = vfs_path_to_node(v_base, v_parent_path);
+    if (!v_parent) {
+        goto vfs_create_fail;
+    }
+
+    vnode_t *node = vfs_alloc_node(v_parent, dir_name, type);
+    if (!node) {
+        goto vfs_create_fail;
+    }
+
+    VECTOR_PUSH_BACK(v_parent->v_children, node);
+
+    // vnodes not required to be mounted to fs
+    if (!v_parent->vfsops) {
+        goto vfs_create_fail;
+    }
+
+    node->vfsops = v_parent->vfsops;
+    node->vfsops->create(node);
+
+    spinlock_release(&vfs_lock);
+    return 1;
+
+vfs_create_fail:
+    spinlock_release(&vfs_lock);
+    return 0;  
+}
+
 void vfs_init() {
-    v_root = vnode_create(NULL, "", VDIR);
+    v_root = vfs_alloc_node(NULL, "", VDIR);
     if (!v_root) {
         kerror("VFS: could not initialize root\n");
     }

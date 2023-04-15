@@ -48,16 +48,15 @@ typedef struct vfsops {
 void vfs_print_tree(vnode_t *parent, int max_depth);
 vnode_t *vfs_get_root(void);
 vnode_t *vnode_create(vnode_t *parent, const char *v_name, int v_type);
-int vfs_create(vnode_t *parent, const char *vfs_name);
-vnode_t *vfs_mount(vnode_t *base, const char *path, const char *fs_name);
 int vfs_add_filesystem(const char *fs_name, vfsops_t *fs_ops);
 fs_t *vfs_get_filesystem(const char *fs_name);
 
+int vfs_mount(vnode_t *base, const char *path, const char *fs_name);
 int vfs_open(vnode_t **vnode, vnode_t *base, const char *path);
 int vfs_close(vnode_t *vnode);
 int vfs_read(void *buff, vnode_t *node, size_t size, size_t offset);
 int vfs_write(void *buff, vnode_t *node, size_t size, size_t offset);
-
+int vfs_create(vnode_t *parent, const char *vfs_name, int type);
 
 void vfs_init(void);
 

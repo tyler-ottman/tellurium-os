@@ -39,7 +39,7 @@ static int tmpfs_read(void *buff, vnode_t *node, size_t size, size_t offset) {
 
 static int tmpfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {
     size_t new_block_size = (size + offset) / node->stat.st_blksize;
-    
+
     if (new_block_size >= node->stat.st_blksize) {
         void *data = krealloc(node->fs_data, new_block_size + 1);
         if (!data) {
