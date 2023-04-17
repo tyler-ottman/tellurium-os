@@ -3,6 +3,7 @@
 
 #include <fs/vfs.h>
 
+void tmpfs_load_userapps(void);
 void tmpfs_init(void);
 vfsops_t *get_tmpfs_ops(void);
 

@@ -4,6 +4,11 @@
 #include <libc/vector.h>
 #include <memory/pmm.h>
 
+static volatile struct limine_module_request module_request = {
+    .id = LIMINE_MODULE_REQUEST,
+    .revision = 0
+};
+
 static int tmpfs_mount(vnode_t *mp, vnode_t *device) {
     // vnode_t *tmpfs_root = vnode_create(mp, "tmpfs_root", VDIR);
     // if (!tmpfs_root) {
@@ -83,6 +88,21 @@ static vfsops_t tmpfs_ops = {
 
 void tmpfs_init() {
     vfs_add_filesystem("tmpfs", &tmpfs_ops);
+}
+
+void tmpfs_load_userapps() {
+    struct limine_module_response *mod_response = module_request.response;
+    if (!mod_response) {
+        kprintf(INFO "No modules to load\n");
+        return;
+    }
+    
+    kprintf(INFO "%d file(s) present\n", mod_response->module_count);
+
+    // for (size_t i = 0; i < mod_response->module_count; i++) {
+    //     struct limine_file *file = mod_response->modules[i];
+    //     kprintf("%s at %x\n", file->path, file->address);
+    // }
 }
 
 vfsops_t *get_tmpfs_ops() {

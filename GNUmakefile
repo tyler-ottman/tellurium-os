@@ -3,6 +3,7 @@ override MAKEFLAGS += -rR
 override IMAGE_NAME := tellurium
 override LIMINE_DIR := ../limine
 override KERNEL_DIR := kernel
+override USER_DIR := userspace
 
 .PHONY: all
 all: $(IMAGE_NAME).iso
@@ -17,11 +18,13 @@ run: $(IMAGE_NAME).iso
 .PHONY: $(KERNEL_DIR)
 kernel:
 	$(MAKE) -C $(KERNEL_DIR)
+	$(MAKE) -C $(USER_DIR)
 
 $(IMAGE_NAME).iso: $(KERNEL_DIR)
 	rm -rf iso_root
 	mkdir -p iso_root
 	cp $(KERNEL_DIR)/kernel.elf \
+		$(USER_DIR)/userspace.tar \
 		limine.cfg \
         $(LIMINE_DIR)/limine.sys \
         $(LIMINE_DIR)/limine-cd.bin \
@@ -38,4 +41,5 @@ $(IMAGE_NAME).iso: $(KERNEL_DIR)
 .PHONY: clean
 clean:
 	rm -rf iso_root $(IMAGE_NAME).iso
-	$(MAKE) -C kernel clean
+	$(MAKE) -C $(KERNEL_DIR) clean
+	$(MAKE) -C $(USER_DIR) clean
