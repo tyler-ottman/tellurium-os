@@ -72,6 +72,6 @@ void kmain(void *param) {
 
     // vfs_create(vfs_get_root(), "/mnt");
     // vfs_create(vfs_get_root(), "/proc");
-    // vfs_print_tree(vfs_get_root(), 4);
+    vfs_print_tree(vfs_get_root(), 4);
     kprintf(INFO "kmain: init complete\n");
 }

@@ -9,7 +9,7 @@ all:
 	tar -cf $(APP_TAR).tar --files-from /dev/null
 	for app in $(APPLICATIONS); do		\
 		$(MAKE) -C $$app;				\
-		tar --append --file=$(APP_TAR).tar $$app/bin/*.elf;	\
+		tar --append --file=$(APP_TAR).tar -C $$app/bin/ $$app.elf;	\
 	done
 
 clean:
