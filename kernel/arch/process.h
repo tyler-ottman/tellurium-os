@@ -6,15 +6,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define KERNEL_PROCESS_ID       0
-#define IDLE_THREAD_TID     0
+#define IDLE_THREAD_TID         0
+#define PROCESS_MAX             256
 
 typedef int pstate_t;
 typedef int pid_t;
 
 enum process_state {
-    alive =     0,
-    dead =      1
+    ALIVE =     0,
+    DEAD =      1
 };
 
 enum thread_state {
@@ -27,13 +27,13 @@ enum thread_state {
     ZOMBIE
 };
 
-struct pcb {
+typedef struct pcb {
     pid_t pid;
     pstate_t state;
     VECTOR_DECLARE(threads);
     VECTOR_DECLARE(children);
     struct pagemap* pmap;
-};
+} pcb_t;
 
 typedef struct tcb {
     uint32_t tid;
@@ -55,6 +55,10 @@ typedef struct tcb {
 } thread_t;
 
 struct pcb* get_kernel_process(void);
+struct pcb *create_user_process(const char *elf_path);
+void process_destroy(pcb_t *proc);
+int process_alloc_pid(void);
+void process_free_pid(uint16_t pid);
 void init_kernel_process(void);
 
 thread_t* alloc_idle_thread(void);

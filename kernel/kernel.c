@@ -54,24 +54,12 @@ void kmain(void *param) {
     vfs_create(vfs_get_root(), "/tmp", VDIR);
     vfs_mount(vfs_get_root(), "/tmp", "tmpfs");
 
+    // Store userapps in vfs
     tmpfs_load_userapps();
 
-    // vfs_create(vfs_get_root(), "/tmp/testFile", VREG);
-    
-    // vnode_t *testNode;
-    // vfs_open(&testNode, vfs_get_root(), "/tmp/testFile");
+    // For testing purposes
+    create_user_process("/tmp/helloWorld.elf");
 
-    // char *msg = "hello";
-    // int msg_len = __strlen(msg) + 1;
-    // vfs_write((void *)msg, testNode, msg_len, 0);
-
-    // char rcv[10];
-    // vfs_read((void *)rcv, testNode, msg_len, 0);
-
-    // kprintf("%s\n", rcv);
-
-    // vfs_create(vfs_get_root(), "/mnt");
-    // vfs_create(vfs_get_root(), "/proc");
     vfs_print_tree(vfs_get_root(), 4);
     kprintf(INFO "kmain: init complete\n");
 }

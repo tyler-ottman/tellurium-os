@@ -179,7 +179,7 @@ void* slab_alloc(size_t size) {
     if (pages == NULL) {
         return NULL;
     }
-    
+
     struct page_metadata* metadata = (struct page_metadata*)pages;
     metadata->pages_allocated = num_pages;
     return (uint64_t*)((uint64_t)pages + PAGE_SIZE_BYTES);
@@ -190,12 +190,12 @@ void* slab_realloc(void* addr, size_t size) {
     if (addr == NULL) {
         return NULL;
     }
-
+    
     // Bypass slab re-allocator
     if ((((uint64_t)addr) & 0xfff) == 0) {
         void* base = (void*)((uint64_t)addr - PAGE_SIZE_BYTES);
         struct page_metadata* metadata = (struct page_metadata*)base;
-        
+
         size_t num_pages = size / PAGE_SIZE_BYTES;
         if (size % PAGE_SIZE_BYTES != 0) num_pages++;
         if (num_pages <= metadata->pages_allocated) {
@@ -203,10 +203,14 @@ void* slab_realloc(void* addr, size_t size) {
         }
 
         chunk = slab_alloc(size);
-        __memcpy(chunk, addr, size);
-        slab_free(base);
+        if (!chunk) {
+            return NULL;
+        }
 
-        return NULL;
+        __memcpy(chunk, addr, size);
+        slab_free(addr);
+
+        return chunk;
     }
 
     struct slab* slab = (struct slab*)((uint64_t)addr & ~0xfff);
@@ -231,7 +235,7 @@ void slab_free(void* addr) {
     if ((((uint64_t)addr) & 0xfff) == 0) { // Bypass slab de-allocator
         void* base = (void*)((uint64_t)addr - PAGE_SIZE_BYTES);
         struct page_metadata* metadata = (struct page_metadata*)(base);
-        pfree((void*)metadata, metadata->pages_allocated);
+        pfree((void*)metadata, metadata->pages_allocated + 1);
     } else { // Normal slab de-allocator
         slab_free_chunk(addr);
     }

@@ -180,7 +180,7 @@ void pfree(void* base, size_t pages) {
 
     uint64_t addr = (uint64_t)base;
     for (size_t idx = 0; idx < pages; idx++) {
-        bitmap_reset(addr);
+        bitmap_reset(addr - KERNEL_HHDM_OFFSET);
         addr += PAGE_SIZE_BYTES;
     }
 

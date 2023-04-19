@@ -57,7 +57,7 @@ static int tmpfs_close(vnode_t *node) {
 }
 
 static int tmpfs_read(void *buff, vnode_t *node, size_t size, size_t offset) {
-    if (offset + size > node->stat.st_size) {
+    if (offset + size >= node->stat.st_size) {
         size = node->stat.st_size - offset;
     }
 
@@ -68,15 +68,21 @@ static int tmpfs_read(void *buff, vnode_t *node, size_t size, size_t offset) {
 }
 
 static int tmpfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {
-    size_t new_block_size = (size + offset) / node->stat.st_blksize;
+    size_t file_head_max = size + offset;
+    size_t file_block_size = node->stat.st_blksize;
+    size_t new_block_size = file_head_max / file_block_size;
+    if (file_head_max % file_block_size != 0) {
+        new_block_size++;
+    }
 
-    if (new_block_size >= node->stat.st_blksize) {
-        void *data = krealloc(node->fs_data, new_block_size + 1);
+    if (new_block_size > node->stat.st_blocks) {
+        void *data = krealloc(node->fs_data, new_block_size * PAGE_SIZE_BYTES);
         if (!data) {
             return 0;
         }
+
         node->fs_data = data;
-        node->stat.st_blocks = new_block_size + 1;
+        node->stat.st_blocks = new_block_size;
         node->stat.st_size = offset + size;
     }
 
@@ -89,15 +95,17 @@ static int tmpfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {
     return 1;
 }
 
+#include <memory/slab.h>
 static int tmpfs_create(vnode_t *node) {
-    void *data = palloc(1);
+    void *data = kmalloc(PAGE_SIZE_BYTES);
     if (!data) {
         return 0;
     }
 
     node->fs_data = data;
     node->stat.st_blksize = PAGE_SIZE_BYTES;
-    node->stat.st_blksize = 1;
+    node->stat.st_blocks = 1;
+    node->stat.st_size = node->stat.st_blksize;
 
     return 1;
 }
@@ -147,19 +155,19 @@ void tmpfs_load_userapps() {
                 tar_file->typeflag != TAR_REGTYPE) {
                 continue;
             }
-
+            
             // Add ELF to tmpfs
             char file_path[VNODE_NAME_MAX] = "/tmp/";
             __strncpy(file_path + __strlen(file_path), app_name, __strlen(app_name));
             vfs_create(vfs_get_root(), file_path, VREG);
-
+            
             vnode_t *node;
             vfs_open(&node, vfs_get_root(), file_path);
             if (!node) {
                 kprintf(INFO "Failed to open %s\n", file_path);
                 continue;
             }
-
+            
             int size = octal_to_int(tar_file->size, sizeof(tar_file->size));
             uint64_t addr = (uint64_t)tar_file + 512;
             int ret = vfs_write((void *)addr, node, size, 0);
