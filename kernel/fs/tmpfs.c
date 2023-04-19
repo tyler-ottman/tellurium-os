@@ -95,7 +95,6 @@ static int tmpfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {
     return 1;
 }
 
-#include <memory/slab.h>
 static int tmpfs_create(vnode_t *node) {
     void *data = kmalloc(PAGE_SIZE_BYTES);
     if (!data) {

@@ -39,20 +39,20 @@ pcb_t *create_user_process(const char *elf_path) {
     VECTOR_ALLOC(proc->threads);
     VECTOR_ALLOC(proc->children);
 
-    struct pagemap *pmap = kmalloc(sizeof(struct pagemap));
-    if (!pmap) {
+    proc->pmap = kmalloc(sizeof(struct pagemap));
+    if (!proc->pmap) {
         process_destroy(proc);
         return NULL;
     }
 
-    pmap->pml4_base = kmalloc(PAGE_SIZE_BYTES);
-    if (!pmap->pml4_base) {
+    proc->pmap->pml4_base = kmalloc(PAGE_SIZE_BYTES);
+    if (!proc->pmap->pml4_base) {
         process_destroy(proc);
         return NULL;
     }
 
     struct pagemap *k_pmap = get_kernel_pagemap();
-    __memcpy(pmap->pml4_base, k_pmap->pml4_base, PAGE_SIZE_BYTES);
+    __memcpy(proc->pmap->pml4_base, k_pmap->pml4_base, PAGE_SIZE_BYTES);
 
     // Load ELF into user process's address space
     elf_load(proc, elf_path);

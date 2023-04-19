@@ -26,10 +26,10 @@ struct pagemap* get_kernel_pagemap() {
     return k_pagemap;
 }
 
-void map_section(uint64_t vaddr_base, uint64_t paddr_base, uint64_t len, uint64_t flags) {
+void map_section(struct pagemap *pmap, uint64_t vaddr_base, uint64_t paddr_base, uint64_t len, uint64_t flags) {
     uint64_t paddr = paddr_base;
     for (uint64_t vaddr = vaddr_base; vaddr < vaddr_base + len; vaddr += PAGE_SIZE) {
-        map_page(vaddr, paddr, flags);
+        map_page(pmap, vaddr, paddr, flags);
         paddr += PAGE_SIZE;
     }
 }
@@ -56,21 +56,21 @@ void init_vmm() {
     uint64_t etext_vaddr = align_address((uint64_t)_etext, true);
     uint64_t stext_paddr = stext_vaddr - kernel_vaddr + kernel_paddr;
     uint64_t text_len = etext_vaddr - stext_vaddr;
-    map_section(stext_vaddr, stext_paddr, text_len, PML_PRESENT);
+    map_section(k_pagemap, stext_vaddr, stext_paddr, text_len, PML_PRESENT);
     
     // map .rodata section
     uint64_t srodata_vaddr = align_address((uint64_t)_srodata, false);
     uint64_t erodata_vaddr = align_address((uint64_t)_erodata, true);
     uint64_t srodata_paddr = srodata_vaddr - kernel_vaddr + kernel_paddr;
     uint64_t rodata_len = erodata_vaddr - srodata_vaddr;
-    map_section(srodata_vaddr, srodata_paddr, rodata_len, PML_NOT_EXECUTABLE | PML_PRESENT);
+    map_section(k_pagemap, srodata_vaddr, srodata_paddr, rodata_len, PML_NOT_EXECUTABLE | PML_PRESENT);
     
     // map .data section
     uint64_t sdata_vaddr = align_address((uint64_t)_sdata, false);
     uint64_t edata_vaddr = align_address((uint64_t)_edata, true);
     uint64_t sdata_paddr = sdata_vaddr - kernel_vaddr + kernel_paddr;
     uint64_t data_len = edata_vaddr - sdata_vaddr;
-    map_section(sdata_vaddr, sdata_paddr, data_len, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
+    map_section(k_pagemap, sdata_vaddr, sdata_paddr, data_len, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
 
     // kprintf(".text: %016x - %016x, .rodata: %016x - %016x\n.data: %016x - %016x\n", stext_vaddr, etext_vaddr, srodata_vaddr, erodata_vaddr, sdata_vaddr, edata_vaddr);
 
@@ -84,19 +84,19 @@ void init_vmm() {
         uint64_t end_paddr = align_address(entry->base + entry->length, true);
         uint64_t len = end_paddr - start_paddr;
 
-        map_section(start_paddr + KERNEL_HHDM_OFFSET, start_paddr, len, PML_WRITE | PML_PRESENT);        
+        map_section(k_pagemap, start_paddr + KERNEL_HHDM_OFFSET, start_paddr, len, PML_WRITE | PML_PRESENT);        
     }
 
     uint64_t bitmap_addr = (uint64_t)get_bitmap_addr();
     size_t bitmap_size = get_bitmap_size();
-    map_section(bitmap_addr, bitmap_addr - KERNEL_HHDM_OFFSET, bitmap_size, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
+    map_section(k_pagemap, bitmap_addr, bitmap_addr - KERNEL_HHDM_OFFSET, bitmap_size, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
     
     // Map MMIO devices
     mmio_dev_info_t dev_info = get_dev_info();
     for (size_t i = 0; i < dev_info.num_devs; i++) {
         mmio_dev_t dev = dev_info.devices[i];
         uint64_t dev_addr = dev.addr;
-        map_section(dev_addr + KERNEL_HHDM_OFFSET, dev_addr, dev.size_bytes, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
+        map_section(k_pagemap, dev_addr + KERNEL_HHDM_OFFSET, dev_addr, dev.size_bytes, PML_NOT_EXECUTABLE | PML_WRITE | PML_PRESENT);
     }
 
     // Mark upper half as kernel only
@@ -153,7 +153,7 @@ bool get_next_page_map(uint64_t** new_map_base, uint64_t* map_base, uint64_t map
     return false;
 }
 
-void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
+void map_page(struct pagemap *pmap, uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     uint64_t pml4e = (vaddr >> 39) & 0x1ff;
     uint64_t pdpte = (vaddr >> 30) & 0x1ff;
     uint64_t pde = (vaddr >> 21) & 0x1ff;
@@ -161,8 +161,8 @@ void map_page(uint64_t vaddr, uint64_t paddr, uint64_t flags) {
     // kprintf("NEW MAPPING: %x -> %x\n", vaddr, paddr);
     
     uint64_t* pdpt_base = NULL;
-    if (!get_next_page_map(&pdpt_base, k_pagemap->pml4_base, pml4e)) {
-        pdpt_base = allocate_map(k_pagemap->pml4_base, pml4e, PML_PRESENT | PML_WRITE | PML_USER);
+    if (!get_next_page_map(&pdpt_base, pmap->pml4_base, pml4e)) {
+        pdpt_base = allocate_map(pmap->pml4_base, pml4e, PML_PRESENT | PML_WRITE | PML_USER);
         // kprintf("%x -> %x, pdpt_base: %x\n", vaddr, paddr, pdpt_base);
         if (!pdpt_base) {
             // Out of memory, handle later

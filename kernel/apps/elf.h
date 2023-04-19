@@ -3,9 +3,6 @@
 
 #include <arch/process.h>
 
-typedef uint64_t Elf64_Addr;
-typedef uint64_t Elf64_Word;
-
 #define ELF_ERROR                   0
 #define ELF_SUCCESS                 1
 
