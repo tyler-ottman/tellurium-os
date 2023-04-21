@@ -1,5 +1,6 @@
 #include <apps/elf.h>
 #include <arch/process.h>
+#include <arch/scheduler.h>
 #include <libc/kmalloc.h>
 #include <memory/vmm.h>
 
@@ -55,9 +56,12 @@ pcb_t *create_user_process(const char *elf_path) {
     __memcpy(proc->pmap->pml4_base, k_pmap->pml4_base, PAGE_SIZE_BYTES);
 
     // Load ELF into user process's address space
-    elf_load(proc, elf_path);
+    uint64_t entry;
+    elf_load(proc, elf_path, &entry);
 
-    // Create user thread
+    // Create 'main' user thread
+    thread_t *thread = create_user_thread(proc, (void *)entry, NULL);
+    schedule_add_thread(thread);
 
     return proc;
 }

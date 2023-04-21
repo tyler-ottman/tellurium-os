@@ -63,6 +63,7 @@ void init_kernel_process(void);
 
 thread_t* alloc_idle_thread(void);
 thread_t* create_kernel_thread(void* entry, void* param);
+thread_t *create_user_thread(struct pcb *proc, void *entry, void *param);
 thread_t* get_idle_thread(void);
 uint32_t get_new_tid(void);
 void thread_destroy(thread_t *thread);

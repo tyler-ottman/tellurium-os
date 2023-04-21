@@ -113,7 +113,7 @@ static const Elf64_Phdr_t *elf_get_phdr(void *elf_raw, int n) {
     return (const Elf64_Phdr_t *)addr;
 }
 
-int elf_load(pcb_t *proc, const char *path) {
+int elf_load(pcb_t *proc, const char *path, uint64_t *entry) {
     vnode_t *elf_node;
     vfs_open(&elf_node, vfs_get_root(), path);
     if (!elf_node) {
@@ -136,6 +136,12 @@ int elf_load(pcb_t *proc, const char *path) {
         return ELF_ERROR;
     }
 
+    if (!entry) {
+        return ELF_ERROR;
+    }
+    
+    *entry = header->e_entry;
+
     // Map program sections to user process vspace
     for (int i = 0; i < header->e_phnum; i++) {
         const Elf64_Phdr_t *p_hdr = elf_get_phdr(data, i);
@@ -144,7 +150,7 @@ int elf_load(pcb_t *proc, const char *path) {
             continue;
         }
 
-        uint64_t vmm_flags = PML_NOT_EXECUTABLE | PML_PRESENT;
+        uint64_t vmm_flags = PML_NOT_EXECUTABLE | PML_USER | PML_PRESENT;
         if (p_hdr->p_flags & PF_X) {
             vmm_flags &= ~(PML_NOT_EXECUTABLE);
         }
@@ -166,14 +172,13 @@ int elf_load(pcb_t *proc, const char *path) {
         if (!p_section) { // very bad
             return ELF_ERROR;
         }
+        // Address where program section will be stored in memory
+        __memset(p_section, '\0', num_pages * PAGE_SIZE_BYTES);
 
         // Location of program section in ELF file
         const void *p_section_data = (const void *)((uint64_t)data + p_hdr->p_offset);
 
-        // Address where program section will be stored in memory
-        __memset(p_section, '\0', num_pages * PAGE_SIZE_BYTES);
-
-        // // If program section start is not page aligned
+        // If program section start is not page aligned
         p_section = (void *)((uint64_t)p_section + offset);
         __memcpy(p_section, p_section_data, p_hdr->p_memsz);
 

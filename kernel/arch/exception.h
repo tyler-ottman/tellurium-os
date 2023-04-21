@@ -27,3 +27,4 @@ const char* exception_name[] =  {
 };
 
 void exception_handler(uint8_t vector);
+void exception_handler_err(uint8_t vector, uint64_t *err);

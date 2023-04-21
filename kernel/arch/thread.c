@@ -4,6 +4,7 @@
 #include <libc/kmalloc.h>
 #include <libc/vector.h>
 #include <memory/pmm.h>
+#include <memory/vmm.h>
 
 extern void thread_wrapper(struct core_local_info *cpu_info);
 
@@ -102,6 +103,66 @@ thread_t* create_kernel_thread(void* entry, void* param) {
 
     thread->state = CREATED;
     thread->isKernel = true;
+
+    thread->prev = NULL;
+    thread->next = NULL;
+
+    return thread;
+}
+
+thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
+    if (!entry) {
+        return NULL;
+    }
+
+    thread_t* thread = kmalloc(sizeof(thread_t));
+    if (!thread) {
+        return NULL;
+    }
+
+    thread->tid = get_new_tid();
+
+    thread->cpu_id = -1;
+
+    thread->parent = proc;
+
+    uint64_t stack_top;
+    size_t stack_size = PAGE_SIZE_BYTES;
+    thread->thread_base_sp = kmalloc(stack_size);
+    if (!thread->thread_base_sp) {
+        thread_destroy(thread);
+        return NULL;
+    }
+    uint64_t addr = (uint64_t)thread->thread_base_sp - KERNEL_HHDM_OFFSET;
+    thread->thread_base_sp = (uint64_t *)addr;
+    stack_top = (uint64_t)thread->thread_base_sp + stack_size;
+    thread->thread_sp = (uint64_t*)stack_top;
+
+    // Now map stack to userspace
+    uint64_t vaddr = (uint64_t)thread->thread_base_sp;
+    map_section(proc->pmap, vaddr, vaddr, stack_size, PML_PRESENT | PML_NOT_EXECUTABLE | PML_WRITE);
+    
+    thread->kernel_base_sp = kmalloc(stack_size);
+    if (!thread->kernel_base_sp) {
+        thread_destroy(thread);
+        return NULL;
+    }
+    stack_top = (uint64_t)thread->kernel_base_sp + stack_size;
+    thread->kernel_sp = (uint64_t*)(stack_top);
+
+    ctx_t* context = &thread->context;
+    __memset(context, 0, sizeof(ctx_t));
+    context->ds = GDT_USER_DATA | 3;
+    context->rdi = (uint64_t)param;
+    context->rip = (uint64_t)entry;
+
+    context->cs = GDT_USER_CODE | 3;
+    context->rflags = RFLAGS_RESERVED_MASK | RFLAGS_INTERRUPT_MASK;
+    context->rsp = (uint64_t)thread->thread_sp;
+    context->ss = GDT_USER_DATA | 3;
+
+    thread->state = CREATED;
+    thread->isKernel = false;
 
     thread->prev = NULL;
     thread->next = NULL;

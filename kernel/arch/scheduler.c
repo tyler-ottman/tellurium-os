@@ -76,8 +76,9 @@ void thread_switch(struct core_local_info* cpu_info) {
     struct pagemap* map = cpu_info->current_thread->parent->pmap;
     uint64_t* pml4 = map->pml4_base;
     pml4 = (uint64_t*)((uint64_t)pml4 - KERNEL_HHDM_OFFSET);
+    // print_context(&cpu_info->current_thread->context);
     lapic_schedule_time(1000000);
-
+    breakpoint();
     __asm__ volatile(
         "mov %0, %%rsp\n\t"
         "pop %%rax\n\t"
@@ -102,7 +103,8 @@ void thread_switch(struct core_local_info* cpu_info) {
         "addq $8, %%rsp\n\t"
         "iretq\n\t" ::
         "r" (&cpu_info->current_thread->context),
-        "r" (pml4)
+        "r" (pml4) :
+        "memory"
     );
 }
 

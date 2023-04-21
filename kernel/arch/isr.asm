@@ -2,6 +2,7 @@ extern lapic_time_handler
 extern lapic_ipi_handler
 extern ps2_handler
 extern exception_handler
+extern exception_handler_err
 
 %macro save_context 0
     push r15
@@ -44,6 +45,15 @@ ISR_%1:
     iret
 %endmacro
 
+%macro ISR_ERR 1
+ISR_%1:
+    mov rdi, %1
+    mov rsi, rsp
+    xor rbp, rbp
+    call exception_handler_err
+    iret
+%endmacro
+
 ISR_NO_ERR 0
 ISR_NO_ERR 1
 ISR_NO_ERR 2
@@ -57,8 +67,8 @@ ISR_NO_ERR 9
 ISR_NO_ERR 10
 ISR_NO_ERR 11
 ISR_NO_ERR 12
-ISR_NO_ERR 13
-ISR_NO_ERR 14
+ISR_ERR 13
+ISR_ERR 14
 ISR_NO_ERR 15
 ISR_NO_ERR 16
 ISR_NO_ERR 17

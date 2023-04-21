@@ -147,6 +147,10 @@ void core_init(struct limine_smp_info* core) {
     // LAPIC IPI IDT Entry
     set_vector_ist(cpu_info->lapic_ipi_vector, 1);
 
+    for (int i = 0; i < 20; i++) {
+        set_vector_ist(i, 1);
+    }
+
     spinlock_acquire(&init_lock);
     cores_ready++;
     spinlock_release(&init_lock);
