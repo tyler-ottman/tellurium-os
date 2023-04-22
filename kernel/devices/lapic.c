@@ -126,7 +126,6 @@ void init_lapic() {
 void lapic_schedule_time(uint64_t us) {
     uint64_t ticks = us * (get_core_local_info()->lapic_freq / 1000000);
     lapic_write(LVT_INITIAL_COUNT, ticks);
-    enable_interrupts();
 }
 
 void lapic_send_ipi(uint32_t lapic_id, uint32_t vector) {    
