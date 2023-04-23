@@ -4,6 +4,7 @@
 #include <arch/idt.h>
 #include <arch/lock.h>
 #include <arch/scheduler.h>
+#include <arch/syscalls.h>
 #include <arch/terminal.h>
 #include <devices/lapic.h>
 #include <devices/msr.h>
@@ -150,6 +151,8 @@ void core_init(struct limine_smp_info* core) {
     for (int i = 0; i < 20; i++) {
         set_vector_ist(i, 1);
     }
+
+    init_syscall();
 
     spinlock_acquire(&init_lock);
     cores_ready++;

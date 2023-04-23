@@ -14,7 +14,7 @@ int proto_syscall(int num) {
 }
 
 int _start() {
-    // proto_syscall(40);
+    proto_syscall(40);
 
     for (;;) {}
 }

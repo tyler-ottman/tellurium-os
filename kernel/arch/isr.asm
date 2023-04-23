@@ -3,6 +3,7 @@ extern lapic_ipi_handler
 extern ps2_handler
 extern exception_handler
 extern exception_handler_err
+extern syscall_handler
 
 %macro save_context 0
     push r15
@@ -113,3 +114,13 @@ ISR_ps2:
     xor rbp, rbp
     call ps2_handler
     iret
+
+global ISR_syscall
+ISR_syscall:
+    sub rsp, 8
+    save_context
+
+    mov rdi, rsp
+    xor rbp, rbp
+    call syscall_handler
+    sysret
