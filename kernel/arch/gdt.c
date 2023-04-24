@@ -72,21 +72,21 @@ void init_gdt() {
         .base_high = 0
     };
 
-    GDT_Entry user_code64 = {
-        .limit_low = 0,
-        .base_low = 0,
-        .base_middle = 0,
-        .access_byte = 0xfa,
-        .flags_limit = 0x20,
-        .base_high = 0
-    };
-
     GDT_Entry user_data64 = {
         .limit_low = 0,
         .base_low = 0,
         .base_middle = 0,
         .access_byte = 0xf2,
         .flags_limit = 0,
+        .base_high = 0
+    };
+
+    GDT_Entry user_code64 = {
+        .limit_low = 0,
+        .base_low = 0,
+        .base_middle = 0,
+        .access_byte = 0xfa,
+        .flags_limit = 0x20,
         .base_high = 0
     };
 
@@ -97,8 +97,8 @@ void init_gdt() {
     add_gdt_entry(kernel_data32);
     add_gdt_entry(kernel_code64);
     add_gdt_entry(kernel_data64);
-    add_gdt_entry(user_code64);
     add_gdt_entry(user_data64);
+    add_gdt_entry(user_code64);
 
     gdtr.size = sizeof(GDT);
     gdtr.base = (uint64_t)&gdt;

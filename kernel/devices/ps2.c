@@ -79,13 +79,11 @@ void ps2_handler(ctx_t *ctx) {
     }
 
     struct core_local_info* cpu_info = get_core_local_info();
-    thread_t *current_thread = cpu_info->current_thread;
-    if (current_thread) {
-        __memcpy(&current_thread->context, ctx, sizeof(ctx_t));
-    }
+    save_context(cpu_info, ctx);
     
-    if (cpu_info->idle_thread != cpu_info->current_thread) {
-        schedule_add_thread(cpu_info->current_thread);
+    thread_t *current_thread = cpu_info->current_thread;
+    if (cpu_info->idle_thread != current_thread) {
+        schedule_add_thread(current_thread);
     }
 
     lapic_eoi();

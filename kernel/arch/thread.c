@@ -91,7 +91,6 @@ thread_t* create_kernel_thread(void* entry, void* param) {
 
     ctx_t* context = &thread->context;
     __memset(context, 0, sizeof(ctx_t));
-    context->ds = GDT_KERNEL_DATA;
     context->rsi = (uint64_t)param;
     context->rdi = (uint64_t)entry;
     context->rip = (uint64_t)thread_wrapper;
@@ -152,7 +151,6 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
 
     ctx_t* context = &thread->context;
     __memset(context, 0, sizeof(ctx_t));
-    context->ds = GDT_USER_DATA | 3;
     context->rdi = (uint64_t)param;
     context->rip = (uint64_t)entry;
 

@@ -21,14 +21,29 @@ extern syscall_handler
     push rcx
     push rbx
     push rax
-    mov eax, ds
-    push rax
+%endmacro
+
+%macro restore_context 0
+    pop rax
+    pop rbx
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+    pop rbp
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+    pop r12
+    pop r13
+    pop r14
+    pop r15
 %endmacro
 
 %macro load_kernel_data 0
     mov ax, 0x30
     mov ss, ax
-    mov ds, ax
 %endmacro
 
 global isr_table
@@ -93,7 +108,6 @@ ISR_Timer:
 global ISR_IPI
 ISR_IPI:
     sub rsp, 8
-    call breakpoint                         
     save_context
 
     load_kernel_data
@@ -116,11 +130,45 @@ ISR_ps2:
     iret
 
 global ISR_syscall
+
+CORE_LOCAL_INFO_KERNEL_STACK equ            0x0
+CORE_LOCAL_INFO_KERNEL_SCRATCH equ          0x8
+
+GDT_USER_DATA equ                           (0x38 | 3)
+GDT_USER_CODE equ                           (0x40 | 3)                         
+
 ISR_syscall:
-    sub rsp, 8
+    swapgs ; Load core local info
+
+    ; Save user stack pointer to temp register and load kernel rsp
+    mov qword [gs:CORE_LOCAL_INFO_KERNEL_SCRATCH], rsp
+    mov qword rsp, [gs:CORE_LOCAL_INFO_KERNEL_STACK]
+
+    ; Save interrupt stack table fields
+    push GDT_USER_DATA ; ss
+    push qword [gs:CORE_LOCAL_INFO_KERNEL_SCRATCH] ; rsp
+    push r11 ; rflags
+    push GDT_USER_CODE ; cs
+    push rcx ; rip
+    push $0 ; err
+
+    ; Save general purpose registers
     save_context
 
     mov rdi, rsp
     xor rbp, rbp
     call syscall_handler
-    sysret
+
+    swapgs
+
+    ; Restore general purpose registers
+    restore_context
+
+    ; Restore user rsp, rflags, rip
+    add rsp, 8 ; skip err
+    pop rcx ; rip
+    add rsp, 8 ; skip cs
+    pop r11 ; rflags
+    pop rsp ; rsp
+
+    o64 sysret

@@ -51,13 +51,25 @@ void set_thread_local(thread_t* thread) {
 }
 
 struct core_local_info* get_core_local_info() {
-    uint64_t gs_base = get_msr(GS_BASE);
+    uint64_t gs_base = get_msr(IA32_KERNEL_GS_BASE);
     return (struct core_local_info*)((uint64_t)gs_base);
 }
 
 void set_core_local_info(struct core_local_info* cpu_info) {
     uint64_t gs_base = (uint64_t)((uint64_t)cpu_info);
-    set_msr(GS_BASE, gs_base);
+    set_msr(IA32_KERNEL_GS_BASE, gs_base);
+}
+
+void save_context(struct core_local_info *cpu_info, ctx_t *ctx) {
+    thread_t *cur_thread = cpu_info->current_thread;
+    if (!cur_thread) {
+        return;
+    }
+
+    __memcpy(&cur_thread->context, ctx, sizeof(ctx_t));
+
+    // Save scratch register
+    cur_thread->thread_scratch = cpu_info->kernel_scratch;
 }
 
 void enable_interrupts() {
@@ -106,7 +118,7 @@ void init_cpu(void) {
 
 #define NUM_REGISTERS (sizeof(ctx_t) / sizeof(uint64_t))
 static char* reg_names[NUM_REGISTERS] = {
-    "ds", "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp",
+    "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp",
     "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
     "err", "rip", "cs", "rflags", "rsp", "ss"
 };
@@ -123,14 +135,12 @@ void core_init(struct limine_smp_info* core) {
     idt_load();
 
     load_pagemap(get_kernel_pagemap());
-    
-    uint64_t* core_stack = palloc(1);
-    ASSERT(core_stack != NULL);
 
     struct core_local_info* cpu_info = kmalloc(sizeof(struct core_local_info));
     ASSERT(cpu_info != NULL);
     set_core_local_info(cpu_info);
-    cpu_info->abort_stack = core_stack;
+
+    cpu_info->kernel_stack = NULL;
     cpu_info->lapic_id = core->lapic_id;
     cpu_info->current_thread = NULL;
 

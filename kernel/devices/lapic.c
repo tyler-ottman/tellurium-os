@@ -34,15 +34,13 @@ void lapic_time_handler(ctx_t* ctx) {
     lapic_eoi();
 
     struct core_local_info* cpu_info = get_core_local_info();
-    thread_t* current_thread = cpu_info->current_thread;
-    if (current_thread) {
-        __memcpy(&current_thread->context, ctx, sizeof(ctx_t));
-    }
+    save_context(cpu_info, ctx);
     
     // kprintf(MAGENTA"Timer Handle\n");
 
-    if (cpu_info->idle_thread != cpu_info->current_thread) {
-        schedule_add_thread(cpu_info->current_thread);
+    thread_t *current_thread = cpu_info->current_thread;
+    if (cpu_info->idle_thread != current_thread) {
+        schedule_add_thread(current_thread);
     }
 
     schedule_next_thread();
@@ -52,11 +50,9 @@ void lapic_ipi_handler(ctx_t* ctx) {
     lapic_eoi();
 
     struct core_local_info* cpu_info = get_core_local_info();
-    thread_t* current_thread = cpu_info->current_thread;
-    if (current_thread) {
-        __memcpy(&current_thread->context, ctx, sizeof(ctx_t));
-    }
+    save_context(cpu_info, ctx);
 
+    thread_t *current_thread = cpu_info->current_thread;
     if (current_thread->state == ZOMBIE) { // Thread completed execution, terminate
         thread_destroy(current_thread);
     } else { // Add thread back to queue

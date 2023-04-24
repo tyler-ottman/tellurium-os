@@ -4,7 +4,7 @@ int proto_syscall(int num) {
     int ret;
 
     asm volatile(
-        "mov $1, %%rax\n\t"
+        "mov %1, %%rax\n\t"
         "syscall\n\t" :
         "=a"(ret) :
         "m"(num)

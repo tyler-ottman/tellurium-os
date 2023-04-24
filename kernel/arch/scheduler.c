@@ -77,12 +77,14 @@ void thread_switch(struct core_local_info* cpu_info) {
     uint64_t* pml4 = map->pml4_base;
     pml4 = (uint64_t*)((uint64_t)pml4 - KERNEL_HHDM_OFFSET);
     // print_context(&cpu_info->current_thread->context);
+
+    cpu_info->kernel_stack = cpu_info->current_thread->kernel_sp;
+    cpu_info->kernel_scratch = cpu_info->current_thread->thread_scratch;
+
     lapic_schedule_time(1000000);
-    breakpoint();
+
     __asm__ volatile(
         "mov %0, %%rsp\n\t"
-        "pop %%rax\n\t"
-        "mov %%rax, %%ds\n\t"
         "mov %1, %%r15\n\t"
         "pop %%rax\n\t"
         "pop %%rbx\n\t"

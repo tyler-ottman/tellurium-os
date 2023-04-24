@@ -45,6 +45,7 @@ typedef struct tcb {
     uint64_t* kernel_sp;
     void (*thread_entry)(void*);
     struct ctx context;
+    uint64_t thread_scratch;
     uint64_t* fs_base;
     uint32_t state;
     uint32_t time_slice;

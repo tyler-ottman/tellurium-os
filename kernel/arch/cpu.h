@@ -28,7 +28,6 @@ struct TSS {
 }__attribute__((packed));
 
 typedef struct ctx {
-    uint64_t ds;
     uint64_t rax;
     uint64_t rbx;
     uint64_t rcx;
@@ -53,7 +52,8 @@ typedef struct ctx {
 } ctx_t;
 
 struct core_local_info {
-    uint64_t* abort_stack;
+    uint64_t *kernel_stack;     // Kernel stack of running thread
+    uint64_t kernel_scratch;    // Kernel scratch register for current thread
     uint32_t lapic_id;
     uint32_t lapic_ipi_vector;
     uint8_t lapic_timer_vector;
@@ -70,6 +70,7 @@ struct tcb* get_thread_local(void);
 void set_thread_local(struct tcb* thread);
 struct core_local_info* get_core_local_info(void);
 void set_core_local_info(struct core_local_info* cpu_info);
+void save_context(struct core_local_info *cpu_info, ctx_t *ctx);
 void enable_interrupts(void);
 void disable_interrupts(void);
 void print_context(ctx_t* context);
