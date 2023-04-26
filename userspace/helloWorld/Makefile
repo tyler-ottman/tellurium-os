@@ -1,4 +1,4 @@
-override CXX = gcc
+override CXX = g++
 
 override SRC_DIR = ./src
 override BIN_DIR = ./bin
@@ -7,11 +7,11 @@ override LDFILE = ./linker.ld
 override CFLAGS = -ffreestanding -m64 -Wall -nostdlib -mgeneral-regs-only
 override LDFLAGS = -T $(LDFILE) -nostartfiles
 
-override CFILES := $(shell find . -type f -name '*.c')
+override CFILES := $(shell find . -type f -name '*.cpp')
 override ASFILES := $(shell find . -type f -name '*.S')
 override NASMFILES := $(shell find . -type f -name '*.asm')
-override OBJ := $(CFILES:.c=.o) $(ASFILES:.S=.o) $(NASMFILES:.asm=.o)
-override HEADER_DEPS := $(CFILES:.c=.d) $(ASFILES:.S=.d)
+override OBJ := $(CFILES:.cpp=.o) $(ASFILES:.S=.o) $(NASMFILES:.asm=.o)
+override HEADER_DEPS := $(CFILES:.cpp=.d) $(ASFILES:.S=.d)
 
 override APP_NAME := helloWorld
 
@@ -23,7 +23,7 @@ $(BIN_DIR)/$(APP_NAME): $(OBJ)
 %.o: %.s
 	$(CXX) $(CFLAGS) -c $< -o $@
 
-%.o: %.c
+%.o: %.cpp
 	$(CXX) $(CFLAGS) -c $< -o $@
 
 directories:  $(BIN_DIR)

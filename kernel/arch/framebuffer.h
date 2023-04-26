@@ -9,6 +9,12 @@
 #define CURSOR_COLOR    0xff808080
 #define RESET_COLOR     0x00000000
 
+typedef struct fb_context {
+    uint32_t fb_width;
+    uint32_t fb_height;
+    uint32_t fb_pitch;
+} fb_context_t;
+
 void clear_screen(terminal_t *term);
 uint32_t fb_get_width(void);
 uint32_t fb_get_height(void);

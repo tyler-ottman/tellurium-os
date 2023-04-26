@@ -79,7 +79,7 @@ thread_t* create_kernel_thread(void* entry, void* param) {
         return NULL;
     }
     stack_top = (uint64_t)thread->thread_base_sp + stack_size;
-    thread->thread_sp = (uint64_t*)stack_top;
+    thread->thread_sp = (uint64_t*)(stack_top - 8);
     
     thread->kernel_base_sp = kmalloc(stack_size);
     if (!thread->kernel_base_sp) {
@@ -135,7 +135,7 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
     uint64_t addr = (uint64_t)thread->thread_base_sp - KERNEL_HHDM_OFFSET;
     thread->thread_base_sp = (uint64_t *)addr;
     stack_top = (uint64_t)thread->thread_base_sp + stack_size;
-    thread->thread_sp = (uint64_t*)stack_top;
+    thread->thread_sp = (uint64_t*)(stack_top - 8);
 
     // Now map stack to userspace
     uint64_t vaddr = (uint64_t)thread->thread_base_sp;

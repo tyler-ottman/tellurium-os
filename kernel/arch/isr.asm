@@ -152,14 +152,14 @@ ISR_syscall:
     push rcx ; rip
     push $0 ; err
 
+    swapgs
+
     ; Save general purpose registers
     save_context
 
     mov rdi, rsp
     xor rbp, rbp
     call syscall_handler
-
-    swapgs
 
     ; Restore general purpose registers
     restore_context
