@@ -140,7 +140,7 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
     // Now map stack to userspace
     uint64_t vaddr = (uint64_t)thread->thread_base_sp;
     map_section(proc->pmap, vaddr, vaddr, stack_size, PML_PRESENT | PML_NOT_EXECUTABLE | PML_USER | PML_WRITE);
-    
+
     thread->kernel_base_sp = kmalloc(stack_size);
     if (!thread->kernel_base_sp) {
         thread_destroy(thread);

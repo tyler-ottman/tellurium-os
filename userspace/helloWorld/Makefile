@@ -4,7 +4,7 @@ override SRC_DIR = ./src
 override BIN_DIR = ./bin
 
 override LDFILE = ./linker.ld
-override CFLAGS = -ffreestanding -m64 -Wall -nostdlib -mgeneral-regs-only
+override CFLAGS = -ffreestanding -m64 -Wall -mgeneral-regs-only
 override LDFLAGS = -T $(LDFILE) -nostartfiles
 
 override CFILES := $(shell find . -type f -name '*.cpp')

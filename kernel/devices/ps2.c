@@ -75,7 +75,7 @@ void ps2_handler(ctx_t *ctx) {
             char_format = char_shift;
         }
         
-        kprintf("%c", char_format[c]);
+        // kprintf("%c", char_format[c]);
     }
 
     struct core_local_info* cpu_info = get_core_local_info();
