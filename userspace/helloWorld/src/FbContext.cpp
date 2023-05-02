@@ -1,4 +1,5 @@
 #include "FbContext.hpp"
+#include "mem.hpp"
 #include "syscalls.hpp"
 
 FbContext *FbContext::instance;
@@ -14,7 +15,6 @@ FbContext::~FbContext() {
 FbContext *FbContext::getInstance() {
     if (instance == nullptr) {
         instance = new FbContext();
-
         if (!syscall_get_fb_context(&instance->fb_meta) ||
             !syscall_get_fb_buffer((void **)&instance->fb_buff)) {
             return nullptr;
