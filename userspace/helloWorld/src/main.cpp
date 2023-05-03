@@ -5,11 +5,9 @@
 
 int main() {
     FbContext *fbContext = FbContext::getInstance();
-
-    FbMeta fbMeta = fbContext->getFbMeta();
-    uint32_t *fbBuff = fbContext->getFbBuffer();
+    uint32_t *fbBuff = (uint32_t *)fbContext->getFbContext().fb_buff;
     
-    for (size_t i = 0; i < 10000; i++) {
+    for (size_t i = 0; i < 100000; i++) {
         fbBuff[i] = 0xffff00ff;
     }
 

@@ -15,18 +15,13 @@ FbContext::~FbContext() {
 FbContext *FbContext::getInstance() {
     if (instance == nullptr) {
         instance = new FbContext();
-        if (!syscall_get_fb_context(&instance->fb_meta) ||
-            !syscall_get_fb_buffer((void **)&instance->fb_buff)) {
+        if (!syscall_get_fb_context(&instance->fb_meta)) {
             return nullptr;
         }
     }
     return instance;
 }
 
-FbMeta FbContext::getFbMeta() {
+FbMeta FbContext::getFbContext() {
     return instance->fb_meta;
-}
-
-uint32_t *FbContext::getFbBuffer() {
-    return instance->fb_buff;
 }

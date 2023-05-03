@@ -10,6 +10,7 @@
 #define RESET_COLOR     0x00000000
 
 typedef struct fb_context {
+    void *fb_buff;
     uint32_t fb_width;
     uint32_t fb_height;
     uint32_t fb_pitch;

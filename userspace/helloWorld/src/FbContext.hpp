@@ -4,6 +4,7 @@
 #include <cstdint>
 
 typedef struct {
+    void *fb_buff;
     uint32_t fb_width;
     uint32_t fb_height;
     uint32_t fb_pitch;
@@ -21,8 +22,7 @@ public:
     FbContext(FbContext& obj) = delete;
     static FbContext *getInstance(void);
 
-    FbMeta getFbMeta(void);
-    uint32_t *getFbBuffer(void);
+    FbMeta getFbContext(void);
 };
 
 #endif // FBCONTEXT_H

@@ -12,8 +12,7 @@
 #define SYS_SUCCESS                                 1
 
 #define SYSCALL_GET_FB_CONTEXT                      1
-#define SYSCALL_GET_FB_BUFFER                       2
-#define SYSCALL_MMAP                                3
+#define SYSCALL_MMAP                                2
 
 extern void* ISR_syscall[];
 
@@ -26,14 +25,6 @@ static int syscall_get_fb_context(fb_context_t *context) {
     context->fb_height = fb_get_height();
     context->fb_pitch = fb_get_pitch();
 
-    return SYS_SUCCESS;
-}
-
-static int syscall_get_fb_buffer(void **buff) {
-    if (!buff) {
-        return SYS_ERROR;
-    }
-
     // Map framebuffer to user process
     uint64_t addr = (uint64_t)(fb_get_framebuffer());
     addr -= KERNEL_HHDM_OFFSET;
@@ -43,8 +34,7 @@ static int syscall_get_fb_buffer(void **buff) {
     pcb_t *proc = cpu_info->current_thread->parent;
     uint64_t vmm_flags = PML_PRESENT | PML_NOT_EXECUTABLE | PML_USER | PML_WRITE;
     map_section(proc->pmap, vaddr, addr, fb_size_bytes, vmm_flags);
-
-    *buff = (void *)vaddr;
+    context->fb_buff = (void *)vaddr;
 
     return SYS_SUCCESS;
 }
@@ -87,9 +77,6 @@ void syscall_handler(ctx_t *ctx) {
     switch (syscall_id) {
     case SYSCALL_GET_FB_CONTEXT:
         ret = syscall_get_fb_context((fb_context_t *)arg1);
-        break;
-    case SYSCALL_GET_FB_BUFFER:
-        ret = syscall_get_fb_buffer((void **)arg1);
         break;
     case SYSCALL_MMAP:
         ret = (size_t)syscall_mmap((void *)arg1, arg2, arg3, arg4, arg5, arg6);
