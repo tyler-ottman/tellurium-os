@@ -1,4 +1,5 @@
 #include "mem.hpp"
+#include "syscalls.hpp"
 
 #define MAX(X,Y) ((X) < (Y) ? (Y) : (X))
 
@@ -54,7 +55,7 @@ static inline size_t alignUp(size_t num, size_t bound) {
 }
 
 static void *requestBlock(size_t size) {
-    void *addr = mmap(nullptr, size, PROT_WRITE | PROT_READ, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    void *addr = syscall_mmap(nullptr, size, PROT_WRITE | PROT_READ, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     if (addr == MAP_FAILED) {
         return nullptr;
     }

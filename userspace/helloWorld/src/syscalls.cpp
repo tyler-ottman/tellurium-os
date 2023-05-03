@@ -30,3 +30,7 @@ size_t syscall_get_fb_context(FbMeta *fb_meta) {
 int syscall_get_fb_buffer(void **buff) {
     return _syscall(SYSCALL_GET_FB_BUFFER, buff, 0, 0, 0, 0, 0);
 }
+
+void *syscall_mmap(void *addr, size_t len, int prot, int flags, int fd, size_t offset) {
+    return (void *)_syscall(SYSCALL_MMAP, addr, len, prot, flags, fd, offset);
+}
