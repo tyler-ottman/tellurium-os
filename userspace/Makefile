@@ -2,7 +2,7 @@ APP_TAR := userspace
 
 # Specify directory of user application here
 APPLICATIONS :=		\
-	helloWorld
+	gui
 
 # Verify that user application's elf is name 'app.elf'
 all:

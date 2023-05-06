@@ -55,6 +55,15 @@ pcb_t *create_user_process(const char *elf_path) {
     struct pagemap *k_pmap = get_kernel_pagemap();
     __memcpy(proc->pmap->pml4_base, k_pmap->pml4_base, PAGE_SIZE_BYTES);
 
+    // Initialize file descriptor table
+    VECTOR_ALLOC(proc->fd_table.fd_table);
+    vector_t fd_table_vec = proc->fd_table.fd_table;
+    for (int i = 0; i < VECTOR_SIZE(fd_table_vec); i++) {
+        VECTOR_SET(fd_table_vec, i, NULL);
+    }
+
+    proc->fd_table.fd_table_lock = 0;
+
     // Load ELF into user process's address space
     uint64_t entry;
     elf_load(proc, elf_path, &entry);

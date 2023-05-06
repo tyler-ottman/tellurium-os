@@ -2,6 +2,8 @@
 #define PROCESS_H
 
 #include <arch/cpu.h>
+#include <arch/lock.h>
+#include <fs/fd.h>
 #include <libc/vector.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -33,6 +35,7 @@ typedef struct pcb {
     VECTOR_DECLARE(threads);
     VECTOR_DECLARE(children);
     struct pagemap* pmap;
+    fd_table_t fd_table;
 } pcb_t;
 
 typedef struct tcb {

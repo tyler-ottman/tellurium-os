@@ -16,11 +16,11 @@
 #define VECTOR_SET(vec, n, val) vector_set(&vec, n, (void*)val)
 #define VECTOR_SIZE(vec) vector_size(&vec)
 
-struct vector {
+typedef struct vector {
     int cur_elements;
     int max_elements;
     void** elements;
-};
+} vector_t;
 
 void vector_alloc(struct vector* vector);
 void vector_clear(struct vector* vector);

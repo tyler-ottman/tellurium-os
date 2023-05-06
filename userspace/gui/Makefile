@@ -13,7 +13,7 @@ override NASMFILES := $(shell find . -type f -name '*.asm')
 override OBJ := $(CFILES:.cpp=.o) $(ASFILES:.S=.o) $(NASMFILES:.asm=.o)
 override HEADER_DEPS := $(CFILES:.cpp=.d) $(ASFILES:.S=.d)
 
-override APP_NAME := helloWorld
+override APP_NAME := gui
 
 all: directories $(BIN_DIR)/$(APP_NAME)
 

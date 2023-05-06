@@ -54,11 +54,15 @@ void kmain(void *param) {
     vfs_create(vfs_get_root(), "/tmp", VDIR);
     vfs_mount(vfs_get_root(), "/tmp", "tmpfs");
 
+    // Special files (pipe)
+    // vfs_create(vfs_get_root(), "/var", VDIR);
+    // vfs_create(vfs_get_root(), "/var/tmp", VDIR);
+
     // Store userapps in vfs
     tmpfs_load_userapps();
 
-    // For testing purposes
-    create_user_process("/tmp/helloWorld.elf");
+    // Load GUI environment
+    create_user_process("/tmp/gui.elf");
 
     vfs_print_tree(vfs_get_root(), 4);
     kprintf(INFO "kmain: init complete\n");
