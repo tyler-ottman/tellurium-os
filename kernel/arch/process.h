@@ -36,6 +36,7 @@ typedef struct pcb {
     VECTOR_DECLARE(children);
     struct pagemap* pmap;
     fd_table_t fd_table;
+    vnode_t *cwd;
 } pcb_t;
 
 typedef struct tcb {

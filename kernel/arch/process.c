@@ -63,6 +63,7 @@ pcb_t *create_user_process(const char *elf_path) {
     }
 
     proc->fd_table.fd_table_lock = 0;
+    proc->cwd = vfs_get_root();
 
     // Load ELF into user process's address space
     uint64_t entry;

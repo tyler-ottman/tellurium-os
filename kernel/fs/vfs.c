@@ -275,9 +275,11 @@ int vfs_open(struct vnode **ret_vnode, vnode_t *base, const char *path) {
     if (vnode == NULL) {
         char *relpath = buff;
         vnode_t *root = vfs_get_mountpoint(base, (char *)path, &relpath);
+        if (!root) { // No FS mounted on node
+            spinlock_release(&vfs_lock);
+            return 0;
+        }
         root->vfsops->open(root, path); // TODO: pass relative path to root
-        spinlock_release(&vfs_lock);
-        return 0;
     }
 
     vnode->v_ref_count++;
