@@ -105,6 +105,7 @@ static int tmpfs_create(vnode_t *node) {
     node->stat.st_blksize = PAGE_SIZE_BYTES;
     node->stat.st_blocks = 1;
     node->stat.st_size = node->stat.st_blksize;
+    node->stat.st_mode = vfs_vtype_to_st_mode(node->v_type);
 
     return 1;
 }

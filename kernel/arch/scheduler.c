@@ -119,6 +119,12 @@ void thread_wrapper(void *entry, void *param) {
     schedule_thread_terminate();
 }
 
+void schedule_thread_block() {
+    struct core_local_info *info = get_core_local_info();
+    info->current_thread->state = BLOCKED;
+    lapic_send_ipi(info->lapic_id, info->lapic_ipi_vector);
+}
+
 void schedule_thread_yield() {
     struct core_local_info *info = get_core_local_info();
     lapic_send_ipi(info->lapic_id, info->lapic_ipi_vector);

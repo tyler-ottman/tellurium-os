@@ -189,6 +189,15 @@ void vfs_print_tree(vnode_t *parent, int max_depth) {
     spinlock_release(&vfs_lock);
 }
 
+int vfs_vtype_to_st_mode(int vtype) {
+    switch (vtype) {
+    case VREG: return S_IFREG;
+    case VDIR: return S_IFDIR;
+    case VSKT: return S_IFSOCK;
+    default: return 0;
+    }
+}
+
 struct vnode *vfs_get_root(void) {
     return v_root;
 }

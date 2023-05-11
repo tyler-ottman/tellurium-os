@@ -102,6 +102,7 @@ thread_t* create_kernel_thread(void* entry, void* param) {
 
     thread->state = CREATED;
     thread->isKernel = true;
+    thread->received_event = NULL;
 
     thread->prev = NULL;
     thread->next = NULL;
@@ -161,6 +162,7 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
 
     thread->state = CREATED;
     thread->isKernel = false;
+    thread->received_event = NULL;
 
     thread->prev = NULL;
     thread->next = NULL;

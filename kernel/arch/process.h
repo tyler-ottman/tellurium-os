@@ -7,6 +7,7 @@
 #include <libc/vector.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/event.h>
 
 #define IDLE_THREAD_TID         0
 #define PROCESS_MAX             256
@@ -54,6 +55,7 @@ typedef struct tcb {
     uint32_t state;
     uint32_t time_slice;
     bool isKernel;
+    struct event *received_event;
 
     struct tcb *prev;
     struct tcb *next;

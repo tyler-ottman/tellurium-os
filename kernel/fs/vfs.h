@@ -4,17 +4,11 @@
 #include <libc/vector.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/stat.h>
 
 #define VNODE_NAME_MAX                  64
 #define VNODE_PATH_MAX                  512
 #define FS_MAX                          10
-
-typedef struct stat {
-	uint32_t st_mode;
-	uint32_t st_size;
-	uint32_t st_blksize;
-	uint32_t st_blocks;
-} stat_t;
 
 typedef struct fs {
     char fs_name[VNODE_NAME_MAX];
@@ -22,7 +16,7 @@ typedef struct fs {
     struct vfsops *vfsops;
 } fs_t;
 
-enum VTYPE {VNON, VREG, VDIR, VBLK};
+enum VTYPE {VNON, VREG, VDIR, VBLK, VSKT};
 typedef struct vnode {
     size_t v_ref_count;
     size_t v_lock_count;
@@ -46,6 +40,7 @@ typedef struct vfsops {
 } vfsops_t;
 
 void vfs_print_tree(vnode_t *parent, int max_depth);
+int vfs_vtype_to_st_mode(int vtype);
 vnode_t *vfs_get_root(void);
 vnode_t *vnode_create(vnode_t *parent, const char *v_name, int v_type);
 int vfs_add_filesystem(const char *fs_name, vfsops_t *fs_ops);

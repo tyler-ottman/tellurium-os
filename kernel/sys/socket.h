@@ -1,12 +1,15 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
+#include <arch/lock.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <sys/event.h>
 
 #define AF_UNIX_PATH_LEN                        108
 
 #define SOCKETADDR_STORAGE_SIZE                 128
+#define SOCKET_BACKLOG_CAPACITY                 10
 
 // Socket Family
 #define AF_UNIX                                 1
@@ -25,10 +28,16 @@
 #define SKT_BAD_OP                              4
 #define SKT_BAD_SOCKADDR                        5
 #define SKT_BIND_FAIL                           6
+#define SKT_BAD_STATE                           7
+#define SKT_VFS_FAIL                            8
+#define SKT_BACKLOG_FULL                        9
+#define SKT_BLOCK_FAIL                          10
 
 enum socket_state {
     SOCKET_CREATED,
-    SOCKET_BOUND
+    SOCKET_BOUNDED,
+    SOCKET_LISTENING,
+    SOCKET_CONNECTED
 };
 
 typedef unsigned socklen_t;
@@ -67,18 +76,26 @@ struct msghdr {
 };
 
 typedef struct socket {
+    spinlock_t lock;
     int domain;
     int type;
     int protocol;
     int state;
-
     struct socketaddr_storage *local_addr;
-    
     struct socket *peer;
+    
+    event_t connection_request;
+    event_t connection_accepted;
+
+    struct socket **backlog;
+    size_t backlog_capacity;
+    size_t backlog_size;
 
     int (*socket_bind)(struct socket *this, const struct sockaddr *addr, socklen_t addrlen);
+    int (*socket_connect)(struct socket *this, const struct sockaddr *addr, socklen_t addrlen);
 } socket_t;
 
 int socket_init(socket_t *this, int domain, int type, int protocol);
+int socket_add_to_peer_backlog(socket_t *this, socket_t *peer);
 
 #endif // SOCKET_H

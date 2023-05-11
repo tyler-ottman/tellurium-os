@@ -11,7 +11,8 @@ void thread_entry(thread_t* thread);
 void thread_switch(struct core_local_info* cpu_info);
 void thread_wrapper(void *entry, void *param);
 
-void schedule_yield(void);
+void schedule_thread_block(void);
+void schedule_thread_yield(void);
 void schedule_thread_terminate(void);
 
 #endif // SCHEDULER_H
