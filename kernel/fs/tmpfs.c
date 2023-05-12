@@ -35,6 +35,7 @@ static volatile struct limine_module_request module_request = {
 };
 
 static int tmpfs_mount(vnode_t *mp, vnode_t *device) {
+    (void)device;
     // vnode_t *tmpfs_root = vnode_create(mp, "tmpfs_root", VDIR);
     // if (!tmpfs_root) {
     //     return 0;
@@ -49,10 +50,15 @@ static int tmpfs_mount(vnode_t *mp, vnode_t *device) {
 }
 
 static int tmpfs_open(vnode_t *base, const char *path) {
+    (void)base;
+    (void)path;
+
     return 0;
 }
 
 static int tmpfs_close(vnode_t *node) {
+    (void)node;
+
     return 0;
 }
 

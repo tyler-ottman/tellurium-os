@@ -47,6 +47,8 @@ void _start(void) {
 }
 
 void kmain(void *param) {
+    (void)param;
+
     vfs_init();
 
     tmpfs_init();
@@ -60,6 +62,8 @@ void kmain(void *param) {
 
     // Store userapps in vfs
     tmpfs_load_userapps();
+
+
 
     // Load GUI environment
     create_user_process("/tmp/gui.elf");

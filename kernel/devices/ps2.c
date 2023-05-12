@@ -15,37 +15,37 @@ typedef struct keyboard_state {
     bool is_shift;
 }__attribute__((packed)) keyboard_state_t;
 
-static char char_capslock[] = {
-    '\0', '\0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
-    '\t', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\n',
-    '\0', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', '`', 
-    '\0', '\\', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', '\0',
-    '*', '\0', ' '
-};
+// static char char_capslock[] = {
+//     '\0', '\0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
+//     '\t', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\n',
+//     '\0', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', '`', 
+//     '\0', '\\', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', '\0',
+//     '*', '\0', ' '
+// };
 
-static char char_no_capslock[] = {
-    '\0', '\0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
-    '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',
-    '\0', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 
-    '\0', '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', '\0',
-    '*', '\0', ' '
-};
+// static char char_no_capslock[] = {
+//     '\0', '\0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
+//     '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',
+//     '\0', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 
+//     '\0', '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', '\0',
+//     '*', '\0', ' '
+// };
 
-static char char_shift[] = {
-    '\0', '\0', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\b',
-    '\t', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n',
-    '\0', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '\"', '~', 
-    '\0', '|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', '\0',
-    '*', '\0', ' '
-};
+// static char char_shift[] = {
+//     '\0', '\0', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\b',
+//     '\t', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n',
+//     '\0', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '\"', '~', 
+//     '\0', '|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', '\0',
+//     '*', '\0', ' '
+// };
 
-static char char_shift_capslock[] = {
-    '\0', '\0', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\b',
-    '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '{', '}', '\n',
-    '\0', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ':', '\"', '~', 
-    '\0', '|', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '<', '>', '?', '\0',
-    '*', '\0', ' '
-};
+// static char char_shift_capslock[] = {
+//     '\0', '\0', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\b',
+//     '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '{', '}', '\n',
+//     '\0', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ':', '\"', '~', 
+//     '\0', '|', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '<', '>', '?', '\0',
+//     '*', '\0', ' '
+// };
 
 static keyboard_state_t keyboard_state;
 
@@ -65,18 +65,18 @@ void ps2_handler(ctx_t *ctx) {
     }
 
     // testing print
-    if (c <= 0x39) {
-        char *char_format = char_no_capslock;
-        if (keyboard_state.is_capslock && keyboard_state.is_shift) {
-            char_format = char_shift_capslock;
-        } else if (keyboard_state.is_capslock) {
-            char_format = char_capslock;
-        } else if (keyboard_state.is_shift) {
-            char_format = char_shift;
-        }
+    // if (c <= 0x39) {
+    //     char *char_format = char_no_capslock;
+    //     if (keyboard_state.is_capslock && keyboard_state.is_shift) {
+    //         char_format = char_shift_capslock;
+    //     } else if (keyboard_state.is_capslock) {
+    //         char_format = char_capslock;
+    //     } else if (keyboard_state.is_shift) {
+    //         char_format = char_shift;
+    //     }
         
-        // kprintf("%c", char_format[c]);
-    }
+    //     kprintf("%c", char_format[c]);
+    // }
 
     struct core_local_info* cpu_info = get_core_local_info();
     save_context(cpu_info, ctx);

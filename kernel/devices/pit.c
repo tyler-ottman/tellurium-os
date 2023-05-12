@@ -16,6 +16,8 @@ static cwf_t default_command = {
 };
 
 void pit_set_reload(uint8_t channel, uint16_t value) {
+    (void)value;
+
     cwf_t command = default_command;
     command.select_counter = channel;
     command.read_write = 3;

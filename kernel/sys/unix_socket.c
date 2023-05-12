@@ -251,7 +251,7 @@ static size_t unix_socket_recv(struct socket *this, void *buff, size_t len,
     }
 
     for (;;) {
-        
+
     }
 
     err = SKT_OK;

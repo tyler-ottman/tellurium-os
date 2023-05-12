@@ -3,8 +3,7 @@
 
 #include <stdbool.h>
 
-#define HLT
-#undef RET
+// #define DEBUG
 
 #define ERR_NO_MEM                                  1
 

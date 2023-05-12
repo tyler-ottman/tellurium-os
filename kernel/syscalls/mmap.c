@@ -5,6 +5,12 @@
 #include <memory/vmm.h>
 
 void *syscall_mmap(void *addr, size_t len, int prot, int flags, int fd, size_t offset) {
+    (void)addr;
+    (void)prot;
+    (void)flags;
+    (void)fd;
+    (void)offset;
+
     size_t num_pages = len / PAGE_SIZE_BYTES;
     if (len % PAGE_SIZE_BYTES != 0) {
         num_pages++;

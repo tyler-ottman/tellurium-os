@@ -75,7 +75,5 @@ void init_hpet() {
 
     hpet_addr = (uint64_t *)get_hpet_addr();
 
-    kprintf(INFO GREEN "HPET_CLK_PERIOD: %d fs\n", hpet_get_period());
-
-    uint64_t main_counter = hpet_read(HPET_MAIN_COUNTER);
+    kprintf(INFO GREEN "HPET_CLK_PERIOD: %d fs\n", hpet_get_period());    
 }

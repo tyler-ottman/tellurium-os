@@ -75,6 +75,8 @@ uint64_t palign(size_t frames) {
 }
 
 void init_pmm(void) {
+    (void)debug_limine_mmap_type;
+
     // Get memory map
     // kprintf("Kernel hhdm: %x\n", KERNEL_HHDM_OFFSET);
     struct limine_memmap_response* memory_map_response = memory_map_request.response;
@@ -128,7 +130,9 @@ void init_pmm(void) {
     uint64_t available_bytes = 0;
     for (size_t idx = 0; idx < mmap_entries; idx++) {
         entry = entries[idx];
-        // kprintf("Base: %016x, Len: %16x, Type: %s\n", entry->base, entry->length, debug_limine_mmap_type[entry->type]);
+#ifdef DEBUG
+        kprintf("Base: %016x, Len: %16x, Type: %s\n", entry->base, entry->length, debug_limine_mmap_type[entry->type]);
+#endif
         if (entry->type == LIMINE_MEMMAP_USABLE) {
             available_bytes += entry->length;
         }
@@ -136,8 +140,13 @@ void init_pmm(void) {
 
     uint64_t free_frames = available_bytes / PAGE_SIZE_BYTES;
     uint64_t reserved_frames = frames - free_frames;
-    // kprintf("PMM: Page frames -> Total: %u, Reserved: %u, Free: %u\n", frames, reserved_frames, free_frames);
-    // kprintf("PMM: Bitmap size aligned: %u\n", bitmap_size_aligned);
+
+#ifdef DEBUG
+    kprintf("PMM: Page frames -> Total: %u, Reserved: %u, Free: %u\n", frames, reserved_frames, free_frames);
+    kprintf("PMM: Bitmap size aligned: %u\n", bitmap_size_aligned);
+#else
+    (void)reserved_frames;
+#endif
 
     kprintf(INFO GREEN "PMM: Initialized\n");
 }
