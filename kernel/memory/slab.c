@@ -1,6 +1,7 @@
 #include <arch/terminal.h>
 #include <memory/pmm.h>
 #include <memory/slab.h>
+#include <sys/misc.h>
 
 static struct cache* caches[SLAB_CHUNK_SIZE_VARIENTS];
 static struct cache_metadata metadata;
@@ -10,16 +11,12 @@ static size_t known_chunks[] = {
 };
 
 void cache_insert(size_t chunk_size) {
-    if (metadata.cur_caches == metadata.max_caches) {
-        kerror("slab: max caches reached\n");
-    }
+    ASSERT((metadata.cur_caches != metadata.max_caches) &&
+           (chunk_size <= SLAB_MAX_CHUNK_SIZE), ERR_NO_MEM,
+            "slab: max cache or object size reached\n");
 
-    if (chunk_size > SLAB_MAX_CHUNK_SIZE) {
-        kerror("slab: cache object size exceeded\n");
-    }
-    
     struct cache* cache = palloc(1);
-    ASSERT(cache != NULL);
+    ASSERT(cache != NULL, ERR_NO_MEM, NULL);
 
     cache->slabs_empty = cache->slabs_partial = cache->slabs_full = NULL;
     cache->chunk_size = chunk_size;
@@ -63,7 +60,7 @@ void slab_spawn(struct cache* cache) {
     int header_size = sizeof(struct slab);
     
     struct slab* slab = palloc(1);
-    ASSERT(slab != NULL);
+    ASSERT(slab != NULL, ERR_NO_MEM, NULL);
     __memset(slab, 0, header_size);
 
     int header_size_chunks = header_size / chunk_size;

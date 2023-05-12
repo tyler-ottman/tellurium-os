@@ -37,8 +37,6 @@
 
 #define INFO            GREEN"["LIGHT_GREEN"INFO"GREEN"] "
 
-#define ASSERT(cond) {if (!(cond)) kerror("Assertion failed\n");}
-
 typedef struct terminal {
     uint32_t *buffer;
     bool is_double_buffer;

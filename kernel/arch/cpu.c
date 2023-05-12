@@ -11,6 +11,7 @@
 #include <devices/serial.h>
 #include <libc/kmalloc.h>
 #include <memory/vmm.h>
+#include <sys/misc.h>
 
 static volatile struct limine_smp_request kernel_smp_request = {
     .id = LIMINE_SMP_REQUEST,
@@ -137,7 +138,7 @@ void core_init(struct limine_smp_info* core) {
     load_pagemap(get_kernel_pagemap());
 
     struct core_local_info* cpu_info = kmalloc(sizeof(struct core_local_info));
-    ASSERT(cpu_info != NULL);
+    ASSERT(cpu_info != NULL, ERR_NO_MEM, NULL);
     set_core_local_info(cpu_info);
 
     cpu_info->kernel_stack = NULL;

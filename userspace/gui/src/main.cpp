@@ -9,9 +9,9 @@ int main() {
     
     int fd = syscall_open("/var/temp/test", 3);
 
-    for (size_t i = 0; i < 100000; i++) {
-        fbBuff[i] = 0xffff00ff;
-    }
+    // for (size_t i = 0; i < 100000; i++) {
+    //     fbBuff[i] = 0xffff00ff;
+    // }
 
     for (;;) {}
 }

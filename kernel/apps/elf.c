@@ -3,6 +3,7 @@
 #include <fs/vfs.h>
 #include <libc/kmalloc.h>
 #include <memory/vmm.h>
+#include <sys/misc.h>
 
 // e_ident
 #define EI_MAG                          0
@@ -92,14 +93,14 @@ typedef struct Elf64_Phdr {
 
 static int elf_verify_header(Elf64_Ehdr_t *header) {
     const char magic[] = {EI_MAG0, EI_MAG1, EI_MAG2, EI_MAG3};
-    ELF_ASSERT(!__strncmp((const char *)&header->e_ident[EI_MAG], magic, 4));
-    ELF_ASSERT(header->e_ident[EI_CLASS] == ELFCLASS64);
-    ELF_ASSERT(header->e_ident[EI_DATA] == ELFDATA2LSB);
-    ELF_ASSERT(header->e_ident[EI_OSABI] == ELFOSABI_SYSV);
-    ELF_ASSERT(header->e_ident[EI_ABIVERSION] == ABIVERSION_SYSV);
-    ELF_ASSERT(header->e_type == ET_EXEC);
-    ELF_ASSERT(header->e_machine == EM_X86_64);
-    ELF_ASSERT(header->e_version == EV_CURRENT);
+    ASSERT_RET(!__strncmp((const char *)&header->e_ident[EI_MAG], magic, 4), ELF_ERR);
+    ASSERT_RET(header->e_ident[EI_CLASS] == ELFCLASS64, ELF_ERR);
+    ASSERT_RET(header->e_ident[EI_DATA] == ELFDATA2LSB, ELF_ERR);
+    ASSERT_RET(header->e_ident[EI_OSABI] == ELFOSABI_SYSV, ELF_ERR);
+    ASSERT_RET(header->e_ident[EI_ABIVERSION] == ABIVERSION_SYSV, ELF_ERR);
+    ASSERT_RET(header->e_type == ET_EXEC, ELF_ERR);
+    ASSERT_RET(header->e_machine == EM_X86_64, ELF_ERR);
+    ASSERT_RET(header->e_version == EV_CURRENT, ELF_ERR);
     return ELF_SUCCESS;
 }
 
@@ -117,27 +118,27 @@ int elf_load(pcb_t *proc, const char *path, uint64_t *entry) {
     vnode_t *elf_node;
     vfs_open(&elf_node, vfs_get_root(), path);
     if (!elf_node) {
-        return ELF_ERROR;
+        return ELF_ERR;
     }
 
     // Read file as contiguous chunk of bytes
     uint8_t *data = kmalloc(elf_node->stat.st_size);
     if (!data) {
-        return ELF_ERROR;
+        return ELF_ERR;
     }
 
     int ret = vfs_read(data, elf_node, elf_node->stat.st_size, 0);
     if (!ret) {
-        return ELF_ERROR;
+        return ELF_ERR;
     }
     
     Elf64_Ehdr_t *header = (Elf64_Ehdr_t *)data;
     if (!elf_verify_header(header)) {
-        return ELF_ERROR;
+        return ELF_ERR;
     }
 
     if (!entry) {
-        return ELF_ERROR;
+        return ELF_ERR;
     }
     
     *entry = header->e_entry;
@@ -170,7 +171,7 @@ int elf_load(pcb_t *proc, const char *path, uint64_t *entry) {
         // Load program section to memory
         void *p_section = kmalloc(num_pages * PAGE_SIZE_BYTES);
         if (!p_section) { // very bad
-            return ELF_ERROR;
+            return ELF_ERR;
         }
         // Address where program section will be stored in memory
         __memset(p_section, '\0', num_pages * PAGE_SIZE_BYTES);

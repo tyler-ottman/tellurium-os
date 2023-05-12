@@ -1,5 +1,7 @@
 #include <libc/kmalloc.h>
+#include <sys/misc.h>
 #include <sys/socket.h>
+#include <sys/misc.h>
 #include <sys/unix_socket.h>
 
 int socket_init(socket_t *this, int domain, int type, int protocol) {
@@ -21,12 +23,9 @@ int socket_init(socket_t *this, int domain, int type, int protocol) {
     }
     this->peer = NULL;
 
-    this->backlog_capacity = SOCKET_BACKLOG_CAPACITY;
+    this->backlog_capacity = 0;
     this->backlog_size = 0;
-    this->backlog = kmalloc(this->backlog_capacity * sizeof(socket_t *));
-    if (!this->backlog) {
-        return SKT_NO_MEM;
-    }
+    this->backlog = NULL;
 
     this->socket_bind = NULL;
 
@@ -43,6 +42,20 @@ int socket_add_to_peer_backlog(socket_t *this, socket_t *peer) {
     }
 
     peer->backlog[peer->backlog_size++] = this;
+
+    return SKT_OK;
+}
+
+int socket_pop_from_backlog(socket_t *this, socket_t **pop) {
+    ASSERT_RET(this && pop, SKT_BAD_PARAM);
+
+    ASSERT_RET(this->backlog_size != 0, SKT_BACKLOG_EMPTY);
+
+    *pop = this->backlog[0];
+
+    for (size_t i = 0; i < this->backlog_size - 1; i++) {
+        this->backlog[i] = this->backlog[i + 1];
+    }
 
     return SKT_OK;
 }

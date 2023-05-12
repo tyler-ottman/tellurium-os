@@ -5,6 +5,7 @@
 #include <libc/string.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/misc.h>
 
 #define ASSERT_BUFF_LIM(cur, max) {if (cur >= max) return -1;} 
 

@@ -11,7 +11,7 @@
 
 typedef struct event {
     spinlock_t lock;
-    struct thread *listeners[LISTEN_CAPACITY];
+    struct tcb *listeners[LISTEN_CAPACITY];
 } event_t;
 
 int event_wait(event_t *event);

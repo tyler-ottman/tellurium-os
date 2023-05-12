@@ -1,5 +1,6 @@
 #include <acpi/acpi.h>
 #include <memory/vmm.h>
+#include <sys/misc.h>
 
 // Using linker script to find kernel sections
 extern uint8_t _stext[];
@@ -43,10 +44,10 @@ void init_vmm() {
 
     // Allocate frame for kernel pagemap
     k_pagemap = palloc(1);
-    ASSERT(k_pagemap != NULL);
+    ASSERT(k_pagemap != NULL, ERR_NO_MEM, NULL);
 
     k_pagemap->pml4_base = palloc(1);
-    ASSERT(k_pagemap->pml4_base != NULL);
+    ASSERT(k_pagemap->pml4_base != NULL, ERR_NO_MEM, NULL);
     
     uint64_t kernel_vaddr = kernel_response->virtual_base;
     uint64_t kernel_paddr = kernel_response->physical_base;

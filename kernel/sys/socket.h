@@ -9,7 +9,7 @@
 #define AF_UNIX_PATH_LEN                        108
 
 #define SOCKETADDR_STORAGE_SIZE                 128
-#define SOCKET_BACKLOG_CAPACITY                 10
+#define SKT_BACKLOG_CAPACITY                    100
 
 // Socket Family
 #define AF_UNIX                                 1
@@ -32,6 +32,8 @@
 #define SKT_VFS_FAIL                            8
 #define SKT_BACKLOG_FULL                        9
 #define SKT_BLOCK_FAIL                          10
+#define SKT_BACKLOG_EMPTY                       11
+#define SKT_BACKLOG_CAPACITY_INVALID            12
 
 enum socket_state {
     SOCKET_CREATED,
@@ -91,11 +93,25 @@ typedef struct socket {
     size_t backlog_capacity;
     size_t backlog_size;
 
-    int (*socket_bind)(struct socket *this, const struct sockaddr *addr, socklen_t addrlen);
-    int (*socket_connect)(struct socket *this, const struct sockaddr *addr, socklen_t addrlen);
+    int (*socket_accept)(struct socket *this, struct socket **sock,
+                         const struct sockaddr *addr, socklen_t *addrlen);
+    int (*socket_bind)(struct socket *this, const struct sockaddr *addr,
+                       socklen_t addrlen);
+    int (*socket_connect)(struct socket *this, const struct sockaddr *addr,
+                          socklen_t addrlen);
+    int (*socket_getpeername)(struct socket *this, struct sockaddr *addr,
+                              socklen_t *socklen);
+    int (*socket_getsockname)(struct socket *this, struct sockaddr *addr,
+                              socklen_t *socklen);
+    int (*socket_listen)(struct socket *this, int backlog);
+    size_t (*socket_recv)(struct socket *this, void *buff, size_t len,
+                          int flags);
+    size_t (*socket_send)(struct socket *this, const void *buff, size_t len,
+                          int flags);
 } socket_t;
 
 int socket_init(socket_t *this, int domain, int type, int protocol);
 int socket_add_to_peer_backlog(socket_t *this, socket_t *peer);
+int socket_pop_from_backlog(socket_t *this, socket_t **pop);
 
 #endif // SOCKET_H

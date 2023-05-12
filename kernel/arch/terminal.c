@@ -6,6 +6,7 @@
 #include <libc/kmalloc.h>
 #include <libc/print.h>
 #include <stdarg.h>
+#include <sys/misc.h>
 
 #define NUM_SET_TEXT_ATTRIBUTES     9
 #define NUM_RESET_TEXT_ATTRIBUTES   8
@@ -324,7 +325,7 @@ int kprintf(const char* format, ...) {
     va_start(valist, format);
     int err = __vsnprintf(buf, BUF_MAX, format, valist);
     va_end(valist);
-    ASSERT(err != -1);
+    ASSERT(err != -1, 0, "terminal: printf fail\n");
 
     // reset_text_attribute(&kterminal);
 

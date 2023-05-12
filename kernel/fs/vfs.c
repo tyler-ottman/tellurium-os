@@ -2,9 +2,8 @@
 #include <arch/terminal.h>
 #include <libc/kmalloc.h>
 #include <libc/string.h>
+#include <sys/misc.h>
 #include <fs/vfs.h>
-
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 static spinlock_t vfs_lock = 0;
 static vnode_t *v_root;
