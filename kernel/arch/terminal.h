@@ -36,6 +36,7 @@
 #define WHITE           RESET"\033[97m"
 
 #define INFO            GREEN"["LIGHT_GREEN"INFO"GREEN"] "
+#define ERROR           RED "[" LIGHT_RED "ERROR" RED "] "
 
 typedef struct terminal {
     uint32_t *buffer;
@@ -62,7 +63,7 @@ typedef struct terminal {
     char ansi_sequence[ANSI_SEQ_LEN];
 } terminal_t;
 
-void kerror(const char* err);
+void kerror(const char* msg, int err);
 int kprintf(const char* format, ...);
 
 void init_kterminal_doublebuffer(void);

@@ -1,5 +1,6 @@
 #include <arch/lock.h>
 #include <arch/idt.h>
+#include <sys/misc.h>
 
 extern void* isr_table[];
 
@@ -11,9 +12,8 @@ __attribute__((aligned(0x10))) static IDT_Entry idt_entry[256];
 
 uint8_t allocate_vector() {
     spinlock_acquire(&idt_lock);
-    if (cur_vector_idt >= 256) {
-        kerror("IDT: Exceeded available IDT entries\n");
-    }
+    ASSERT(cur_vector_idt < 256, 0, "IDT: Exceeded available IDT entries\n");
+
     uint8_t vector = cur_vector_idt++;
     spinlock_release(&idt_lock);
 

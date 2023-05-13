@@ -1,6 +1,7 @@
 #include <arch/gdt.h>
 #include <arch/lock.h>
 #include <arch/terminal.h>
+#include <sys/misc.h>
 
 GDT_Descriptor gdtr;
 GDT gdt;
@@ -109,9 +110,7 @@ void init_gdt() {
 }
 
 void add_gdt_entry(GDT_Entry entry) {
-    if (gdt_index == GDT_ENTRIES - 1) {
-        kerror("GDT: Exceeded max gdt entries\n");
-    }
+    ASSERT(gdt_index != GDT_ENTRIES - 1, 0, "GDT: Exceeded max gdt entries\n");
 
     gdt.gdt_entry[gdt_index++] = entry;
 }

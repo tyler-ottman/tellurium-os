@@ -10,7 +10,7 @@
 #define ASSERT(cond, err, msg)                      \
 {                                                   \
     if (!(cond)) {                                  \
-        kerror(msg);                                \
+        kerror(msg, err);                           \
     }                                               \
 }
 

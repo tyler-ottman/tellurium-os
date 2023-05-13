@@ -81,7 +81,7 @@ void thread_switch(struct core_local_info* cpu_info) {
     cpu_info->kernel_stack = cpu_info->current_thread->kernel_sp;
     cpu_info->kernel_scratch = cpu_info->current_thread->thread_scratch;
 
-    lapic_schedule_time(1000000);
+    lapic_schedule_time(1000);
 
     __asm__ volatile(
         "mov %0, %%rsp\n\t"

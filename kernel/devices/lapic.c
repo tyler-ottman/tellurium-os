@@ -3,6 +3,7 @@
 #include <devices/lapic.h>
 #include <arch/scheduler.h>
 #include <arch/cpu.h>
+#include <sys/misc.h>
 
 extern void* ISR_Timer[];
 extern void* ISR_IPI[];
@@ -15,17 +16,13 @@ bool is_lapic_aligned(size_t offset) {
 }
 
 uint32_t lapic_read(size_t offset) {
-    if (!is_lapic_aligned(offset)) {
-        kerror(UNALIGNED_LAPIC);
-    }
+    ASSERT(is_lapic_aligned(offset), 0, UNALIGNED_LAPIC);
 
     return *((uint32_t*)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET));
 }
 
 void lapic_write(size_t offset, uint32_t val) {
-    if  (!is_lapic_aligned(offset)) {
-        kerror(UNALIGNED_LAPIC);
-    }
+    ASSERT(is_lapic_aligned(offset), 0, UNALIGNED_LAPIC);
 
     *((uint32_t*)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET)) = val;
 }

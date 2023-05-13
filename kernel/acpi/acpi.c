@@ -1,4 +1,5 @@
 #include <acpi/acpi.h>
+#include <sys/misc.h>
 
 static volatile struct limine_rsdp_request kernel_rsdp_request = {
     .id = LIMINE_RSDP_REQUEST,
@@ -133,17 +134,15 @@ void init_apic_info(const struct MADT* madt) {
             struct proc_lapic* lapic = (struct proc_lapic*)record;
             if (lapic->flags & 0x3) {
                 core_count++;
-                if (local_apic_index >= core_count) {
-                    kerror(INFO "ACPI: cores exceed local APIC IDs list");
-                }
+                ASSERT(local_apic_index < core_count, 0,
+                       "ACPI: cores exceed local APIC IDs list");
                 local_apic_ID[local_apic_index++] = lapic->apic_id;
                 // kprintf("ACPI: Lapic %x detected\n", lapic->apic_id);
             }
         } else if (type == ENTRY_IO_APIC) {
             io_apic_t *ioapic = (io_apic_t *)record;
-            if (io_apic_index >= IOAPIC_NUM_DEVS) {
-                kerror(INFO "ACPI: I/O APIC devices exceed I/O APIC device list");
-            }
+            ASSERT(io_apic_index < IOAPIC_NUM_DEVS, 0,
+                   "ACPI: I/O APIC devices exceed I/O APIC device list");
             ioapics[io_apic_index++] = ioapic;
         }
         
@@ -223,9 +222,8 @@ static void init_devs_ioapic() {
 
 static bool init_madt_devices() {
     madt = find_sdt("APIC");
-    if (!madt || !verify_checksum((const uint8_t*)madt, madt->sdt.length)) {
-        kerror(INVALID_SDT("MADT"));
-    }
+    ASSERT(madt && verify_checksum((const uint8_t *)madt, madt->sdt.length), 0,
+           INVALID_SDT("MADT"));
 
     lapic_addr = find_lapic_addr(madt);
     if (!lapic_addr) {
@@ -253,23 +251,22 @@ void init_acpi() {
     rsdt = (struct RSDT*)((uint64_t)rsdp->rsdt_address);
     xsdt = (struct XSDT*)rsdp->xsdt_address;
 
-    if (!verify_checksum((const uint8_t*)rsdp, get_rsdp_size(rsdp))) {
-        kerror(INVALID_SDT("RSDP"));
+    ASSERT(verify_checksum((const uint8_t*)rsdp, get_rsdp_size(rsdp)), 0,
+           INVALID_SDT("RSDP"));
+
+    if (is_xsdt(rsdp)) {
+        ASSERT(verify_checksum((const uint8_t*)xsdt, xsdt->sdt.length), 0,
+               INVALID_SDT("XSDT"));
+    } else {
+        ASSERT(verify_checksum((const uint8_t*)rsdt, rsdt->sdt.length), 0,
+               INVALID_SDT("RSDT"));
     }
 
-    if (is_xsdt(rsdp) && !verify_checksum((const uint8_t*)xsdt, xsdt->sdt.length)) {
-        kerror(INVALID_SDT("XSDT"));
-    } else if (!verify_checksum((const uint8_t*)rsdt, rsdt->sdt.length)) {
-        kerror(INVALID_SDT("RSDT"));
-    }
-
-    if (!init_madt_devices()) {
-        kerror("MADT Device Initialization Failure\n");
-    }
+    ASSERT(init_madt_devices(), 0, "MADT Device Initialization Failure\n");
 
     if (!init_dev_hpet()) {
         is_hpet_present = false;
-        kerror("HPET not present\n"); // Todo: use PIT if no HPET
+        ASSERT(false, 0, "HPET not present\n"); // Todo: use PIT if no HPET
     }
 
     kprintf(INFO GREEN"ACPI: Initialized\n");

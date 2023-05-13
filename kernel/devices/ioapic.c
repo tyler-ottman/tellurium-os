@@ -5,6 +5,7 @@
 #include <arch/terminal.h>
 #include <devices/ioapic.h>
 #include <libc/string.h>
+#include <sys/misc.h>
 
 #define IOAPIC_REGSEL               0x00
 #define IOAPIC_IOWIN                0x10
@@ -125,9 +126,7 @@ static bool ioapic_write_redtab(uint32_t *ioapic_addr, int entry, redtab_t *redt
 void ioapic_map_irq(uint32_t irq, uint8_t apic_id, bool mask, uint8_t delivery, uint8_t vector, void *gate_entry, uint8_t flags) {
     // Get I/O APIC address legacy irq
     uint32_t *ioapic_addr = ioapic_get_addr(irq);
-    if (!ioapic_addr) {
-        kerror(INFO "IOAPIC: ioapic not found\n");
-    }
+    ASSERT(ioapic_addr, 0, "IOAPIC: ioapic not found\n");
 
     // Redirect IRQ to IDT vector
     redtab_t redtab_keyboard;

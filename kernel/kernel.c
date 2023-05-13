@@ -20,6 +20,8 @@
 #include <fs/tmpfs.h>
 #include <fs/vfs.h>
 
+#include <sys/unix_socket.h>
+
 void init_system() {
     init_kterminal();
     init_gdt();
@@ -63,7 +65,7 @@ void kmain(void *param) {
     // Store userapps in vfs
     tmpfs_load_userapps();
 
-
+    unix_socket_test();
 
     // Load GUI environment
     create_user_process("/tmp/gui.elf");

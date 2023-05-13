@@ -25,7 +25,8 @@ static spinlock_t init_lock = 0;
 // Halt CPU activity
 void done() {
     for (;;) {
-        __asm__("hlt");
+        __asm__ volatile ("cli");
+        __asm__ volatile ("hlt");
     }
 }
 

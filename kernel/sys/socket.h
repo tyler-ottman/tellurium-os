@@ -94,7 +94,7 @@ typedef struct socket {
     size_t backlog_size;
 
     int (*socket_accept)(struct socket *this, struct socket **sock,
-                         const struct sockaddr *addr, socklen_t *addrlen);
+                         struct sockaddr *addr, socklen_t *addrlen);
     int (*socket_bind)(struct socket *this, const struct sockaddr *addr,
                        socklen_t addrlen);
     int (*socket_connect)(struct socket *this, const struct sockaddr *addr,

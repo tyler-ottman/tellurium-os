@@ -3,6 +3,7 @@
 #include <arch/scheduler.h>
 #include <libc/kmalloc.h>
 #include <memory/vmm.h>
+#include <sys/misc.h>
 
 static struct pcb* kernel_process = NULL;
 static uint16_t pids[PROCESS_MAX] = {0};
@@ -86,6 +87,12 @@ int process_alloc_pid(void) {
     return -1;
 }
 
+vnode_t *proc_get_vnode_base(pcb_t *proc, const char *path) {
+    ASSERT_RET(path, NULL);
+
+    return *path == '/' ? vfs_get_root() : proc->cwd;
+}
+
 void process_free_pid(uint16_t pid) {
     if (pid <= PROCESS_MAX) {
         pids[pid] = 0;
@@ -94,9 +101,7 @@ void process_free_pid(uint16_t pid) {
 
 void init_kernel_process() {
     kernel_process = kmalloc(sizeof(struct pcb));
-    if (!kernel_process) {
-        kerror(INFO "Failed to allocate kernel process\n");
-    }
+    ASSERT(kernel_process, 0, "Failed to allocate kernel process\n");
 
     kernel_process->pid = process_alloc_pid();
     kernel_process->state = ALIVE;

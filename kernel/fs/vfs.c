@@ -378,8 +378,7 @@ vfs_create_fail:
 
 void vfs_init() {
     v_root = vfs_alloc_node(NULL, "", VDIR);
-    if (!v_root) {
-        kerror("VFS: could not initialize root\n");
-    }
+    ASSERT(v_root, 0, "VFS: could not initialize root\n");
+
     kprintf(INFO "VFS: Initialized\n");
 }

@@ -1,5 +1,6 @@
 #include <arch/cpu.h>
 #include <arch/process.h>
+#include <arch/terminal.h>
 #include <libc/kmalloc.h>
 #include <libc/string.h>
 #include <stdbool.h>
@@ -15,7 +16,7 @@ typedef struct unix_socket {
 } unix_socket_t;
 
 static int unix_socket_accept(struct socket *this, struct socket **sock,
-                       const struct sockaddr *addr, socklen_t *addrlen) {
+                              struct sockaddr *addr, socklen_t *addrlen) {
     ASSERT_RET(this && addr && (*addrlen > sizeof(struct sockaddr_un)), SKT_BAD_PARAM);
 
     spinlock_acquire(&this->lock);
@@ -75,25 +76,28 @@ static int unix_socket_bind(socket_t *this, const struct sockaddr *addr,
 
     // Add socket to vfs
     struct sockaddr_un *unix_addr = (struct sockaddr_un *)addr;
-    struct core_local_info *cpu_info = get_core_local_info();
-    pcb_t *proc = cpu_info->current_thread->parent;
     __memcpy(unix_addr->sun_path, unix_addr->sun_path, addrlen);
-    int err = vfs_create(proc->cwd, (const char *)unix_addr->sun_path, VREG);
+
+    pcb_t *proc = get_core_local_info()->current_thread->parent;
+    vnode_t *base = proc_get_vnode_base(proc, unix_addr->sun_path);
+    int err = vfs_create(base, (const char *)unix_addr->sun_path, VSKT);
     if (!err) {
         return SKT_BIND_FAIL;
     }
 
     // Store unix address info in socket
     spinlock_acquire(&this->lock);
+
     __memcpy(this->local_addr, unix_addr, sizeof(struct sockaddr_un));
     this->state = SOCKET_BOUNDED;
+
     spinlock_release(&this->lock);
 
     return SKT_OK;
 }
 
 static int unix_socket_connect(struct socket *this, const struct sockaddr *addr,
-                        socklen_t addrlen) {
+                               socklen_t addrlen) {
     ASSERT_RET(addrlen <= sizeof(struct sockaddr_un), SKT_BAD_PARAM);
 
     struct sockaddr_un *unix_addr = (struct sockaddr_un *)addr;
@@ -152,7 +156,7 @@ unix_socket_connect_cleanup:
 }
 
 static int unix_socket_getpeername(socket_t *this, struct sockaddr *addr,
-                            socklen_t *socklen) {
+                                   socklen_t *socklen) {
     ASSERT_RET(this && addr && socklen, SKT_BAD_PARAM);
 
     spinlock_acquire(&this->lock);
@@ -180,7 +184,7 @@ unix_socket_getpeername_cleanup:
 }
 
 static int unix_socket_getsockname(socket_t *this, struct sockaddr *addr,
-                            socklen_t *socklen) {
+                                   socklen_t *socklen) {
     ASSERT_RET(this && addr && socklen, SKT_BAD_PARAM);
 
     spinlock_acquire(&this->lock);
@@ -234,7 +238,7 @@ socket_listen_cleanup:
 }
 
 static size_t unix_socket_recv(struct socket *this, void *buff, size_t len,
-                                int flags) {
+                               int flags) {
     ASSERT_RET(this && buff, SKT_BAD_PARAM);
 
     // No flags functionality
@@ -247,7 +251,7 @@ static size_t unix_socket_recv(struct socket *this, void *buff, size_t len,
     int err;
     if (this->state != SOCKET_CONNECTED || peer->state != SOCKET_CONNECTED) {
         err = SKT_BAD_STATE;
-
+        goto unix_socket_recv_cleanup;
     }
 
     for (;;) {
@@ -277,7 +281,7 @@ static size_t unix_socket_send(struct socket *this, const void *buff,
     int err;
     if (this->state != SOCKET_CONNECTED || peer->state != SOCKET_CONNECTED) {
         err = SKT_BAD_STATE;
-
+        goto unix_socket_send_cleanup;
     }
 
     for (;;) {

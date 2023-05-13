@@ -103,8 +103,12 @@ static terminal_t kterminal;
 void (*apply_set_attribute[NUM_SET_TEXT_ATTRIBUTES]) (terminal_t*);
 void (*apply_reset_attribute[NUM_RESET_TEXT_ATTRIBUTES]) (terminal_t*);
 
-void kerror(const char* err) {
-    kprintf(LIGHT_RED"%s", err);
+void kerror(const char* msg, int err) {
+    __asm__ volatile ("cli");
+
+    char msg_default[] = "error";
+
+    kprintf(ERROR "%s: %d\n", msg ? msg : msg_default, err);
     done();
 }
 

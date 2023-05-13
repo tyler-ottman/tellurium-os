@@ -4,6 +4,7 @@
 #include <arch/cpu.h>
 #include <arch/lock.h>
 #include <fs/fd.h>
+#include <fs/vfs.h>
 #include <libc/vector.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -65,6 +66,7 @@ struct pcb* get_kernel_process(void);
 struct pcb *create_user_process(const char *elf_path);
 void process_destroy(pcb_t *proc);
 int process_alloc_pid(void);
+vnode_t *proc_get_vnode_base(struct pcb *proc, const char *path);
 void process_free_pid(uint16_t pid);
 void init_kernel_process(void);
 
