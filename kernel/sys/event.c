@@ -1,5 +1,6 @@
 #include <arch/cpu.h>
 #include <arch/process.h>
+#include <arch/terminal.h>
 #include <arch/scheduler.h>
 #include <stdbool.h>
 #include <sys/event.h>
@@ -46,32 +47,31 @@ int event_wait(event_t *event) {
 
     attach_listener(thread, event);
 
-    // Block thread until signal
-    schedule_thread_block();
+    // Thread waits until event received
+    schedule_thread_wait(event);
 
-    // Verify event that waked up thread matches
-    if (thread->received_event != event) {
+    if (thread->received_event != thread->waiting_for) {
         err = EVENT_ERR;
     }
 
     remove_listener(thread, event);
-
-    enable_interrupts();
-
+        
     return err;
 }
 
 void event_signal(event_t *event) {
+    disable_interrupts();
+
     spinlock_acquire(&event->lock);
 
     for (size_t i = 0; i < LISTEN_CAPACITY; i++) {
         thread_t *thread = event->listeners[i];
-        if (!thread) {
-            continue;
+        if (thread) {
+            schedule_notify(event, thread);
         }
-
-        thread->state = RUNNABLE;
     }
 
     spinlock_release(&event->lock);
+
+    enable_interrupts();
 }

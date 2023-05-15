@@ -22,7 +22,7 @@ void hpet_write(uint32_t offset, uint64_t value) {
     }
     
     spinlock_acquire(&hpet_lock);
-    *((uint64_t*)((uint64_t)hpet_addr + offset + KERNEL_HHDM_OFFSET)) = value;
+    *((volatile uint64_t*)((uint64_t)hpet_addr + offset + KERNEL_HHDM_OFFSET)) = value;
     spinlock_release(&hpet_lock);
 }
 
@@ -33,7 +33,7 @@ uint64_t hpet_read(uint32_t offset) {
     }
 
     spinlock_acquire(&hpet_lock);
-    reg = *((uint64_t*)((uint64_t)hpet_addr + offset + KERNEL_HHDM_OFFSET));
+    reg = *((volatile uint64_t*)((uint64_t)hpet_addr + offset + KERNEL_HHDM_OFFSET));
     spinlock_release(&hpet_lock);
 
     return reg;

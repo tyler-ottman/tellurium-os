@@ -5,6 +5,8 @@
 #include <sys/unix_socket.h>
 #include <tests/test.h>
 
+volatile int unix_socket_server_init = 0;
+
 void unix_socket_server(void *param) {
     (void) param;
 
@@ -25,19 +27,23 @@ void unix_socket_server(void *param) {
     err = sock->socket_listen(sock, 10);
     ASSERT(err == SKT_OK, err, "unix_socket_server: listen failure");
 
-    kprintf(INFO "unix_socket_server: listening\n");
-
     socket_t *client;
+    unix_socket_server_init = 1;
     err = sock->socket_accept(sock, &client, (struct sockaddr *)&addr, &addrlen);
     ASSERT(err == SKT_OK, err, "socket connection failure");
 
-    kprintf(INFO "unix_socket_server: connected\n");
+    // kprintf(INFO "unix_socket_server: connected\n");
 }
 
 void unix_socket_client(void *param) {
     (void)param;
 
-    kprintf("unix socket client\n");
+    struct sockaddr_un addr;
+
+    while (!unix_socket_server_init) {}
+
+    // kprintf("unix socket client\n");
+
 }
 
 void unix_socket_test(void) {
@@ -48,7 +54,7 @@ void unix_socket_test(void) {
     thread_t *client = create_kernel_thread(client_entry, NULL);
 
     schedule_add_thread(server);
-    schedule_add_thread(client);    
+    schedule_add_thread(client);
 
     for (;;) {}
 

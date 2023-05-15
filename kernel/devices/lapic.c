@@ -18,13 +18,13 @@ bool is_lapic_aligned(size_t offset) {
 uint32_t lapic_read(size_t offset) {
     ASSERT(is_lapic_aligned(offset), 0, UNALIGNED_LAPIC);
 
-    return *((uint32_t*)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET));
+    return *((volatile uint32_t*)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET));
 }
 
 void lapic_write(size_t offset, uint32_t val) {
     ASSERT(is_lapic_aligned(offset), 0, UNALIGNED_LAPIC);
 
-    *((uint32_t*)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET)) = val;
+    *((volatile uint32_t*)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET)) = val;
 }
 
 void lapic_time_handler(ctx_t* ctx) {
@@ -50,9 +50,9 @@ void lapic_ipi_handler(ctx_t* ctx) {
     save_context(cpu_info, ctx);
 
     thread_t *current_thread = cpu_info->current_thread;
-    if (current_thread->state == ZOMBIE) { // Thread completed execution, terminate
+    if (current_thread->state == THREAD_ZOMBIE) { // Thread completed execution, terminate
         thread_destroy(current_thread);
-    } else { // Add thread back to queue
+    } else if (current_thread->state == THREAD_RUNNABLE) { // Add thread back to queue
         schedule_add_thread(current_thread);
     }
 
@@ -124,10 +124,6 @@ void lapic_schedule_time(uint64_t us) {
 void lapic_send_ipi(uint32_t lapic_id, uint32_t vector) {    
     lapic_write(LAPIC_ICR1, lapic_id << 24);
     lapic_write(LAPIC_ICR0, vector); // Writing to lower half invokes IPI
-    
-    for (;;) {
-        __asm__ volatile ("pause");
-    }
 }
 
 void lapic_lvt_set_vector(uint32_t lvt, uint8_t vector) {

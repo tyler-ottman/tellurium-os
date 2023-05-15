@@ -49,7 +49,10 @@ int socket_add_to_peer_backlog(socket_t *this, socket_t *peer) {
 int socket_pop_from_backlog(socket_t *this, socket_t **pop) {
     ASSERT_RET(this && pop, SKT_BAD_PARAM);
 
-    ASSERT_RET(this->backlog_size != 0, SKT_BACKLOG_EMPTY);
+    if (this->backlog_size == 0) {
+        *pop = NULL;
+        return SKT_OK;
+    }
 
     *pop = this->backlog[0];
 

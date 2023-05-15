@@ -66,6 +66,7 @@ struct core_local_info {
 void done(void);
 void breakpoint(void);
 void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d);
+int core_get_if_flag(void);
 struct tcb* get_thread_local(void);
 void set_thread_local(struct tcb* thread);
 struct core_local_info* get_core_local_info(void);

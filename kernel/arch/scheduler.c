@@ -66,6 +66,8 @@ void schedule_add_thread(thread_t* thread) {
 void thread_entry(thread_t* thread) {
     struct core_local_info* cpu_info = get_core_local_info();
     cpu_info->current_thread = thread;
+    thread->state = THREAD_RUNNING;
+    spinlock_release(&thread->yield_lock);
     set_thread_local(cpu_info->current_thread);
     cpu_info->tss.ist1 = (uint64_t)thread->kernel_sp;
 
@@ -82,6 +84,7 @@ void thread_switch(struct core_local_info* cpu_info) {
     cpu_info->kernel_scratch = cpu_info->current_thread->thread_scratch;
 
     lapic_schedule_time(1000);
+    lapic_lvt_enable(LVT_TIMER);
 
     __asm__ volatile(
         "mov %0, %%rsp\n\t"
@@ -119,19 +122,75 @@ void thread_wrapper(void *entry, void *param) {
     schedule_thread_terminate();
 }
 
-void schedule_thread_block() {
-    struct core_local_info *info = get_core_local_info();
-    info->current_thread->state = BLOCKED;
-    lapic_send_ipi(info->lapic_id, info->lapic_ipi_vector);
+void schedule_thread_wait(event_t *event) {
+    thread_t *thread = get_core_local_info()->current_thread;
+    if (thread->state != THREAD_RUNNING) {
+        return;
+    }
+
+    thread->waiting_for = event;
+    thread->state = THREAD_WAITING;
+
+    schedule_thread_yield(false);
 }
 
-void schedule_thread_yield() {
+void schedule_notify(event_t *event, thread_t *thread) {
+    int state = thread->state;
+    if (state != THREAD_WAITING || state != THREAD_BLOCKED) {
+        return;
+    }
+
+    if (state == THREAD_WAITING) {
+        thread->received_event = event;
+    }
+    
+    thread->state = THREAD_RUNNABLE;
+
+    schedule_add_thread(thread);
+}
+
+void schedule_thread_yield(bool no_return) {
+    int state_if_flag = core_get_if_flag();
+
+    // Critical Section
+    disable_interrupts();
+
+    // Disable timer interrupts
+    lapic_lvt_disable(LVT_TIMER);
+    lapic_schedule_time(0);
+
     struct core_local_info *info = get_core_local_info();
+    thread_t *thread = info->current_thread;
+
+    if (!no_return) {
+        spinlock_acquire(&thread->yield_lock);
+    }
+    
+    // Send self IPI
     lapic_send_ipi(info->lapic_id, info->lapic_ipi_vector);
+    enable_interrupts();
+
+    if (no_return) { // Hault here until IPI serviced (for terminated threads)
+        for (;;) {
+            __asm__ volatile ("hlt");
+        }
+    }
+
+    // Thread waits here until IPI serviced, the context switching back here
+    // releases the lock
+    spinlock_acquire(&thread->yield_lock);
+    spinlock_release(&thread->yield_lock);
+
+    if (!state_if_flag) {
+        disable_interrupts();
+    }
 }
 
 void schedule_thread_terminate() {
-    struct core_local_info *info = get_core_local_info();
-    info->current_thread->state = ZOMBIE;
-    lapic_send_ipi(info->lapic_id, info->lapic_ipi_vector);
+    disable_interrupts();
+
+    thread_t *thread = get_core_local_info()->current_thread;
+    thread->state = THREAD_ZOMBIE;
+
+    schedule_thread_yield(true);
 }

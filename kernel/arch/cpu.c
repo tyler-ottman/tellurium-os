@@ -24,8 +24,8 @@ static spinlock_t init_lock = 0;
 
 // Halt CPU activity
 void done() {
+    __asm__ volatile ("cli");
     for (;;) {
-        __asm__ volatile ("cli");
         __asm__ volatile ("hlt");
     }
 }
@@ -40,6 +40,19 @@ void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
     __asm__ volatile (
         "cpuid" : "=a" (a), "=b" (b), "=c" (c), "=d" (d) : "a" (in_a)
     );
+}
+
+int core_get_if_flag(void) {
+    size_t rflags;
+
+    __asm__ volatile (
+        "pushfq\n\t"
+        "pop %0" :
+        "=rm" (rflags) : :
+        "memory"
+    );
+
+    return rflags & (1 << 9);
 }
 
 thread_t* get_thread_local() {
@@ -147,7 +160,7 @@ void core_init(struct limine_smp_info* core) {
     cpu_info->current_thread = NULL;
 
     cpu_info->idle_thread = alloc_idle_thread();
-    cpu_info->idle_thread->state = RUNNABLE;
+    cpu_info->idle_thread->state = THREAD_RUNNABLE;
     
     __memset(&cpu_info->tss, 0, sizeof(struct TSS));
     load_tss_entry(&cpu_info->tss);

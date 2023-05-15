@@ -100,9 +100,9 @@ thread_t* create_kernel_thread(void* entry, void* param) {
     context->rsp = (uint64_t)thread->thread_sp;
     context->ss = GDT_KERNEL_DATA;
 
-    thread->state = CREATED;
-    thread->isKernel = true;
+    thread->state = THREAD_CREATED;
     thread->received_event = NULL;
+    thread->waiting_for = NULL;
 
     thread->prev = NULL;
     thread->next = NULL;
@@ -160,9 +160,9 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
     context->rsp = (uint64_t)thread->thread_sp;
     context->ss = GDT_USER_DATA | 3;
 
-    thread->state = CREATED;
-    thread->isKernel = false;
+    thread->state = THREAD_CREATED;
     thread->received_event = NULL;
+    thread->waiting_for = NULL;
 
     thread->prev = NULL;
     thread->next = NULL;

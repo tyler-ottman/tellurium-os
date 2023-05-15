@@ -17,14 +17,13 @@ typedef struct unix_socket {
 
 static int unix_socket_accept(struct socket *this, struct socket **sock,
                               struct sockaddr *addr, socklen_t *addrlen) {
-    ASSERT_RET(this && addr && (*addrlen > sizeof(struct sockaddr_un)), SKT_BAD_PARAM);
+    ASSERT_RET(this && addr && (*addrlen <= sizeof(struct sockaddr_un)), SKT_BAD_PARAM);
 
     spinlock_acquire(&this->lock);
 
-    int err = SKT_OK;
     if (this->state != SOCKET_LISTENING) {
-        err = SKT_BAD_STATE;
-        goto unix_socket_accept_cleanup;
+        spinlock_release(&this->lock);
+        return SKT_BAD_STATE;
     }
 
     // Create socket that will listen to client
@@ -36,9 +35,21 @@ static int unix_socket_accept(struct socket *this, struct socket **sock,
 
     // Get client socket off backlog
     socket_t *client_sock;
-    err = socket_pop_from_backlog(this, &client_sock);
-    if (err) {
-        goto unix_socket_accept_cleanup;
+    int err = socket_pop_from_backlog(this, &client_sock);
+    if (err != SKT_OK) {
+        spinlock_release(&this->lock);
+        return err;
+    }
+
+    if (!client_sock) { // Backlog empty, wait for connections
+        err = event_wait(&this->connection_request);
+        kprintf("did get here\n");
+        if (err == EVENT_ERR) {
+            spinlock_release(&this->lock);
+            return SKT_BAD_EVENT;
+        }
+
+        socket_pop_from_backlog(this, &client_sock);
     }
 
     listen_sock->peer = client_sock;
@@ -59,10 +70,9 @@ static int unix_socket_accept(struct socket *this, struct socket **sock,
     // Signal to client that connection made
     event_signal(&client_sock->connection_accepted);
 
-    err = SKT_OK;
-unix_socket_accept_cleanup:
     spinlock_release(&this->lock);
-    return err;
+    
+    return SKT_OK;
 }
 
 static int unix_socket_bind(socket_t *this, const struct sockaddr *addr,

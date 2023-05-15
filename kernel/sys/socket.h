@@ -34,6 +34,7 @@
 #define SKT_BLOCK_FAIL                          10
 #define SKT_BACKLOG_EMPTY                       11
 #define SKT_BACKLOG_CAPACITY_INVALID            12
+#define SKT_BAD_EVENT                           13
 
 enum socket_state {
     SOCKET_CREATED,
