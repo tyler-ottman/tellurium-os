@@ -139,7 +139,7 @@ void schedule_thread_wait(event_t *event) {
 
 void schedule_notify(event_t *event, thread_t *thread) {
     int state = thread->state;
-    if (state != THREAD_WAITING || state != THREAD_BLOCKED) {
+    if (state != THREAD_WAITING && state != THREAD_BLOCKED) {
         return;
     }
 

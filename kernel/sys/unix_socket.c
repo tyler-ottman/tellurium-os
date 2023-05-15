@@ -94,6 +94,15 @@ static int unix_socket_bind(socket_t *this, const struct sockaddr *addr,
         return SKT_BIND_FAIL;
     }
 
+    // Write socket struct to vfs
+    vnode_t *socket_file;
+    err = vfs_open(&socket_file, base, unix_addr->sun_path);
+    if (!err) {
+        return SKT_VFS_FAIL;
+    }
+
+    socket_file->fs_data = this;
+
     // Store unix address info in socket
     spinlock_acquire(&this->lock);
 
@@ -127,17 +136,19 @@ static int unix_socket_connect(struct socket *this, const struct sockaddr *addr,
 
     // Open peer socket file
     vnode_t *vnode;
-    err = vfs_open(&vnode, proc->cwd, unix_addr->sun_path);
+    vnode_t *base = proc_get_vnode_base(proc, unix_addr->sun_path);
+    err = vfs_open(&vnode, base, unix_addr->sun_path);
     if (!err) {
+        err = SKT_VFS_FAIL;
         goto unix_socket_connect_cleanup;
     }
-
-    socket_t *peer = vnode->fs_data;
 
     if (!S_ISSOCK(vnode->stat.st_mode)) {
         err = SKT_BAD_PARAM;
         goto unix_socket_connect_cleanup;
     }
+
+    socket_t *peer = (socket_t *)vnode->fs_data;
 
     // Add socket to peer's connection list
     err = socket_add_to_peer_backlog(this, peer);
@@ -146,7 +157,7 @@ static int unix_socket_connect(struct socket *this, const struct sockaddr *addr,
     }
 
     // Signal socket wants to connect to peer
-    event_signal(&this->peer->connection_request);
+    event_signal(&peer->connection_request);
 
     // Wait until connection accepted
     err = event_wait(&this->connection_accepted);
@@ -159,6 +170,7 @@ static int unix_socket_connect(struct socket *this, const struct sockaddr *addr,
         vfs_close(vnode);
     }
 
+    err = SKT_OK;
 unix_socket_connect_cleanup:
     spinlock_release(&this->lock);
     return err;

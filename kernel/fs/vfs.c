@@ -281,6 +281,11 @@ int vfs_open(struct vnode **ret_vnode, vnode_t *base, const char *path) {
     
     // Node not present in VFS, consult lower level FS to query existence of node
     if (vnode == NULL) {
+        if (vnode->v_type == VSKT) {
+            spinlock_release(&vfs_lock);
+            return 0;
+        }
+
         char *relpath = buff;
         vnode_t *root = vfs_get_mountpoint(base, (char *)path, &relpath);
         if (!root) { // No FS mounted on node
