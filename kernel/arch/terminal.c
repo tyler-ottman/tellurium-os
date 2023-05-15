@@ -334,10 +334,17 @@ int kprintf(const char* format, ...) {
     ASSERT(err != -1, 0, "terminal: printf fail\n");
 
     // reset_text_attribute(&kterminal);
-
+    int state = core_get_if_flag();
+    disable_interrupts();
     spinlock_acquire(&kprint_lock);
     terminal_printf(&kterminal, buf);
     spinlock_release(&kprint_lock);
+    
+    if (state) {
+        enable_interrupts();
+    } else {
+        disable_interrupts();
+    }
 
     return err;
 }

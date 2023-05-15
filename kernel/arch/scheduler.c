@@ -43,6 +43,9 @@ thread_t *pop_thread_from_queue() {
 
     head = head->next;
 
+    thread->prev = NULL;
+    thread->next = NULL;
+
     spinlock_release(&queue_lock);
 
     return thread;
@@ -165,9 +168,10 @@ void schedule_thread_yield(bool no_return) {
     if (!no_return) {
         spinlock_acquire(&thread->yield_lock);
     }
-    
+
     // Send self IPI
     lapic_send_ipi(info->lapic_id, info->lapic_ipi_vector);
+
     enable_interrupts();
 
     if (no_return) { // Hault here until IPI serviced (for terminated threads)
@@ -188,7 +192,7 @@ void schedule_thread_yield(bool no_return) {
 
 void schedule_thread_terminate() {
     disable_interrupts();
-
+    
     thread_t *thread = get_core_local_info()->current_thread;
     thread->state = THREAD_ZOMBIE;
 

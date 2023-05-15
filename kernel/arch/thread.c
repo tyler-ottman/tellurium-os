@@ -163,6 +163,7 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
     thread->state = THREAD_CREATED;
     thread->received_event = NULL;
     thread->waiting_for = NULL;
+    thread->yield_lock = 0;
 
     thread->prev = NULL;
     thread->next = NULL;

@@ -29,6 +29,7 @@ void unix_socket_server(void *param) {
 
     socket_t *client;
     unix_socket_server_init = 1;
+
     err = sock->socket_accept(sock, &client, (struct sockaddr *)&addr, &addrlen);
     ASSERT(err == SKT_OK, err, "socket connection failure");
 
@@ -43,6 +44,7 @@ void unix_socket_client(void *param) {
     while (!unix_socket_server_init) {}
 
     // kprintf("unix socket client\n");
+    // while (1) {}
 
 }
 

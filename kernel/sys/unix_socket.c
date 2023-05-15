@@ -43,7 +43,6 @@ static int unix_socket_accept(struct socket *this, struct socket **sock,
 
     if (!client_sock) { // Backlog empty, wait for connections
         err = event_wait(&this->connection_request);
-        kprintf("did get here\n");
         if (err == EVENT_ERR) {
             spinlock_release(&this->lock);
             return SKT_BAD_EVENT;
