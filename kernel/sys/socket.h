@@ -35,6 +35,7 @@
 #define SKT_BACKLOG_EMPTY                       11
 #define SKT_BACKLOG_CAPACITY_INVALID            12
 #define SKT_BAD_EVENT                           13
+#define SKT_NONBLOCK                            14
 
 enum socket_state {
     SOCKET_CREATED,
@@ -89,13 +90,15 @@ typedef struct socket {
     
     event_t connection_request;
     event_t connection_accepted;
+    event_t data_received;
 
     struct socket **backlog;
     size_t backlog_capacity;
     size_t backlog_size;
 
     int (*socket_accept)(struct socket *this, struct socket **sock,
-                         struct sockaddr *addr, socklen_t *addrlen);
+                         struct sockaddr *addr, socklen_t *addrlen,
+                         int fd_flags);
     int (*socket_bind)(struct socket *this, const struct sockaddr *addr,
                        socklen_t addrlen);
     int (*socket_connect)(struct socket *this, const struct sockaddr *addr,
@@ -106,9 +109,9 @@ typedef struct socket {
                               socklen_t *socklen);
     int (*socket_listen)(struct socket *this, int backlog);
     size_t (*socket_recv)(struct socket *this, void *buff, size_t len,
-                          int flags);
+                          int flags, int fd_flags, int *bytes_read);
     size_t (*socket_send)(struct socket *this, const void *buff, size_t len,
-                          int flags);
+                          int flags, int fd_flags, int *bytes_written);
 } socket_t;
 
 int socket_init(socket_t *this, int domain, int type, int protocol);

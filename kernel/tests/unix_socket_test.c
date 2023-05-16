@@ -30,7 +30,7 @@ void unix_socket_server(void *param) {
     unix_socket_server_init = 1;
 
     socket_t *client;
-    err = sock->socket_accept(sock, &client, (struct sockaddr *)&addr, &addrlen);
+    err = sock->socket_accept(sock, &client, (struct sockaddr *)&addr, &addrlen, 0);
     ASSERT(err == SKT_OK, err, "socket connection failure");
 
     kprintf(INFO "unix_socket_server: connected\n");

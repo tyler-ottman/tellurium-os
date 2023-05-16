@@ -10,6 +10,9 @@
 #define FD_SUCCESS                  1
 #define FD_FAIL                     0
 
+// Fd flags
+#define O_NONBLOCK                  00004000
+
 typedef struct fd {
     spinlock_t fd_lock;
     vnode_t *vnode;

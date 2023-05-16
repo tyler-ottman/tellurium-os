@@ -1,7 +1,9 @@
 #include <arch/cpu.h>
 #include <arch/process.h>
 #include <arch/terminal.h>
+#include <fs/fd.h>
 #include <libc/kmalloc.h>
+#include <libc/ringbuffer.h>
 #include <libc/string.h>
 #include <stdbool.h>
 #include <sys/misc.h>
@@ -11,13 +13,14 @@
 
 typedef struct unix_socket {
     socket_t socket;
-    void *buff;
-    size_t buff_size;
+    RINGBUFFER_DECLARE(ringbuffer);
 } unix_socket_t;
 
 static int unix_socket_accept(struct socket *this, struct socket **sock,
-                              struct sockaddr *addr, socklen_t *addrlen) {
-    ASSERT_RET(this && addr && (*addrlen <= sizeof(struct sockaddr_un)), SKT_BAD_PARAM);
+                              struct sockaddr *addr, socklen_t *addrlen,
+                              int fd_flags) {
+    ASSERT_RET(this && addr && (*addrlen <= sizeof(struct sockaddr_un)),
+               SKT_BAD_PARAM);
 
     spinlock_acquire(&this->lock);
 
@@ -42,6 +45,11 @@ static int unix_socket_accept(struct socket *this, struct socket **sock,
     }
 
     if (!client_sock) { // Backlog empty, wait for connections
+        if (fd_flags & O_NONBLOCK) {
+            spinlock_release(&this->lock);
+            return SKT_NONBLOCK;
+        }
+
         err = event_wait(&this->connection_request);
         if (err == EVENT_ERR) {
             spinlock_release(&this->lock);
@@ -259,61 +267,98 @@ socket_listen_cleanup:
 }
 
 static size_t unix_socket_recv(struct socket *this, void *buff, size_t len,
-                               int flags) {
-    ASSERT_RET(this && buff, SKT_BAD_PARAM);
+                               int flags, int fd_flags, int *bytes_read) {
+    ASSERT_RET(this && buff && bytes_read, SKT_BAD_PARAM);
 
     // No flags functionality
     ASSERT_RET(!flags, SKT_BAD_OP);
 
     spinlock_acquire(&this->lock);
-    socket_t *peer = this->peer;
-    spinlock_acquire(&peer->lock);
-
+    
     int err;
-    if (this->state != SOCKET_CONNECTED || peer->state != SOCKET_CONNECTED) {
+    if (this->state != SOCKET_CONNECTED) {
         err = SKT_BAD_STATE;
         goto unix_socket_recv_cleanup;
     }
 
-    for (;;) {
+    unix_socket_t *unix_this = (unix_socket_t *)this;
 
+    // Wait for bytes while nothing on buffer
+    while (RINGBUFFER_SIZE(unix_this->ringbuffer) == 0) {
+        if (fd_flags & O_NONBLOCK) {
+            err = SKT_NONBLOCK;
+            goto unix_socket_recv_cleanup;
+        }
+
+        spinlock_release(&this->lock);
+
+        err = event_wait(&unix_this->socket.data_received);
+        if (err == EVENT_ERR) {
+            err = SKT_BLOCK_FAIL;
+            goto unix_socket_recv_cleanup;
+        }
+
+        spinlock_acquire(&this->lock);
     }
+
+    *bytes_read = RINGBUFFER_READ(unix_this->ringbuffer, buff, len);
+
+    // If peer blocked when trying to write
+    event_signal(&this->peer->data_received);
 
     err = SKT_OK;
 
 unix_socket_recv_cleanup:
     spinlock_release(&this->lock);
-    spinlock_release(&peer->lock);
 
     return err;
 }
-                        
+
 static size_t unix_socket_send(struct socket *this, const void *buff,
-                               size_t len, int flags) {
+                               size_t len, int flags, int fd_flags,
+                               int *bytes_written) {
     ASSERT_RET(this && buff, SKT_BAD_PARAM);
 
     // No flags functionality
     ASSERT_RET(!flags, SKT_BAD_OP);
 
-    spinlock_acquire(&this->lock);
-    socket_t *peer = this->peer;
-    spinlock_acquire(&peer->lock);
+    spinlock_acquire(&this->peer->lock);
+
+    unix_socket_t *unix_peer = (unix_socket_t *)this->peer;
 
     int err;
-    if (this->state != SOCKET_CONNECTED || peer->state != SOCKET_CONNECTED) {
+    if (this->peer->state != SOCKET_CONNECTED) {
         err = SKT_BAD_STATE;
         goto unix_socket_send_cleanup;
     }
 
-    for (;;) {
-        
+    while (RINGBUFFER_SIZE(unix_peer->ringbuffer) ==
+           RINGBUFFER_CAPACITY(unix_peer->ringbuffer)) {
+        if (fd_flags & O_NONBLOCK) {
+            err = SKT_NONBLOCK;
+            goto unix_socket_send_cleanup;
+        }
+
+        spinlock_release(&this->peer->lock);
+
+        err = event_wait(&unix_peer->socket.data_received);
+        if (err == EVENT_ERR) {
+            err = SKT_BLOCK_FAIL;
+            goto unix_socket_send_cleanup;
+        }
+
+        spinlock_acquire(&this->peer->lock);
     }
+
+    *bytes_written = RINGBUFFER_WRITE(unix_peer->ringbuffer, buff, len);
+
+    // If peer blocked when trying to read
+    event_signal(&this->peer->data_received);
 
     err = SKT_OK;
 
 unix_socket_send_cleanup:
-    spinlock_release(&this->lock);
-    spinlock_release(&peer->lock);
+    spinlock_release(&this->peer->lock);
 
     return err;
 }
@@ -327,10 +372,8 @@ int unix_socket_create(socket_t **this, int type, int protocol) {
     int err = socket_init((socket_t *)unix_socket, AF_UNIX, type, protocol);
     ASSERT_RET(err == SKT_OK, err);
 
-    unix_socket->buff = kmalloc(UNIX_SOCK_BUFF_SIZE);
-    ASSERT_RET(unix_socket->buff, SKT_NO_MEM);
-
-    unix_socket->buff_size = 0;
+    err = RINGBUFFER_ALLOC(unix_socket->ringbuffer, UNIX_SOCK_BUFF_SIZE);
+    ASSERT_RET(err == RINGBUFFER_OK, SKT_NO_MEM);
     
     unix_socket->socket.socket_accept = unix_socket_accept;
     unix_socket->socket.socket_bind = unix_socket_bind;
