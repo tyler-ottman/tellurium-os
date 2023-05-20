@@ -53,7 +53,7 @@ void set_vector_ist(uint8_t vector, int ist) {
 }
 
 void idt_load() {
-    __asm__ volatile ("lidt %0" : : "m"(idtr));
+    __asm__ volatile ("lidt %0" : : "m"(idtr) : "memory");
 }
 
 void init_idt(void) {

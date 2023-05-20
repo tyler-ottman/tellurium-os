@@ -63,6 +63,8 @@ ISR_%1:
 
 %macro ISR_ERR 1
 ISR_%1:
+    save_context
+
     mov rdi, %1
     mov rsi, rsp
     xor rbp, rbp
@@ -98,8 +100,6 @@ ISR_Timer:
     sub rsp, 8
     save_context
 
-    load_kernel_data
-
     mov rdi, rsp
     xor rbp, rbp
     call lapic_time_handler
@@ -110,8 +110,6 @@ ISR_IPI:
     sub rsp, 8
     save_context
 
-    load_kernel_data
-
     mov rdi, rsp
     xor rbp, rbp
     call lapic_ipi_handler
@@ -121,8 +119,6 @@ global ISR_ps2
 ISR_ps2:
     sub rsp, 8
     save_context
-
-    load_kernel_data
 
     mov rdi, rsp
     xor rbp, rbp

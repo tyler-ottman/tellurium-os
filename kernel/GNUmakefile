@@ -15,7 +15,8 @@ endef
 # It is highly recommended to use a custom built cross toolchain to build a kernel.
 # We are only using "cc" as a placeholder here. It may work by using
 # the host system's toolchain, but this is not guaranteed.
-$(eval $(call DEFAULT_VAR,CC,cc))
+# $(eval $(call DEFAULT_VAR,CC,cc))
+override CC += x86_64-elf-gcc
  
 # Same thing for "ld" (the linker).
 $(eval $(call DEFAULT_VAR,LD,ld))
@@ -33,23 +34,22 @@ NASMFLAGS ?= -F dwarf -g
 LDFLAGS ?=
  
 # Internal C flags that should not be changed by the user.
-override CFLAGS +=       \
-    -I.                  \
-    -std=c11             \
-    -ffreestanding       \
-    -fno-stack-protector \
-    -fno-stack-check     \
-    -fno-pie             \
-    -fno-pic             \
-    -m64                 \
-    -march=x86-64        \
-    -mabi=sysv           \
-    -mno-80387           \
-    -mno-mmx             \
-    -mno-sse             \
-    -mno-sse2            \
-    -mno-red-zone        \
-    -mcmodel=kernel      \
+override CFLAGS +=              \
+    -I.                         \
+    -std=c11                    \
+    -ffreestanding              \
+    -fstack-protector-strong    \
+    -fno-pie                    \
+    -fno-pic                    \
+    -m64                        \
+    -march=x86-64               \
+    -mabi=sysv                  \
+    -mno-80387                  \
+    -mno-mmx                    \
+    -mno-sse                    \
+    -mno-sse2                   \
+    -mno-red-zone               \
+    -mcmodel=kernel             \
     -MMD
 
 # Internal linker flags that should not be changed by the user.

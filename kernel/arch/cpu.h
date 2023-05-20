@@ -63,17 +63,40 @@ struct core_local_info {
     struct TSS tss;
 };
 
+static inline void core_hlt(void) {
+    for (;;) {
+        __asm__ ("hlt");
+    }
+}
+
+static inline void enable_interrupts(void) {
+    __asm__ ("sti");
+}
+
+static inline void disable_interrupts(void) {
+    __asm__ ("cli");
+}
+
+static inline int core_get_if_flag(void) {
+    uint64_t rflags;
+
+    __asm__ volatile (
+        "pushfq\n\t"
+        "pop %0" :
+        "=rm" (rflags) : :
+        "memory"
+    );
+
+    return rflags & (1 << 9);
+}
+
 void done(void);
-void breakpoint(void);
 void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d);
-int core_get_if_flag(void);
 struct tcb* get_thread_local(void);
 void set_thread_local(struct tcb* thread);
 struct core_local_info* get_core_local_info(void);
 void set_core_local_info(struct core_local_info* cpu_info);
 void save_context(struct core_local_info *cpu_info, ctx_t *ctx);
-void enable_interrupts(void);
-void disable_interrupts(void);
 void print_context(ctx_t* context);
 void init_cpu(void);
 void core_init(struct limine_smp_info* core);

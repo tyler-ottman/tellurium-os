@@ -110,7 +110,7 @@ void init_gdt() {
 }
 
 void add_gdt_entry(GDT_Entry entry) {
-    ASSERT(gdt_index != GDT_ENTRIES - 1, 0, "GDT: Exceeded max gdt entries\n");
+    // ASSERT(gdt_index != GDT_ENTRIES - 1, 0, "GDT: Exceeded max gdt entries\n");
 
     gdt.gdt_entry[gdt_index++] = entry;
 }
@@ -133,11 +133,11 @@ void load_tss_entry(struct TSS* tss) {
     gdt.tss_entry = tss_entry;
     uint16_t tss_byte_offset = GDT_ENTRY_SIZE_BYTES * GDT_ENTRIES;
 
-    __asm__ volatile("ltr %%ax" ::"a"(tss_byte_offset));
+    __asm__ volatile("ltr %0" ::"rm"(tss_byte_offset) : "memory");
 
     spinlock_release(&tss_lock);
 }
 
 void load_gdt(void) {
-    __asm__ volatile ("lgdt %0" :: "m" (gdtr));
+    __asm__ volatile ("lgdt %0" :: "m" (gdtr) : "memory");
 }

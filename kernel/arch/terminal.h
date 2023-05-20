@@ -65,6 +65,7 @@ typedef struct terminal {
 
 void kerror(const char* msg, int err);
 int kprintf(const char* format, ...);
+int kprintj(const char *ptr);
 
 void init_kterminal_doublebuffer(void);
 void init_kterminal(void);

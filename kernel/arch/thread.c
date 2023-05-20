@@ -72,14 +72,14 @@ thread_t* create_kernel_thread(void* entry, void* param) {
     thread->parent = get_kernel_process();
 
     uint64_t stack_top;
-    size_t stack_size = PAGE_SIZE_BYTES;
+    size_t stack_size = 16 * PAGE_SIZE_BYTES;
     thread->thread_base_sp = kmalloc(stack_size);
     if (!thread->thread_base_sp) {
         thread_destroy(thread);
         return NULL;
     }
     stack_top = (uint64_t)thread->thread_base_sp + stack_size;
-    thread->thread_sp = (uint64_t*)(stack_top - 8);
+    thread->thread_sp = (uint64_t*)(stack_top - 0x10);
     
     thread->kernel_base_sp = kmalloc(stack_size);
     if (!thread->kernel_base_sp) {
@@ -87,7 +87,8 @@ thread_t* create_kernel_thread(void* entry, void* param) {
         return NULL;
     }
     stack_top = (uint64_t)thread->kernel_base_sp + stack_size;
-    thread->kernel_sp = (uint64_t*)(stack_top);
+    kprintf("stack top: %x\n", stack_top);
+    thread->kernel_sp = (uint64_t*)(stack_top - 0x10);
 
     ctx_t* context = &thread->context;
     __memset(context, 0, sizeof(ctx_t));
@@ -127,7 +128,7 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
     thread->parent = proc;
 
     uint64_t stack_top;
-    size_t stack_size = PAGE_SIZE_BYTES;
+    size_t stack_size = 4 * PAGE_SIZE_BYTES;
     thread->thread_base_sp = kmalloc(stack_size);
     if (!thread->thread_base_sp) {
         thread_destroy(thread);
@@ -147,7 +148,7 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
         thread_destroy(thread);
         return NULL;
     }
-    stack_top = (uint64_t)thread->kernel_base_sp + stack_size;
+    stack_top = (uint64_t)thread->kernel_base_sp + stack_size - 0x10;
     thread->kernel_sp = (uint64_t*)(stack_top);
 
     ctx_t* context = &thread->context;

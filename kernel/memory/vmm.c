@@ -117,7 +117,7 @@ void init_vmm() {
 void load_pagemap(struct pagemap* map) {
     uint64_t cr3_write = (uint64_t)map->pml4_base;
     cr3_write -= KERNEL_HHDM_OFFSET;
-    __asm__ volatile ("mov %0, %%cr3" : : "r"(cr3_write));
+    __asm__ volatile ("mov %0, %%cr3" : : "r"(cr3_write) : "memory");
 }
 
 uint64_t align_address(uint64_t addr, bool round_up) {

@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <arch/terminal.h>
 #include <libc/string.h>
-#include <string.h>
 
 #define KERNEL_HHDM_OFFSET  (kernel_hhdm_request.response->offset)
 #define PAGE_SIZE_BYTES     4096

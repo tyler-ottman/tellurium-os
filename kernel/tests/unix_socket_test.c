@@ -33,7 +33,10 @@ void unix_socket_server(void *param) {
     err = sock->socket_accept(sock, &client, (struct sockaddr *)&addr, &addrlen, 0);
     ASSERT(err == SKT_OK, err, "socket connection failure");
 
-    kprintf(INFO "unix_socket_server: connected\n");
+    int id = get_core_local_info()->lapic_id;
+    kprintf(INFO "cpu%d: unix_socket_server: connected\n", id);
+
+    while(1) {}
 }
 
 void unix_socket_client(void *param) {
@@ -52,7 +55,10 @@ void unix_socket_client(void *param) {
     err = sock->socket_connect(sock, (const struct sockaddr *)&addr, sizeof(addr));
     ASSERT(err == SKT_OK, err, "unix_socket_client: connect failure");
 
-    kprintf(INFO "unix_socket_client: connected\n");
+    // kprintf(INFO "unix_socket_client: connected\n");
+    // enable_interrupts();
+    disable_interrupts();
+    while(1) {}
 }
 
 void unix_socket_test(void) {

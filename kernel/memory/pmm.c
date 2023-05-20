@@ -1,5 +1,6 @@
 #include <arch/lock.h>
 #include <memory/pmm.h>
+#include <sys/misc.h>
 
 volatile struct limine_memmap_request memory_map_request = {
     .id = LIMINE_MEMMAP_REQUEST,
@@ -130,20 +131,22 @@ void init_pmm(void) {
     uint64_t available_bytes = 0;
     for (size_t idx = 0; idx < mmap_entries; idx++) {
         entry = entries[idx];
-#ifdef DEBUG
-        kprintf("Base: %016x, Len: %16x, Type: %s\n", entry->base, entry->length, debug_limine_mmap_type[entry->type]);
-#endif
         if (entry->type == LIMINE_MEMMAP_USABLE) {
             available_bytes += entry->length;
         }
+
+        // if (entry->type != LIMINE_MEMMAP_KERNEL_AND_MODULES) {
+        //     continue;
+        // }
+        // kprintf("Base: %016x, Len: %16x, Type: %s\n", entry->base, entry->length, debug_limine_mmap_type[entry->type]);
     }
 
     uint64_t free_frames = available_bytes / PAGE_SIZE_BYTES;
     uint64_t reserved_frames = frames - free_frames;
 
 #ifdef DEBUG
-    kprintf("PMM: Page frames -> Total: %u, Reserved: %u, Free: %u\n", frames, reserved_frames, free_frames);
-    kprintf("PMM: Bitmap size aligned: %u\n", bitmap_size_aligned);
+    // kprintf("PMM: Page frames -> Total: %u, Reserved: %u, Free: %u\n", frames, reserved_frames, free_frames);
+    // kprintf("PMM: Bitmap size aligned: %u\n", bitmap_size_aligned);
 #else
     (void)reserved_frames;
 #endif

@@ -97,8 +97,8 @@ static uint32_t rgb256[] = {
     0xa0a0a0, 0xaaaaaa, 0xb4b4b4, 0xbebebe, 0xc8c8c8, 0xd2d2d2, 0xdcdcdc, 0xe6e6e6,
 };
 
-static spinlock_t kprint_lock = 0;
-static terminal_t kterminal;
+spinlock_t kprint_lock = 0;
+terminal_t kterminal;
 
 void (*apply_set_attribute[NUM_SET_TEXT_ATTRIBUTES]) (terminal_t*);
 void (*apply_reset_attribute[NUM_RESET_TEXT_ATTRIBUTES]) (terminal_t*);
@@ -265,7 +265,7 @@ static void terminal_parse_ansi(terminal_t* terminal) {
     }
 }
 
-static void terminal_printf(terminal_t* terminal, const char* buf) {
+void terminal_printf(terminal_t* terminal, const char* buf) {
     const char* start = buf;
 
     draw_cursor(terminal, terminal->bg_color);
@@ -325,28 +325,30 @@ static void terminal_printf(terminal_t* terminal, const char* buf) {
 }
 
 int kprintf(const char* format, ...) {
-    char buf[BUF_MAX];
+    char buf[512];
     va_list valist;
 
     va_start(valist, format);
-    int err = __vsnprintf(buf, BUF_MAX, format, valist);
+    __vsnprintf(buf, BUF_MAX, format, valist);
     va_end(valist);
-    ASSERT(err != -1, 0, "terminal: printf fail\n");
 
-    // reset_text_attribute(&kterminal);
+    reset_text_attribute(&kterminal);
     int state = core_get_if_flag();
-    disable_interrupts();
+    if (state) {
+        disable_interrupts();
+    }
+    // breakpoint_two();
+
     spinlock_acquire(&kprint_lock);
     terminal_printf(&kterminal, buf);
     spinlock_release(&kprint_lock);
+    // breakpoint_two();
     
     if (state) {
         enable_interrupts();
-    } else {
-        disable_interrupts();
     }
 
-    return err;
+    return 0;
 }
 
 // static void print_color_palette() {

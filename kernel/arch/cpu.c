@@ -30,29 +30,10 @@ void done() {
     }
 }
 
-// For debugging
-int a = 0;
-void breakpoint() {
-    a++;
-}
-
 void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
     __asm__ volatile (
         "cpuid" : "=a" (a), "=b" (b), "=c" (c), "=d" (d) : "a" (in_a)
     );
-}
-
-int core_get_if_flag(void) {
-    size_t rflags;
-
-    __asm__ volatile (
-        "pushfq\n\t"
-        "pop %0" :
-        "=rm" (rflags) : :
-        "memory"
-    );
-
-    return rflags & (1 << 9);
 }
 
 thread_t* get_thread_local() {
@@ -85,14 +66,6 @@ void save_context(struct core_local_info *cpu_info, ctx_t *ctx) {
 
     // Save scratch register
     cur_thread->thread_scratch = cpu_info->kernel_scratch;
-}
-
-void enable_interrupts() {
-    __asm__ volatile ("sti");
-}
-
-void disable_interrupts() {
-    __asm__ volatile ("cli");
 }
 
 static uint32_t cores_ready = 0;
