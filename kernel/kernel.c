@@ -45,7 +45,9 @@ void _start(void) {
 
     kprintf(INFO GREEN "Kernel: Initialized\n");
 
-    done();
+    // Never reach here
+    disable_interrupts();
+    core_hlt();
 }
 
 void kmain(void *param) {

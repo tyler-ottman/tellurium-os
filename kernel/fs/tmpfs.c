@@ -144,7 +144,7 @@ void tmpfs_load_userapps() {
         return;
     }
     
-    // kprintf(INFO "%d file(s) present\n", mod_response->module_count);
+    kprintf(INFO "%d file(s) present\n", mod_response->module_count);
 
     for (size_t i = 0; i < mod_response->module_count; i++) {
         struct limine_file *file = mod_response->modules[i];

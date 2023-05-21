@@ -104,12 +104,13 @@ void (*apply_set_attribute[NUM_SET_TEXT_ATTRIBUTES]) (terminal_t*);
 void (*apply_reset_attribute[NUM_RESET_TEXT_ATTRIBUTES]) (terminal_t*);
 
 void kerror(const char* msg, int err) {
-    __asm__ volatile ("cli");
+    disable_interrupts();
 
-    char msg_default[] = "error";
+    const char msg_default[] = "error";
 
     kprintf(ERROR "%s: %d\n", msg ? msg : msg_default, err);
-    done();
+    
+    core_hlt();
 }
 
 static terminal_t* get_kterminal() {
@@ -332,7 +333,6 @@ int kprintf(const char* format, ...) {
     __vsnprintf(buf, BUF_MAX, format, valist);
     va_end(valist);
 
-    reset_text_attribute(&kterminal);
     int state = core_get_if_flag();
     if (state) {
         disable_interrupts();
@@ -340,7 +340,10 @@ int kprintf(const char* format, ...) {
     // breakpoint_two();
 
     spinlock_acquire(&kprint_lock);
+
+    reset_text_attribute(&kterminal);
     terminal_printf(&kterminal, buf);
+
     spinlock_release(&kprint_lock);
     // breakpoint_two();
     

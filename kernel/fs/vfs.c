@@ -1,3 +1,4 @@
+#include <arch/cpu.h>
 #include <arch/lock.h>
 #include <arch/terminal.h>
 #include <libc/kmalloc.h>
@@ -14,9 +15,7 @@ static int fs_count = 0;
 
 // For debugging VFS directory tree
 static void vfs_print_tree_internal(vnode_t *vnode, int cur_depth, int max_depth) {
-    if (cur_depth == max_depth) {
-        return;
-    }
+    ASSERT_RET(cur_depth != max_depth,);
 
     for (int i = 0; i < cur_depth; i++) {
         kprintf("\t");
@@ -31,6 +30,7 @@ static void vfs_print_tree_internal(vnode_t *vnode, int cur_depth, int max_depth
     if (vnode->v_type != VDIR) {
         return;
     }
+
 
     int num_children = VECTOR_SIZE(vnode->v_children);
     for (int i = 0; i < num_children; i++) {
@@ -385,5 +385,5 @@ void vfs_init() {
     v_root = vfs_alloc_node(NULL, "", VDIR);
     ASSERT(v_root, 0, "VFS: could not initialize root\n");
 
-    // kprintf(INFO "VFS: Initialized\n");
+    kprintf(INFO "VFS: Initialized\n");
 }

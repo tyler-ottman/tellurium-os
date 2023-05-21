@@ -113,7 +113,7 @@ static int unix_socket_bind(socket_t *this, const struct sockaddr *addr,
 
     // Store unix address info in socket
     spinlock_acquire(&this->lock);
-
+    
     __memcpy(this->local_addr, unix_addr, sizeof(struct sockaddr_un));
     this->state = SOCKET_BOUNDED;
 

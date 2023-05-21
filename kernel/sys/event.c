@@ -55,6 +55,8 @@ int event_wait(event_t *event) {
     }
 
     remove_listener(thread, event);
+
+    enable_interrupts();
         
     return err;
 }

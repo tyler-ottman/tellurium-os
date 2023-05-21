@@ -87,7 +87,6 @@ thread_t* create_kernel_thread(void* entry, void* param) {
         return NULL;
     }
     stack_top = (uint64_t)thread->kernel_base_sp + stack_size;
-    kprintf("stack top: %x\n", stack_top);
     thread->kernel_sp = (uint64_t*)(stack_top - 0x10);
 
     ctx_t* context = &thread->context;

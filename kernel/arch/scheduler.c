@@ -1,3 +1,4 @@
+#include <arch/cpu.h>
 #include <arch/lock.h>
 #include <arch/gdt.h>
 #include <arch/scheduler.h>
@@ -56,12 +57,14 @@ void schedule_add_thread(thread_t* thread) {
 
     if (head == NULL) {
         head = thread;
+        thread->prev = NULL;
     } else {
         tail->next = thread;
         thread->prev = tail;
     }
 
     tail = thread;
+    thread->next = NULL;
 
     spinlock_release(&queue_lock);
 }
@@ -138,9 +141,6 @@ void schedule_thread_wait(event_t *event) {
 }
 
 void schedule_notify(event_t *event, thread_t *thread) {
-    if ((uintptr_t)thread < 0x1000) {
-        kprintf("what: %x\n", thread);
-    }
     int state = thread->state;
     if (state != THREAD_WAITING && state != THREAD_BLOCKED) {
         return;
@@ -178,12 +178,10 @@ void schedule_thread_yield(bool no_return) {
     enable_interrupts();
 
     if (no_return) { // Hault here until IPI serviced (for terminated threads)
-        for (;;) {
-            __asm__ volatile ("hlt");
-        }
+        core_hlt();
     }
 
-    // Thread waits here until IPI serviced, the context switching back here
+    // Thread waits here until IPI serviced, then context switching back here
     // releases the lock
     spinlock_acquire(&thread->yield_lock);
     spinlock_release(&thread->yield_lock);

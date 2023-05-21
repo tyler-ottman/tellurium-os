@@ -27,7 +27,7 @@ int syscall_open(const char *path, int flags) {
     if (!err) {
         return -1;
     }
-    kprintf("HELLO: %x\n", vnode->v_name);
+
     fd->vnode = vnode;
 
     return fd_i;
