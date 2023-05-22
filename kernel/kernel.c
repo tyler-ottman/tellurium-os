@@ -69,9 +69,8 @@ void kmain(void *param) {
 
     unix_socket_test();
 
-    // Load GUI environment
-    // create_user_process("/tmp/gui.elf");
-
     vfs_print_tree(vfs_get_root(), 4);
-    kprintf(INFO "kmain: init complete\n");
+
+    // Load GUI environment    
+    create_user_process("/tmp/gui.elf");
 }

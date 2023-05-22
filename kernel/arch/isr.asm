@@ -1,6 +1,7 @@
 extern lapic_time_handler
 extern lapic_ipi_handler
-extern ps2_handler
+extern keyboard_handler
+extern mouse_handler
 extern exception_handler
 extern exception_handler_err
 extern syscall_handler
@@ -115,14 +116,25 @@ ISR_IPI:
     call lapic_ipi_handler
     iret
 
-global ISR_ps2
-ISR_ps2:
+global ISR_keyboard
+ISR_keyboard:
     sub rsp, 8
     save_context
 
     mov rdi, rsp
     xor rbp, rbp
-    call ps2_handler
+    call keyboard_handler
+    iret
+
+global ISR_mouse
+ISR_mouse:
+    sub rsp, 8
+
+    save_context
+
+    mov rdi, rsp
+    xor rbp, rbp
+    call mouse_handler
     iret
 
 global ISR_syscall

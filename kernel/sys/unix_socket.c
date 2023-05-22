@@ -293,6 +293,7 @@ static size_t unix_socket_recv(struct socket *this, void *buff, size_t len,
         spinlock_release(&this->lock);
 
         err = event_wait(&unix_this->socket.data_received);
+
         if (err == EVENT_ERR) {
             err = SKT_BLOCK_FAIL;
             goto unix_socket_recv_cleanup;

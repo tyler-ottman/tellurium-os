@@ -4,6 +4,8 @@
 #include <sys/unix_socket.h>
 #include <tests/test.h>
 
+#define UNIX_BUF_LEN                        128
+
 static volatile bool server_init = false;
 
 void unix_socket_server(void *param) {
@@ -14,22 +16,34 @@ void unix_socket_server(void *param) {
 
     socket_t *sock;
     int err = unix_socket_create(&sock, SOCK_STREAM, AF_UNIX);
-    ASSERT(err == SKT_OK, err, "unix_socket_server: init failure");
+    ASSERT(err == SKT_OK, err, "usocket_server: init failure");
 
     const char sun_path[] = "/tmp/socket_gui";
     addr.sun_family = AF_UNIX;
     __memcpy(addr.sun_path, sun_path, __strlen(sun_path));
     err = sock->socket_bind(sock, (const struct sockaddr *)&addr, sizeof(addr));
-    ASSERT(err == SKT_OK, err, "unix_socket_server: bind failure");
+    ASSERT(err == SKT_OK, err, "usocket_server: bind failure");
 
     err = sock->socket_listen(sock, 10);
-    ASSERT(err == SKT_OK, err, "unix_socket_server: listen failure");
+    ASSERT(err == SKT_OK, err, "usocket_server: listen failure");
 
     server_init = true;
 
-    socket_t *client;
-    err = sock->socket_accept(sock, &client, (struct sockaddr *)&addr, &addrlen, 0);
-    ASSERT(err == SKT_OK, err, "socket connection failure");
+    socket_t *receive;
+    err = sock->socket_accept(sock, &receive, (struct sockaddr *)&addr, &addrlen, 0);
+    ASSERT(err == SKT_OK, err, "usocket_server: connection failure");
+
+    char buff[UNIX_BUF_LEN] = {0};
+    int bytes_received = 0;
+    err = sock->socket_recv(receive, buff, UNIX_BUF_LEN, 0, 0, &bytes_received);
+    ASSERT(err == SKT_OK, err, "usocket_server: receive failure");
+
+    kprintf(INFO "usocket_server: %d bytes: %s\n", bytes_received, buff);
+
+    const char msg1[] = "syn+ack";
+    int bytes_sent;
+    err = sock->socket_send(receive, msg1, __strlen(msg1), 0, 0, &bytes_sent);
+    ASSERT(err == SKT_OK, err, "usocket_server: send failure");
 }
 
 void unix_socket_client(void *param) {
@@ -40,13 +54,25 @@ void unix_socket_client(void *param) {
 
     socket_t *sock;
     int err = unix_socket_create(&sock, SOCK_STREAM, AF_UNIX);
-    ASSERT(err == SKT_OK, err, "unix_socket_client: init failure");
+    ASSERT(err == SKT_OK, err, "usocket_client: init failure");
 
     const char sun_path[] = "/tmp/socket_gui";
     addr.sun_family = AF_UNIX;
     __memcpy(addr.sun_path, sun_path, __strlen(sun_path));
     err = sock->socket_connect(sock, (const struct sockaddr *)&addr, sizeof(addr));
-    ASSERT(err == SKT_OK, err, "unix_socket_client: connect failure");
+    ASSERT(err == SKT_OK, err, "usocket_client: connect failure");
+
+    const char msg1[] = "syn";
+    int bytes_sent;
+    err = sock->socket_send(sock, msg1, __strlen(msg1), 0, 0, &bytes_sent);
+    ASSERT(err == SKT_OK, err, "usocket_client: send failure");
+
+    char buff[UNIX_BUF_LEN] = {0};
+    int bytes_received;
+    err = sock->socket_recv(sock, buff, UNIX_BUF_LEN, 0, 0, &bytes_received);
+    ASSERT(err == SKT_OK, err, "usocket_client: receive failure");
+
+    kprintf(INFO "usocket_client: %d bytes: %s\n", bytes_received, buff);
 }
 
 void unix_socket_test(void) {
