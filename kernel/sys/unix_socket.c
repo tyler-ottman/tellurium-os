@@ -12,7 +12,7 @@
 #define UNIX_SOCK_BUFF_SIZE                         0x2000
 
 typedef struct unix_socket {
-    socket_t socket;
+    struct socket socket;
     RINGBUFFER_DECLARE(ringbuffer);
 } unix_socket_t;
 
@@ -22,10 +22,7 @@ static int unix_socket_accept(struct socket *this, struct socket **sock,
     ASSERT_RET(this && addr && (*addrlen <= sizeof(struct sockaddr_un)),
                SKT_BAD_PARAM);
 
-    spinlock_acquire(&this->lock);
-
     if (this->state != SOCKET_LISTENING) {
-        spinlock_release(&this->lock);
         return SKT_BAD_STATE;
     }
 
@@ -37,26 +34,30 @@ static int unix_socket_accept(struct socket *this, struct socket **sock,
     }
 
     // Get client socket off backlog
+    int err;
     socket_t *client_sock;
-    int err = socket_pop_from_backlog(this, &client_sock);
-    if (err != SKT_OK) {
-        spinlock_release(&this->lock);
-        return err;
-    }
 
-    if (!client_sock) { // Backlog empty, wait for connections
+    spinlock_acquire(&this->lock);
+
+    while (this->backlog_size == 0) {
         if (fd_flags & O_NONBLOCK) {
-            spinlock_release(&this->lock);
             return SKT_NONBLOCK;
         }
 
+        spinlock_release(&this->lock);
+
         err = event_wait(&this->connection_request);
         if (err == EVENT_ERR) {
-            spinlock_release(&this->lock);
             return SKT_BAD_EVENT;
         }
 
-        socket_pop_from_backlog(this, &client_sock);
+        spinlock_acquire(&this->lock);
+    }
+
+    err = socket_pop_from_backlog(this, &client_sock);
+    if (err) {
+        spinlock_release(&this->lock);
+        return err;
     }
 
     listen_sock->peer = client_sock;
@@ -75,7 +76,11 @@ static int unix_socket_accept(struct socket *this, struct socket **sock,
     *sock = listen_sock;
 
     // Signal to client that connection made
-    event_signal(&client_sock->connection_accepted);
+    err = event_signal(&client_sock->connection_accepted);
+    if (err) {
+        spinlock_release(&this->lock);
+        return SKT_BAD_EVENT;
+    }
 
     spinlock_release(&this->lock);
     
@@ -95,17 +100,18 @@ static int unix_socket_bind(socket_t *this, const struct sockaddr *addr,
     struct sockaddr_un *unix_addr = (struct sockaddr_un *)addr;
     __memcpy(unix_addr->sun_path, unix_addr->sun_path, addrlen);
 
-    pcb_t *proc = get_core_local_info()->current_thread->parent;
+    pcb_t *proc = get_thread_local()->parent;
     vnode_t *base = proc_get_vnode_base(proc, unix_addr->sun_path);
+
     int err = vfs_create(base, (const char *)unix_addr->sun_path, VSKT);
-    if (!err) {
+    if (err) {
         return SKT_BIND_FAIL;
     }
 
     // Write socket struct to vfs
     vnode_t *socket_file;
     err = vfs_open(&socket_file, base, unix_addr->sun_path);
-    if (!err) {
+    if (err) {
         return SKT_VFS_FAIL;
     }
 
@@ -129,59 +135,64 @@ static int unix_socket_connect(struct socket *this, const struct sockaddr *addr,
     struct sockaddr_un *unix_addr = (struct sockaddr_un *)addr;
     ASSERT_RET(unix_addr->sun_family == AF_UNIX, SKT_INVALID_DOMAIN);
 
-    struct core_local_info *cpu_info = get_core_local_info();
-    pcb_t *proc = cpu_info->current_thread->parent;
-
-    spinlock_acquire(&this->lock);
+    pcb_t *proc = get_thread_local()->parent;
 
     int err;
-
     int state = this->state;
-    if (state == SOCKET_LISTENING || state == SOCKET_CONNECTED) {
-        err = SKT_BAD_PARAM;
-        goto unix_socket_connect_cleanup;
+
+    if (state != SOCKET_CREATED) {
+        return SKT_BAD_PARAM;
     }
 
     // Open peer socket file
     vnode_t *vnode;
     vnode_t *base = proc_get_vnode_base(proc, unix_addr->sun_path);
     err = vfs_open(&vnode, base, unix_addr->sun_path);
-    if (!err) {
-        err = SKT_VFS_FAIL;
-        goto unix_socket_connect_cleanup;
+    if (err) {
+        return SKT_VFS_FAIL;
     }
 
     if (!S_ISSOCK(vnode->stat.st_mode)) {
-        err = SKT_BAD_PARAM;
-        goto unix_socket_connect_cleanup;
+        return SKT_BAD_PARAM;
     }
 
     socket_t *peer = (socket_t *)vnode->fs_data;
 
+    spinlock_acquire(&peer->lock);
+
+    if (peer->state != SOCKET_LISTENING) {
+        spinlock_release(&peer->lock);
+        return SKT_BAD_PARAM;
+    }
+
     // Add socket to peer's connection list
     err = socket_add_to_peer_backlog(this, peer);
     if (err != SKT_OK) {
-        goto unix_socket_connect_cleanup;
+        spinlock_release(&peer->lock);
+        return err;
     }
 
     // Signal socket wants to connect to peer
-    event_signal(&peer->connection_request);
+    err = event_signal(&peer->connection_request);
+    if (err) {
+        socket_backlog_pop_latest(peer);
+        spinlock_release(&peer->lock);
+        return SKT_BAD_EVENT;
+    }
+
+    spinlock_release(&peer->lock);
 
     // Wait until connection accepted
     err = event_wait(&this->connection_accepted);
     if (err == EVENT_ERR) {
-        err = SKT_BLOCK_FAIL;
-        goto unix_socket_connect_cleanup;
+        return SKT_BLOCK_FAIL;
     }
 
     if (vnode) {
         vfs_close(vnode);
     }
 
-    err = SKT_OK;
-unix_socket_connect_cleanup:
-    spinlock_release(&this->lock);
-    return err;
+    return SKT_OK;
 }
 
 static int unix_socket_getpeername(socket_t *this, struct sockaddr *addr,

@@ -116,6 +116,7 @@ typedef struct socket {
 
 int socket_init(socket_t *this, int domain, int type, int protocol);
 int socket_add_to_peer_backlog(socket_t *this, socket_t *peer);
+int socket_backlog_pop_latest(socket_t *peer);
 int socket_pop_from_backlog(socket_t *this, socket_t **pop);
 
 #endif // SOCKET_H

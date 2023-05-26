@@ -4,6 +4,7 @@
 #include <libc/string.h>
 #include <libc/vector.h>
 #include <memory/pmm.h>
+#include <sys/misc.h>
 
 #define TMAGIC              "ustar"
 #define TMAGLEN             6
@@ -36,41 +37,35 @@ static volatile struct limine_module_request module_request = {
 
 static int tmpfs_mount(vnode_t *mp, vnode_t *device) {
     (void)device;
-    // vnode_t *tmpfs_root = vnode_create(mp, "tmpfs_root", VDIR);
-    // if (!tmpfs_root) {
-    //     return 0;
-    // }
 
-    // VECTOR_PUSH_BACK(tmpfs_root->v_parent->v_children, tmpfs_root);
-    // tmpfs_root->v_mp = mp;
-    // tmpfs_root->vfsops = get_tmpfs_ops();
+    mp->v_mp = mp;
     mp->vfsops = get_tmpfs_ops();
 
-    return 1;
+    return VFS_SUCCESS;
 }
 
-static int tmpfs_open(vnode_t *base, const char *path) {
-    (void)base;
-    (void)path;
+static int tmpfs_open(vnode_t *parent, const char *name) {
+    (void)parent;
+    (void)name;
 
-    return 0;
+    return VFS_OPEN_FAIL;
 }
 
 static int tmpfs_close(vnode_t *node) {
     (void)node;
 
-    return 0;
+    return VFS_CLOSE_FAIL;
 }
 
 static int tmpfs_read(void *buff, vnode_t *node, size_t size, size_t offset) {
-    if (offset + size >= node->stat.st_size) {
+    if (offset + size >= (size_t)node->stat.st_size) {
         size = node->stat.st_size - offset;
     }
-
+    
     uint64_t addr = (uint64_t)node->fs_data + offset;
     __memcpy(buff, (void *)addr, size);
 
-    return 1;
+    return VFS_SUCCESS;
 }
 
 static int tmpfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {
@@ -81,10 +76,10 @@ static int tmpfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {
         new_block_size++;
     }
 
-    if (new_block_size > node->stat.st_blocks) {
+    if (new_block_size > (size_t)node->stat.st_blocks) {
         void *data = krealloc(node->fs_data, new_block_size * PAGE_SIZE_BYTES);
         if (!data) {
-            return 0;
+            return VFS_NO_MEM;
         }
 
         node->fs_data = data;
@@ -94,17 +89,17 @@ static int tmpfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {
 
     uint64_t addr = (uint64_t)node->fs_data + offset;
     __memcpy((void *)addr, buff, size);
-    if (offset + size > node->stat.st_size) {
+    if (offset + size > (size_t)node->stat.st_size) {
         node->stat.st_size = offset + size;
     }
 
-    return 1;
+    return VFS_SUCCESS;
 }
 
 static int tmpfs_create(vnode_t *node) {
     void *data = kmalloc(PAGE_SIZE_BYTES);
     if (!data) {
-        return 0;
+        return VFS_NO_MEM;
     }
 
     node->fs_data = data;
@@ -113,7 +108,7 @@ static int tmpfs_create(vnode_t *node) {
     node->stat.st_size = node->stat.st_blksize;
     node->stat.st_mode = vfs_vtype_to_st_mode(node->v_type);
 
-    return 1;
+    return VFS_SUCCESS;
 }
 
 static vfsops_t tmpfs_ops = {
@@ -162,24 +157,24 @@ void tmpfs_load_userapps() {
                 continue;
             }
             
+            const char err_msg[] = "app load failure";
+
             // Add ELF to tmpfs
             char file_path[VNODE_NAME_MAX] = "/tmp/";
             __strncpy(file_path + __strlen(file_path), app_name, __strlen(app_name));
-            vfs_create(vfs_get_root(), file_path, VREG);
-            
+            int err = vfs_create(vfs_get_root(), file_path, VREG);
+            ASSERT(!err, err, err_msg);
+
             vnode_t *node;
-            vfs_open(&node, vfs_get_root(), file_path);
-            if (!node) {
-                kprintf(INFO "Failed to open %s\n", file_path);
-                continue;
-            }
+            err = vfs_open(&node, vfs_get_root(), file_path);
+            ASSERT(!err, err, err_msg);
             
             int size = octal_to_int(tar_file->size, sizeof(tar_file->size));
             uint64_t addr = (uint64_t)tar_file + 512;
-            int ret = vfs_write((void *)addr, node, size, 0);
-            if (!ret) {
-                kprintf(INFO "Failed to write to %s\n", file_path);
-            }
+
+            size_t bytes_written;
+            err = vfs_write((void *)addr, node, size, 0, &bytes_written);
+            ASSERT(!err, err, err_msg);
 
             int num_blocks = size / 512;
             if (num_blocks % 512 != 0) {

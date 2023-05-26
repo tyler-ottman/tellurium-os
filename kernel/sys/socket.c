@@ -27,7 +27,15 @@ int socket_init(socket_t *this, int domain, int type, int protocol) {
     this->backlog_size = 0;
     this->backlog = NULL;
 
-    this->socket_bind = NULL;
+    return SKT_OK;
+}
+
+int socket_backlog_pop_latest(socket_t *peer) {
+    ASSERT_RET(peer, SKT_BAD_PARAM);
+
+    ASSERT_RET(peer->backlog_size != 0, SKT_BACKLOG_EMPTY);
+
+    peer->backlog[peer->backlog_size--] = NULL;
 
     return SKT_OK;
 }
@@ -51,7 +59,7 @@ int socket_pop_from_backlog(socket_t *this, socket_t **pop) {
 
     if (this->backlog_size == 0) {
         *pop = NULL;
-        return SKT_OK;
+        return SKT_BACKLOG_EMPTY;
     }
 
     *pop = this->backlog[0];

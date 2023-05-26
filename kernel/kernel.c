@@ -17,6 +17,8 @@
 #include <memory/vmm.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <sys/misc.h>
+#include <fs/devfs.h>
 #include <fs/tmpfs.h>
 #include <fs/vfs.h>
 
@@ -56,13 +58,13 @@ void kmain(void *param) {
     vfs_init();
 
     tmpfs_init();
-    
-    vfs_create(vfs_get_root(), "/tmp", VDIR);
-    vfs_mount(vfs_get_root(), "/tmp", "tmpfs");
+    devfs_init();
 
-    // Special files (pipe)
-    // vfs_create(vfs_get_root(), "/var", VDIR);
-    // vfs_create(vfs_get_root(), "/var/tmp", VDIR);
+    vfs_create(vfs_get_root(), "/tmp", VDIR);
+    vfs_mount(NULL, vfs_get_root(), "/tmp", "tmpfs");
+
+    vnode_t *device;
+    // devfs_new_device(&device, "mouse");
 
     // Store userapps in vfs
     tmpfs_load_userapps();
@@ -72,5 +74,5 @@ void kmain(void *param) {
     vfs_print_tree(vfs_get_root(), 4);
 
     // Load GUI environment    
-    create_user_process("/tmp/gui.elf");
+    // create_user_process("/tmp/gui.elf");
 }

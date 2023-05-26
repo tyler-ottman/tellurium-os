@@ -116,7 +116,9 @@ static const Elf64_Phdr_t *elf_get_phdr(void *elf_raw, int n) {
 
 int elf_load(pcb_t *proc, const char *path, uint64_t *entry) {
     vnode_t *elf_node;
-    vfs_open(&elf_node, vfs_get_root(), path);
+    int err = vfs_open(&elf_node, vfs_get_root(), path);
+    ASSERT(!err, err, "elf load fail");
+
     if (!elf_node) {
         return ELF_ERR;
     }
@@ -127,8 +129,9 @@ int elf_load(pcb_t *proc, const char *path, uint64_t *entry) {
         return ELF_ERR;
     }
 
-    int ret = vfs_read(data, elf_node, elf_node->stat.st_size, 0);
-    if (!ret) {
+    size_t bytes_read;
+    int ret = vfs_read(data, elf_node, elf_node->stat.st_size, 0, &bytes_read);
+    if (ret) {
         return ELF_ERR;
     }
     

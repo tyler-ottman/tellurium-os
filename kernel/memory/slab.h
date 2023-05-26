@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <arch/lock.h>
+#include <memory/pmm.h>
 
 #define SLAB_CHUNK_SIZE_VARIENTS    16
 

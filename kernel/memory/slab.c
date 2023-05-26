@@ -1,5 +1,4 @@
 #include <arch/terminal.h>
-#include <memory/pmm.h>
 #include <memory/slab.h>
 #include <sys/misc.h>
 

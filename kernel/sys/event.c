@@ -12,6 +12,7 @@ static bool attach_listener(thread_t *thread, event_t *event) {
     for (size_t i = 0; i < LISTEN_CAPACITY; i++) {
         if (!event->listeners[i]) {
             event->listeners[i] = thread;
+            event->num_listeners++;
             ret = true;
             break;
         }
@@ -29,6 +30,7 @@ static bool remove_listener(thread_t *thread, event_t *event) {
     for (size_t i = 0; i < LISTEN_CAPACITY; i++) {
         if (event->listeners[i] == thread) {
             event->listeners[i] = NULL;
+            event->num_listeners--;
             ret = true;
             break;
         }
@@ -41,9 +43,10 @@ static bool remove_listener(thread_t *thread, event_t *event) {
 
 int event_wait(event_t *event) {
     int err = EVENT_OK;
-    thread_t *thread = get_core_local_info()->current_thread;
 
     disable_interrupts();
+
+    thread_t *thread = get_core_local_info()->current_thread;
 
     attach_listener(thread, event);
 
@@ -61,10 +64,16 @@ int event_wait(event_t *event) {
     return err;
 }
 
-void event_signal(event_t *event) {
+int event_signal(event_t *event) {
     disable_interrupts();
 
     spinlock_acquire(&event->lock);
+
+    if (event->num_listeners == 0) {
+        spinlock_release(&event->lock);
+        enable_interrupts();
+        return EVENT_ERR;
+    }
 
     for (size_t i = 0; i < LISTEN_CAPACITY; i++) {
         thread_t *thread = event->listeners[i];
@@ -76,4 +85,6 @@ void event_signal(event_t *event) {
     spinlock_release(&event->lock);
 
     enable_interrupts();
+
+    return EVENT_OK;
 }

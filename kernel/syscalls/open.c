@@ -24,7 +24,7 @@ int syscall_open(const char *path, int flags) {
 
     vnode_t *vnode = NULL;
     err = vfs_open(&vnode, vfs_get_root(), path);
-    if (!err) {
+    if (err) {
         return -1;
     }
 

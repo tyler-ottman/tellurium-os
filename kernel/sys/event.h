@@ -11,10 +11,11 @@
 
 typedef struct event {
     spinlock_t lock;
+    size_t num_listeners;
     struct tcb *listeners[LISTEN_CAPACITY];
 } event_t;
 
 int event_wait(event_t *event);
-void event_signal(event_t *event);
+int event_signal(event_t *event);
 
 #endif // EVENT_H
