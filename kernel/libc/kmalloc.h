@@ -4,8 +4,8 @@
 #include <memory/slab.h>
 #include <stddef.h>
 
-void* kmalloc(size_t size);
-void* krealloc(void* addr, size_t size);
-void kfree(void* addr);
+void *kmalloc(size_t size);
+void *krealloc(void *addr, size_t size);
+void kfree(void *addr);
 
 #endif // KMALLOC_H

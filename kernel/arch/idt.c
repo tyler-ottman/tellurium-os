@@ -2,7 +2,7 @@
 #include <arch/idt.h>
 #include <sys/misc.h>
 
-extern void* isr_table[];
+extern void *isr_table[];
 
 static IDT_Descriptor idtr;
 static spinlock_t idt_lock = 0;
@@ -20,10 +20,10 @@ uint8_t allocate_vector() {
     return vector;
 }
 
-void add_descriptor(uint8_t vector, void* gate_entry, uint8_t flags) {
+void add_descriptor(uint8_t vector, void *gate_entry, uint8_t flags) {
     spinlock_acquire(&idt_lock);
     
-    IDT_Entry* descriptor_ptr = &idt_entry[vector];
+    IDT_Entry *descriptor_ptr = &idt_entry[vector];
 
     uint64_t entry_addr = (uint64_t)gate_entry;
 
@@ -43,7 +43,7 @@ void add_descriptor(uint8_t vector, void* gate_entry, uint8_t flags) {
 void set_vector_ist(uint8_t vector, int ist) {
     spinlock_acquire(&idt_lock);
 
-    IDT_Entry* idt_descriptor = &idt_entry[vector];
+    IDT_Entry *idt_descriptor = &idt_entry[vector];
 
     idt_descriptor->ist = ist;
 

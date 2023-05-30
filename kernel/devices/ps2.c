@@ -89,11 +89,11 @@ void keyboard_handler(ctx_t *ctx) {
         kprintf("%c", char_format[c]);
     }
 
-    struct core_local_info* cpu_info = get_core_local_info();
-    save_context(cpu_info, ctx);
+    core_t *core = get_core_local_info();
+    save_context(core, ctx);
     
-    thread_t *current_thread = cpu_info->current_thread;
-    if (cpu_info->idle_thread != current_thread) {
+    thread_t *current_thread = core->current_thread;
+    if (core->idle_thread != current_thread) {
         schedule_add_thread(current_thread);
     }
 
@@ -147,11 +147,11 @@ void mouse_handler(ctx_t *ctx) {
         break;
     }
 
-    struct core_local_info *cpu_info = get_core_local_info();
-    save_context(cpu_info, ctx);
+    core_t *core = get_core_local_info();
+    save_context(core, ctx);
 
-    thread_t *current_thread = cpu_info->current_thread;
-    if (cpu_info->idle_thread != current_thread) {
+    thread_t *current_thread = core->current_thread;
+    if (core->idle_thread != current_thread) {
         schedule_add_thread(current_thread);
     }
 

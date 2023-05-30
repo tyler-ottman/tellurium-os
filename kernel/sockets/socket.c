@@ -1,8 +1,8 @@
 #include <libc/kmalloc.h>
 #include <sys/misc.h>
-#include <sys/socket.h>
+#include <sockets/socket.h>
+#include <sockets/unix_socket.h>
 #include <sys/misc.h>
-#include <sys/unix_socket.h>
 
 int socket_init(socket_t *this, int domain, int type, int protocol) {
     if (!this) {

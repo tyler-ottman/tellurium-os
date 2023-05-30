@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 // https://github.com/bminor/newlib/blob/master/newlib/libc/stdlib/utoa.c
-char* __utoa(uint64_t value, char *str, int base) {
+char *__utoa(uint64_t value, char *str, int base) {
   const char digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
   int i, j;
   uint64_t remainder;
@@ -33,7 +33,7 @@ char* __utoa(uint64_t value, char *str, int base) {
   return str;
 }
 
-char* __itoa(int64_t value, char* str) {
+char *__itoa(int64_t value, char *str) {
     if (value < 0) {
         value *= -1;
         *(str++) = '-';
@@ -43,8 +43,8 @@ char* __itoa(int64_t value, char* str) {
     return __utoa(value, str, 10);
 }
 
-char* __strcat(char* dest, char* src) {
-    char* base = dest + __strlen(dest);
+char *__strcat(char *dest, char *src) {
+    char *base = dest + __strlen(dest);
     while (*src) {
         *(base++) = *(src++);
     }
@@ -52,7 +52,7 @@ char* __strcat(char* dest, char* src) {
     return dest;
 }
 
-const char* __strchr(const char* str, int c) {
+const char *__strchr(const char *str, int c) {
     while (*str && *str != c) {
         str++;
     }
@@ -74,7 +74,7 @@ const char *__strncpy(char *dest, const char *src, size_t n) {
     return start;
 }
 
-size_t __strcspn(const char* str1, const char* str2) {
+size_t __strcspn(const char *str1, const char *str2) {
     size_t len = 0;
     if (!str1 || !str2) {
         return len;
@@ -92,8 +92,8 @@ size_t __strcspn(const char* str1, const char* str2) {
     return len;
 }
 
-size_t __strlen(const char* str) {
-    const char* start = str;
+size_t __strlen(const char *str) {
+    const char *start = str;
     while(*str != '\0')
         str++;
     return (size_t)(str - start);
@@ -112,7 +112,7 @@ size_t __strncmp(const char *str1, const char *str2, size_t n) {
     return 0;
 }
 
-size_t __strspn(const char* str1, const char* str2) {
+size_t __strspn(const char *str1, const char *str2) {
     size_t len = 0;
     if (!str1 || !str2) {
         return len;
@@ -129,9 +129,9 @@ size_t __strspn(const char* str1, const char* str2) {
     return len;
 }
 
-char* __strtok(char* str, const char* del) {
-    static char* old_str;
-    char* token;
+char *__strtok(char *str, const char *del) {
+    static char *old_str;
+    char *token;
 
     if (str) {
         old_str = str;
@@ -186,8 +186,8 @@ char *__strtok_r(char *str, const char *del, char **old_ptr) {
     return str;
 }
 
-void* __memset(void* base, unsigned char val, size_t len) {
-    char* ptr = (char*)base;
+void *__memset(void *base, unsigned char val, size_t len) {
+    char *ptr = (char *)base;
     
     while (len-- > 0) {
         *(ptr++) = val;
@@ -196,18 +196,18 @@ void* __memset(void* base, unsigned char val, size_t len) {
     return base;
 }
 
-void* __memcpy(void* dest, const void* src, size_t n) {
-    char* dest_ptr = (char*)dest;
-    const char* src_ptr = (const char*)src;
+void *__memcpy(void *dest, const void *src, size_t n) {
+    char *dest_ptr = (char *)dest;
+    const char *src_ptr = (const char *)src;
     while (n-- > 0) {
         *(dest_ptr++) = *(src_ptr++);
     }
     return dest;
 }
 
-int __memcmp(const void* str1, const void* str2, size_t n) {
-    const char* src1 = (const char*)str1;
-    const char* src2 = (const char*)str2;
+int __memcmp(const void *str1, const void *str2, size_t n) {
+    const char *src1 = (const char *)str1;
+    const char *src2 = (const char *)str2;
     while (n-- > 0) {
         if (*src1++ != *src2++) {
             return (*(src1-1) < *(src2-1)) ? -1 : 1;

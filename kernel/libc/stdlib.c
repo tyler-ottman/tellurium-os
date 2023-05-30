@@ -1,6 +1,6 @@
 #include <libc/stdlib.h>
 
-int __atoi(const char* str) {
+int __atoi(const char *str) {
     int sign = (*str == '-') ? -1 : 1;
     if (*str == '-') str++;
 

@@ -115,7 +115,7 @@ void add_gdt_entry(GDT_Entry entry) {
     gdt.gdt_entry[gdt_index++] = entry;
 }
 
-void load_tss_entry(struct TSS* tss) {
+void load_tss_entry(struct TSS *tss) {
     spinlock_acquire(&tss_lock);
 
     uint64_t addr = (uint64_t)tss;

@@ -23,8 +23,7 @@ void *syscall_mmap(void *addr, size_t len, int prot, int flags, int fd, size_t o
     }
 
     uintptr_t vaddr = (uintptr_t)section - KERNEL_HHDM_OFFSET;
-    struct core_local_info *cpu_info = get_core_local_info();
-    pcb_t *proc = cpu_info->current_thread->parent;    
+    pcb_t *proc = get_core_local_info()->current_thread->parent;    
     uint64_t vmm_flags = PML_NOT_EXECUTABLE | PML_USER | PML_WRITE | PML_PRESENT;
     map_section(proc->pmap, vaddr, vaddr, num_bytes, vmm_flags);
 

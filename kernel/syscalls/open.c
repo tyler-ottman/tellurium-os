@@ -10,8 +10,8 @@
 #define O_RDWR                      0x03
 
 int syscall_open(const char *path, int flags) {
-    struct core_local_info *cpu_info = get_core_local_info();
-    pcb_t *proc = cpu_info->current_thread->parent;
+    core_t *core = get_core_local_info();
+    pcb_t *proc = core->current_thread->parent;
 
     fd_t *fd;
     int fd_i;

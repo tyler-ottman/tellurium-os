@@ -63,8 +63,8 @@ typedef struct terminal {
     char ansi_sequence[ANSI_SEQ_LEN];
 } terminal_t;
 
-void kerror(const char* msg, int err);
-int kprintf(const char* format, ...);
+void kerror(const char *msg, int err);
+int kprintf(const char *format, ...);
 int kprintj(const char *ptr);
 
 void init_kterminal_doublebuffer(void);

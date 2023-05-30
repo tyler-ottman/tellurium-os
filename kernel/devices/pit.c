@@ -23,14 +23,14 @@ void pit_set_reload(uint8_t channel, uint16_t value) {
     command.read_write = 3;
     command.m_mode = 4;
 
-    outb(PIT_CONTROL_WORD, *((uint8_t*)&command));
+    outb(PIT_CONTROL_WORD, *((uint8_t *)&command));
 }
 
 uint16_t pit_get_count(uint8_t channel) {
     cwf_t command = default_command;
     command.select_counter = channel;
 
-    outb(PIT_CONTROL_WORD, *((uint8_t*)&command));
+    outb(PIT_CONTROL_WORD, *((uint8_t *)&command));
 
     uint8_t low = inb(command.select_counter);
     uint8_t high = inb(command.select_counter);

@@ -78,7 +78,12 @@ int event_signal(event_t *event) {
     for (size_t i = 0; i < LISTEN_CAPACITY; i++) {
         thread_t *thread = event->listeners[i];
         if (thread) {
-            schedule_notify(event, thread);
+            int err = schedule_notify(event, thread);
+            
+            // Trying to notify a thread that is not yet blocked
+            if (err) {
+                return EVENT_ERR;
+            }
         }
     }
 

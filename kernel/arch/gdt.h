@@ -45,7 +45,7 @@ typedef struct {
 
 void init_gdt(void);
 void add_gdt_entry(GDT_Entry entry);
-void load_tss_entry(struct TSS* tss);
+void load_tss_entry(struct TSS *tss);
 void load_gdt(void);
 
 #endif // GDT_H

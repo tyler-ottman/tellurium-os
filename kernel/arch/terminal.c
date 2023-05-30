@@ -100,8 +100,8 @@ static uint32_t rgb256[] = {
 spinlock_t kprint_lock = 0;
 terminal_t kterminal;
 
-void (*apply_set_attribute[NUM_SET_TEXT_ATTRIBUTES]) (terminal_t*);
-void (*apply_reset_attribute[NUM_RESET_TEXT_ATTRIBUTES]) (terminal_t*);
+void (*apply_set_attribute[NUM_SET_TEXT_ATTRIBUTES]) (terminal_t *);
+void (*apply_reset_attribute[NUM_RESET_TEXT_ATTRIBUTES]) (terminal_t *);
 
 void kerror(const char* msg, int err) {
     disable_interrupts();
@@ -113,15 +113,15 @@ void kerror(const char* msg, int err) {
     core_hlt();
 }
 
-static terminal_t* get_kterminal() {
+static terminal_t *get_kterminal() {
     return &kterminal;
 }
 
-void no_change_text_attribute(terminal_t* terminal) {
+void no_change_text_attribute(terminal_t *terminal) {
     (void)terminal;
 }
 
-void reset_text_attribute(terminal_t* terminal) {
+void reset_text_attribute(terminal_t *terminal) {
     terminal->ansi_state = PROCESS_NORMAL;
     terminal->fg_color = terminal->fg_color_default;
     terminal->bg_color = terminal->bg_color_default;
@@ -131,7 +131,7 @@ static inline bool num_in_byte_bounds(int n) {
     return (n >= 0 && n <= 255);
 }
 
-static inline void apply_color(terminal_t* terminal, uint32_t color) {
+static inline void apply_color(terminal_t *terminal, uint32_t color) {
     if (terminal->apply_to_fg) {
         terminal->fg_color = color;
     } else {
@@ -139,7 +139,7 @@ static inline void apply_color(terminal_t* terminal, uint32_t color) {
     }
 }
 
-static void parse_sgr(terminal_t* terminal, char* sequence) {
+static void parse_sgr(terminal_t *terminal, char *sequence) {
     uint32_t color = 0;
     if (__strlen(sequence) == 0) {
         // Reset ANSI attributes
@@ -248,8 +248,8 @@ static void parse_sgr(terminal_t* terminal, char* sequence) {
     }
 }
 
-static void terminal_parse_ansi(terminal_t* terminal) {
-    char* ansi_sequence = terminal->ansi_sequence;
+static void terminal_parse_ansi(terminal_t *terminal) {
+    char *ansi_sequence = terminal->ansi_sequence;
 
     if (ansi_sequence[0] != '[') {
         return;
@@ -266,8 +266,8 @@ static void terminal_parse_ansi(terminal_t* terminal) {
     }
 }
 
-void terminal_printf(terminal_t* terminal, const char* buf) {
-    const char* start = buf;
+void terminal_printf(terminal_t *terminal, const char *buf) {
+    const char *start = buf;
 
     draw_cursor(terminal, terminal->bg_color);
 
@@ -325,7 +325,7 @@ void terminal_printf(terminal_t* terminal, const char* buf) {
     }
 }
 
-int kprintf(const char* format, ...) {
+int kprintf(const char *format, ...) {
     char buf[512];
     va_list valist;
 

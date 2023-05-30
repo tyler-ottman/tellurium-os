@@ -15,14 +15,13 @@
 #include <memory/pmm.h>
 #include <memory/slab.h>
 #include <memory/vmm.h>
+#include <sockets/unix_socket.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <sys/misc.h>
 #include <fs/devfs.h>
 #include <fs/tmpfs.h>
 #include <fs/vfs.h>
-
-#include <sys/unix_socket.h>
 
 void init_system() {
     init_kterminal();

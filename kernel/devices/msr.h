@@ -1,3 +1,6 @@
+#ifndef MSR_H
+#define MSR_H
+
 #include <stdint.h>
 
 #define IA32_APIC_BASE      0x0000001B
@@ -11,3 +14,5 @@
 
 uint64_t get_msr(uint32_t msr);
 void set_msr(uint32_t msr, uint64_t val);
+
+#endif // MSR_H

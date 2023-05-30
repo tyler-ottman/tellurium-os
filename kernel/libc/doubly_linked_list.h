@@ -26,5 +26,4 @@ void push_back(doubly_linked_list_t *dll, void *data);
 void *pop_front(doubly_linked_list_t *dll);
 void *pop_back(doubly_linked_list_t *dll);
 
-
 #endif // DOUBLY_LINKED_LIST_H

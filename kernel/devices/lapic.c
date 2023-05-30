@@ -5,10 +5,10 @@
 #include <arch/cpu.h>
 #include <sys/misc.h>
 
-extern void* ISR_Timer[];
-extern void* ISR_IPI[];
+extern void *ISR_Timer[];
+extern void *ISR_IPI[];
 
-uint32_t* lapic_addr;
+uint32_t *lapic_addr;
 static spinlock_t calibrate_lock = 0;
 
 bool is_lapic_aligned(size_t offset) {
@@ -18,42 +18,43 @@ bool is_lapic_aligned(size_t offset) {
 uint32_t lapic_read(size_t offset) {
     ASSERT(is_lapic_aligned(offset), 0, UNALIGNED_LAPIC);
 
-    return *((volatile uint32_t*)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET));
+    return *((volatile uint32_t *)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET));
 }
 
 void lapic_write(size_t offset, uint32_t val) {
     ASSERT(is_lapic_aligned(offset), 0, UNALIGNED_LAPIC);
 
-    *((volatile uint32_t*)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET)) = val;
+    *((volatile uint32_t *)((uint64_t)lapic_addr + offset + KERNEL_HHDM_OFFSET)) = val;
 }
 
-void lapic_time_handler(ctx_t* ctx) {
+void lapic_time_handler(ctx_t *ctx) {
     lapic_eoi();
 
-    struct core_local_info* cpu_info = get_core_local_info();
-    save_context(cpu_info, ctx);
+    core_t *core = get_core_local_info();
+    save_context(core, ctx);
     
     // kprintf(MAGENTA"Timer Handle\n");
 
-    thread_t *current_thread = cpu_info->current_thread;
-    if (cpu_info->idle_thread != current_thread) {
+    thread_t *current_thread = core->current_thread;
+    if (core->idle_thread != current_thread) {
         schedule_add_thread(current_thread);
     }
 
     schedule_next_thread();
 }
 
-void lapic_ipi_handler(ctx_t* ctx) {
+void lapic_ipi_handler(ctx_t *ctx) {
     lapic_eoi();
 
-    struct core_local_info* cpu_info = get_core_local_info();
-    save_context(cpu_info, ctx);
+    core_t *core = get_core_local_info();
+    thread_t *thread = get_thread_local();
 
-    thread_t *current_thread = cpu_info->current_thread;
-    if (current_thread->state == THREAD_ZOMBIE) { // Thread completed execution, terminate
-        thread_destroy(current_thread);
-    } else if (current_thread->state == THREAD_RUNNABLE) { // Add thread back to queue
-        schedule_add_thread(current_thread);
+    save_context(core, ctx);
+
+    if (thread->state == THREAD_ZOMBIE) { // Thread completed execution, terminate
+        thread_destroy(thread);
+    } else if (thread->state == THREAD_RUNNABLE) { // Add thread back to queue
+        schedule_add_thread(thread);
     }
 
     // kprintf(MAGENTA"IPI Handle\n");
@@ -91,7 +92,7 @@ void lapic_calibrate(bool hpet_present) {
 }
 
 void init_lapic() {
-    struct core_local_info* cpu_info = get_core_local_info();
+    core_t *core = get_core_local_info();
     
     lapic_addr = get_lapic_addr();
     
@@ -101,7 +102,7 @@ void init_lapic() {
     
     // Add IDT entry for timer interrupts
     uint8_t timer_vector = allocate_vector();
-    cpu_info->lapic_timer_vector = timer_vector;
+    core->lapic_timer_vector = timer_vector;
     
     add_descriptor(timer_vector, ISR_Timer, 0x8e);
     lapic_lvt_set_vector(LVT_TIMER, timer_vector);
@@ -113,7 +114,7 @@ void init_lapic() {
 
     uint8_t ipi_vector = allocate_vector();
     add_descriptor(ipi_vector, ISR_IPI, 0x8e);
-    cpu_info->lapic_ipi_vector = ipi_vector;
+    core->lapic_ipi_vector = ipi_vector;
 }
 
 void lapic_schedule_time(uint64_t us) {

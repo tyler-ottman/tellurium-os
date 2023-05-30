@@ -6,7 +6,7 @@
 #include <memory/pmm.h>
 #include <memory/vmm.h>
 
-extern void thread_wrapper(struct core_local_info *cpu_info);
+extern void thread_wrapper(core_t *core);
 
 static spinlock_t tid_lock = 0;
 static uint32_t cur_tid = 1;
@@ -19,17 +19,17 @@ static void idle_thread_spin(void) {
     }
 }
 
-thread_t* alloc_idle_thread(void) {
-    void* entry = (void*)((uint64_t)idle_thread_spin);
+thread_t *alloc_idle_thread(void) {
+    void *entry = (void *)((uint64_t)idle_thread_spin);
     return create_kernel_thread(entry, NULL);
 }
 
-thread_t* get_idle_thread(void) {
-    struct core_local_info* cpu_info = get_core_local_info();
-    return cpu_info->idle_thread;
+thread_t *get_idle_thread(void) {
+    core_t *core = get_core_local_info();
+    return core->idle_thread;
 }
 
-void thread_destroy(thread_t* thread) {
+void thread_destroy(thread_t *thread) {
     if (!thread) {
         return;
     }
@@ -43,9 +43,9 @@ void thread_destroy(thread_t* thread) {
     }
 
     // Remove thread from pare
-    struct pcb* parent = thread->parent;
+    struct pcb *parent = thread->parent;
     for (int i = 0; i < parent->threads.cur_elements; i++) {
-        thread_t* cur_thread = VECTOR_GET(parent->threads, i);
+        thread_t *cur_thread = VECTOR_GET(parent->threads, i);
         if (cur_thread == thread) {
             VECTOR_REMOVE(parent->threads, i);
             break;
@@ -55,12 +55,12 @@ void thread_destroy(thread_t* thread) {
     kfree(thread);
 }
 
-thread_t* create_kernel_thread(void* entry, void* param) {
+thread_t *create_kernel_thread(void *entry, void *param) {
     if (!entry) {
         return NULL;
     }
 
-    thread_t* thread = kmalloc(sizeof(thread_t));
+    thread_t *thread = kmalloc(sizeof(thread_t));
     if (!thread) {
         return NULL;
     }
@@ -79,7 +79,7 @@ thread_t* create_kernel_thread(void* entry, void* param) {
         return NULL;
     }
     stack_top = (uint64_t)thread->thread_base_sp + stack_size;
-    thread->thread_sp = (uint64_t*)(stack_top - 0x10);
+    thread->thread_sp = (uint64_t *)(stack_top - 0x10);
     
     thread->kernel_base_sp = kmalloc(stack_size);
     if (!thread->kernel_base_sp) {
@@ -87,9 +87,9 @@ thread_t* create_kernel_thread(void* entry, void* param) {
         return NULL;
     }
     stack_top = (uint64_t)thread->kernel_base_sp + stack_size;
-    thread->kernel_sp = (uint64_t*)(stack_top - 0x10);
+    thread->kernel_sp = (uint64_t *)(stack_top - 0x10);
 
-    ctx_t* context = &thread->context;
+    ctx_t *context = &thread->context;
     __memset(context, 0, sizeof(ctx_t));
     context->rsi = (uint64_t)param;
     context->rdi = (uint64_t)entry;
@@ -101,6 +101,7 @@ thread_t* create_kernel_thread(void* entry, void* param) {
     context->ss = GDT_KERNEL_DATA;
 
     thread->state = THREAD_CREATED;
+    thread->yield_cause = 0;
     thread->received_event = NULL;
     thread->waiting_for = NULL;
 
@@ -115,7 +116,7 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
         return NULL;
     }
 
-    thread_t* thread = kmalloc(sizeof(thread_t));
+    thread_t *thread = kmalloc(sizeof(thread_t));
     if (!thread) {
         return NULL;
     }
@@ -136,7 +137,7 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
     uint64_t addr = (uint64_t)thread->thread_base_sp - KERNEL_HHDM_OFFSET;
     thread->thread_base_sp = (uint64_t *)addr;
     stack_top = (uint64_t)thread->thread_base_sp + stack_size;
-    thread->thread_sp = (uint64_t*)(stack_top - 8);
+    thread->thread_sp = (uint64_t *)(stack_top - 8);
 
     // Now map stack to userspace
     uint64_t vaddr = (uint64_t)thread->thread_base_sp;
@@ -148,9 +149,9 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
         return NULL;
     }
     stack_top = (uint64_t)thread->kernel_base_sp + stack_size - 0x10;
-    thread->kernel_sp = (uint64_t*)(stack_top);
+    thread->kernel_sp = (uint64_t *)(stack_top);
 
-    ctx_t* context = &thread->context;
+    ctx_t *context = &thread->context;
     __memset(context, 0, sizeof(ctx_t));
     context->rdi = (uint64_t)param;
     context->rip = (uint64_t)entry;
@@ -161,6 +162,7 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
     context->ss = GDT_USER_DATA | 3;
 
     thread->state = THREAD_CREATED;
+    thread->yield_cause = 0;
     thread->received_event = NULL;
     thread->waiting_for = NULL;
     thread->yield_lock = 0;

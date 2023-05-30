@@ -36,27 +36,27 @@ void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
     );
 }
 
-thread_t* get_thread_local() {
+thread_t *get_thread_local() {
     uint64_t fs_base = get_msr(FS_BASE);
-    return (thread_t*)((uint64_t)fs_base);
+    return (thread_t *)((uint64_t)fs_base);
 }
 
-void set_thread_local(thread_t* thread) {
+void set_thread_local(thread_t *thread) {
     uint64_t fs_base = (uint64_t)((uint64_t)thread);
     set_msr(FS_BASE, fs_base);
 }
 
-struct core_local_info* get_core_local_info() {
+core_t *get_core_local_info() {
     uint64_t gs_base = get_msr(IA32_KERNEL_GS_BASE);
-    return (struct core_local_info*)((uint64_t)gs_base);
+    return (core_t *)((uint64_t)gs_base);
 }
 
-void set_core_local_info(struct core_local_info* cpu_info) {
+void set_core_local_info(core_t *cpu_info) {
     uint64_t gs_base = (uint64_t)((uint64_t)cpu_info);
     set_msr(IA32_KERNEL_GS_BASE, gs_base);
 }
 
-void save_context(struct core_local_info *cpu_info, ctx_t *ctx) {
+void save_context(core_t *cpu_info, ctx_t *ctx) {
     thread_t *cur_thread = cpu_info->current_thread;
     if (!cur_thread) {
         return;
@@ -72,12 +72,12 @@ static uint32_t cores_ready = 0;
 static uint64_t bsp_id = 0;
 
 void init_cpu(void) {
-    struct limine_smp_response* smp_response = kernel_smp_request.response;
+    struct limine_smp_response *smp_response = kernel_smp_request.response;
     size_t core_count = get_core_count();
     bsp_id = smp_response->bsp_lapic_id;
     kprintf(INFO GREEN "CPU: %d available cores\n", core_count);
 
-    struct limine_smp_info* core;
+    struct limine_smp_info *core;
     for (size_t i = 0; i < core_count; i++) {
         core = smp_response->cpus[i];
         
@@ -111,40 +111,40 @@ static char* reg_names[NUM_REGISTERS] = {
     "err", "rip", "cs", "rflags", "rsp", "ss"
 };
 
-void print_context(ctx_t* context) {
-    uint64_t* registers = (uint64_t*)context;
+void print_context(ctx_t *context) {
+    uint64_t *registers = (uint64_t *)context;
     for (size_t i = 0; i < NUM_REGISTERS; i++) {
         kprintf("%s: %016x\n", reg_names[i], registers[i]);
     }
 }
 
-void core_init(struct limine_smp_info* core) {
+void core_init(struct limine_smp_info *limine_core_info) {
     load_gdt();
     idt_load();
 
     load_pagemap(get_kernel_pagemap());
 
-    struct core_local_info* cpu_info = kmalloc(sizeof(struct core_local_info));
-    ASSERT(cpu_info != NULL, ERR_NO_MEM, NULL);
-    set_core_local_info(cpu_info);
+    core_t* core = kmalloc(sizeof(core_t));
+    ASSERT(core != NULL, ERR_NO_MEM, NULL);
+    set_core_local_info(core);
 
-    cpu_info->kernel_stack = NULL;
-    cpu_info->lapic_id = core->lapic_id;
-    cpu_info->current_thread = NULL;
+    core->kernel_stack = NULL;
+    core->lapic_id = limine_core_info->lapic_id;
+    core->current_thread = NULL;
 
-    cpu_info->idle_thread = alloc_idle_thread();
-    cpu_info->idle_thread->state = THREAD_RUNNABLE;
+    core->idle_thread = alloc_idle_thread();
+    core->idle_thread->state = THREAD_RUNNABLE;
     
-    __memset(&cpu_info->tss, 0, sizeof(struct TSS));
-    load_tss_entry(&cpu_info->tss);
+    __memset(&core->tss, 0, sizeof(struct TSS));
+    load_tss_entry(&core->tss);
     
     init_lapic();
 
     // LAPIC Timer IDT Entry uses stack stored in IST1
-    set_vector_ist(cpu_info->lapic_timer_vector, 1);
+    set_vector_ist(core->lapic_timer_vector, 1);
 
     // LAPIC IPI IDT Entry
-    set_vector_ist(cpu_info->lapic_ipi_vector, 1);
+    set_vector_ist(core->lapic_ipi_vector, 1);
 
     for (int i = 0; i < 20; i++) {
         set_vector_ist(i, 1);
@@ -156,7 +156,7 @@ void core_init(struct limine_smp_info* core) {
     cores_ready++;
     spinlock_release(&init_lock);
 
-    if (core->lapic_id != bsp_id) {
+    if (limine_core_info->lapic_id != bsp_id) {
         schedule_next_thread();
         while(1) {}
     }

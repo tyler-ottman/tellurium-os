@@ -9,8 +9,8 @@
 
 static spinlock_t queue_lock = 0;
 
-static thread_t* head = NULL;
-static thread_t* tail = NULL;
+static thread_t *head = NULL;
+static thread_t *tail = NULL;
 
 typedef struct thread_queue {
     thread_t *head;
@@ -18,7 +18,7 @@ typedef struct thread_queue {
 } thread_queue_t;
 
 void schedule_next_thread() {
-    thread_t* next_thread = pop_thread_from_queue();
+    thread_t *next_thread = pop_thread_from_queue();
 
     if (next_thread == NULL) {
         next_thread = get_idle_thread();
@@ -52,7 +52,7 @@ thread_t *pop_thread_from_queue() {
     return thread;
 }
 
-void schedule_add_thread(thread_t* thread) {
+void schedule_add_thread(thread_t *thread) {
     spinlock_acquire(&queue_lock);
 
     if (head == NULL) {
@@ -69,25 +69,27 @@ void schedule_add_thread(thread_t* thread) {
     spinlock_release(&queue_lock);
 }
 
-void thread_entry(thread_t* thread) {
-    struct core_local_info* cpu_info = get_core_local_info();
-    cpu_info->current_thread = thread;
-    thread->state = THREAD_RUNNING;
-    spinlock_release(&thread->yield_lock);
-    set_thread_local(cpu_info->current_thread);
-    cpu_info->tss.ist1 = (uint64_t)thread->kernel_sp;
+void thread_entry(thread_t *thread) {
+    core_t *core = get_core_local_info();
+    core->current_thread = thread;
+    core->tss.ist1 = (uint64_t)thread->kernel_sp;
 
-    thread_switch(cpu_info);
+    thread->state = THREAD_RUNNING;
+    set_thread_local(core->current_thread);
+
+    spinlock_release(&thread->yield_lock);
+
+    thread_switch(core);
 }
 
-void thread_switch(struct core_local_info* cpu_info) {
-    struct pagemap* map = cpu_info->current_thread->parent->pmap;
-    uint64_t* pml4 = map->pml4_base;
-    pml4 = (uint64_t*)((uint64_t)pml4 - KERNEL_HHDM_OFFSET);
-    // print_context(&cpu_info->current_thread->context);
+void thread_switch(core_t *core) {
+    thread_t *thread = core->current_thread;
+    struct pagemap *map = core->current_thread->parent->pmap;
 
-    cpu_info->kernel_stack = cpu_info->current_thread->kernel_sp;
-    cpu_info->kernel_scratch = cpu_info->current_thread->thread_scratch;
+    uint64_t cr3 = (uint64_t)(map->pml4_base) - KERNEL_HHDM_OFFSET;
+
+    core->kernel_stack = thread->kernel_sp;
+    core->kernel_scratch = thread->thread_scratch;
     
     lapic_schedule_time(1000);
     lapic_lvt_enable(LVT_TIMER);
@@ -113,8 +115,8 @@ void thread_switch(struct core_local_info* cpu_info) {
         "pop %%r15\n\t"
         "addq $8, %%rsp\n\t"
         "iretq\n\t" ::
-        "r" (&cpu_info->current_thread->context),
-        "r" (pml4) :
+        "r" (&thread->context),
+        "r" ((uint64_t *)cr3) :
         "memory"
     );
 }
@@ -135,15 +137,15 @@ void schedule_thread_wait(event_t *event) {
     }
 
     thread->waiting_for = event;
-    thread->state = THREAD_WAITING;
+    thread->state = THREAD_WAITING; // bad
 
-    schedule_thread_yield(false);
+    schedule_thread_yield(false, YIELD_WAIT);
 }
 
-void schedule_notify(event_t *event, thread_t *thread) {
+int schedule_notify(event_t *event, thread_t *thread) {
     int state = thread->state;
     if (state != THREAD_WAITING && state != THREAD_BLOCKED) {
-        return;
+        return SCHEDULE_ERR;
     }
 
     if (state == THREAD_WAITING) {
@@ -153,9 +155,11 @@ void schedule_notify(event_t *event, thread_t *thread) {
     thread->state = THREAD_RUNNABLE;
 
     schedule_add_thread(thread);
+
+    return SCHEDULE_OK;
 }
 
-void schedule_thread_yield(bool no_return) {
+void schedule_thread_yield(bool no_return, int cause) {
     int state_if_flag = core_get_if_flag();
 
     // Critical Section
@@ -165,15 +169,17 @@ void schedule_thread_yield(bool no_return) {
     lapic_lvt_disable(LVT_TIMER);
     lapic_schedule_time(0);
 
-    struct core_local_info *info = get_core_local_info();
-    thread_t *thread = info->current_thread;
+    core_t *core = get_core_local_info();
+    thread_t *thread = core->current_thread;
+
+    thread->yield_cause = cause;
 
     if (!no_return) {
         spinlock_acquire(&thread->yield_lock);
     }
 
     // Send self IPI
-    lapic_send_ipi(info->lapic_id, info->lapic_ipi_vector);
+    lapic_send_ipi(core->lapic_id, core->lapic_ipi_vector);
 
     enable_interrupts();
 
@@ -197,5 +203,5 @@ void schedule_thread_terminate() {
     thread_t *thread = get_core_local_info()->current_thread;
     thread->state = THREAD_ZOMBIE;
 
-    schedule_thread_yield(true);
+    schedule_thread_yield(true, YIELD_TERMINATE);
 }

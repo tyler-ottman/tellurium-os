@@ -9,7 +9,7 @@
 
 #define ASSERT_BUFF_LIM(cur, max) {if (cur >= max) return -1;} 
 
-int __vsnprintf(char* buf, size_t n, const char* format, va_list valist) {
+int __vsnprintf(char *buf, size_t n, const char *format, va_list valist) {
     uint64_t flags; // Flags in format specifier
     uint64_t width; // Field width in format specifier
     uint64_t base; // Default base for numbers
@@ -95,7 +95,7 @@ int __vsnprintf(char* buf, size_t n, const char* format, va_list valist) {
                 }
 
                 // Print string representation of number
-                char* str = str_num;
+                char *str = str_num;
                 while (*str) {
                     ASSERT_BUFF_LIM(cur_idx, n);
                     buf[cur_idx++] = *str;
@@ -127,7 +127,7 @@ int __vsnprintf(char* buf, size_t n, const char* format, va_list valist) {
                 }
 
                 // Print string representation of number
-                char* str = str_num;
+                char *str = str_num;
                 while (*str) {
                     ASSERT_BUFF_LIM(cur_idx, n);
                     buf[cur_idx++] = *str;
@@ -197,7 +197,7 @@ int __vsnprintf(char* buf, size_t n, const char* format, va_list valist) {
     return cur_idx;
 }
 
-int __snprintf(char* buf, size_t n, const char* format, ...) {
+int __snprintf(char *buf, size_t n, const char *format, ...) {
     va_list valist;
     int err;
     

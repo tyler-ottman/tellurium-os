@@ -2,7 +2,7 @@
 #include <memory/slab.h>
 #include <sys/misc.h>
 
-static struct cache* caches[SLAB_CHUNK_SIZE_VARIENTS];
+static struct cache *caches[SLAB_CHUNK_SIZE_VARIENTS];
 static struct cache_metadata metadata;
 
 static size_t known_chunks[] = {
@@ -14,7 +14,7 @@ void cache_insert(size_t chunk_size) {
            (chunk_size <= SLAB_MAX_CHUNK_SIZE), ERR_NO_MEM,
             "slab: max cache or object size reached\n");
 
-    struct cache* cache = palloc(1);
+    struct cache *cache = palloc(1);
     ASSERT(cache != NULL, ERR_NO_MEM, NULL);
 
     cache->slabs_empty = cache->slabs_partial = cache->slabs_full = NULL;
@@ -35,7 +35,7 @@ int get_cache_index(size_t chunk_size) {
     return -1;
 }
 
-void transfer_slab(struct slab* slab, struct slab** old_list, struct slab** new_list) {
+void transfer_slab(struct slab *slab, struct slab **old_list, struct slab **new_list) {
     if (slab->prev == NULL && slab->next == NULL) { // Only slab in list
         *old_list = NULL;
     } else if (slab->next == NULL) { // Slab at end of list
@@ -53,12 +53,12 @@ void transfer_slab(struct slab* slab, struct slab** old_list, struct slab** new_
     slab->prev = NULL;
 }
 
-void slab_spawn(struct cache* cache) {
+void slab_spawn(struct cache *cache) {
     int chunk_size = cache->chunk_size;
     int total_chunks = PAGE_SIZE_BYTES / chunk_size;
     int header_size = sizeof(struct slab);
     
-    struct slab* slab = palloc(1);
+    struct slab *slab = palloc(1);
     ASSERT(slab != NULL, ERR_NO_MEM, NULL);
     __memset(slab, 0, header_size);
 
@@ -78,26 +78,26 @@ void slab_spawn(struct cache* cache) {
     // Initialize chunk freelist
     uint64_t base_addr = (uint64_t)cache->slabs_empty;
     base_addr += chunk_size * header_size_chunks;
-    slab->free_chunk = (uint64_t*)base_addr;
-    void** cur_chunk = (void**)slab->free_chunk;
-    size_t offset = chunk_size / sizeof(void*);
+    slab->free_chunk = (uint64_t *)base_addr;
+    void **cur_chunk = (void **)slab->free_chunk;
+    size_t offset = chunk_size / sizeof(void *);
     for (size_t i = 0; i < slab->total_chunks; i++) {
         cur_chunk[i * offset] = &cur_chunk[(i + 1) * offset];
     }
     cur_chunk[slab->total_chunks * offset] = NULL;
 }
 
-void* slab_inner_alloc_chunk(struct slab* slab_list_base) {
-    struct slab* slab = slab_list_base;
+void *slab_inner_alloc_chunk(struct slab *slab_list_base) {
+    struct slab *slab = slab_list_base;
 
     while (slab != NULL) {
         if ((slab->used_chunks != slab->total_chunks)) {
             slab->used_chunks++;
-            void** old_free_chunk = slab->free_chunk;
+            void **old_free_chunk = slab->free_chunk;
             slab->free_chunk = *old_free_chunk;
             
             // Add slab to full list
-            struct cache* cache = slab->cache;
+            struct cache *cache = slab->cache;
             if (slab->used_chunks == slab->total_chunks) { // partial -> full
                 transfer_slab(slab, &(cache->slabs_partial), &(cache->slabs_full));
             } else if (slab->used_chunks == 1) { // empty -> partial
@@ -112,9 +112,9 @@ void* slab_inner_alloc_chunk(struct slab* slab_list_base) {
     return NULL;
 }
 
-void* slab_alloc_chunk(int cache_idx) {
-    struct cache* cache = caches[cache_idx];
-    void* addr;
+void *slab_alloc_chunk(int cache_idx) {
+    struct cache *cache = caches[cache_idx];
+    void *addr;
 
     spinlock_acquire(&(cache->lock));
 
@@ -142,9 +142,9 @@ void* slab_alloc_chunk(int cache_idx) {
     return addr;
 }
 
-void slab_free_chunk(void* addr) {
-    struct slab* slab = (struct slab*)((uint64_t)addr & ~0xfff);
-    struct cache* cache = slab->cache;
+void slab_free_chunk(void *addr) {
+    struct slab *slab = (struct slab *)((uint64_t)addr & ~0xfff);
+    struct cache *cache = slab->cache;
 
     spinlock_acquire(&(cache->lock));
 
@@ -162,7 +162,7 @@ void slab_free_chunk(void* addr) {
     spinlock_release(&(cache->lock));
 }
 
-void* slab_alloc(size_t size) {
+void *slab_alloc(size_t size) {
     int cache_idx = get_cache_index(size);
     if (cache_idx != -1) {
         return slab_alloc_chunk(cache_idx);
@@ -171,26 +171,26 @@ void* slab_alloc(size_t size) {
     // Bypass slab allocator, jump directly to PMM
     size_t num_pages = size / PAGE_SIZE_BYTES;
     if (size % PAGE_SIZE_BYTES != 0) num_pages++;
-    void* pages = palloc(num_pages + 1);
+    void *pages = palloc(num_pages + 1);
     if (pages == NULL) {
         return NULL;
     }
 
-    struct page_metadata* metadata = (struct page_metadata*)pages;
+    struct page_metadata *metadata = (struct page_metadata *)pages;
     metadata->pages_allocated = num_pages;
-    return (uint64_t*)((uint64_t)pages + PAGE_SIZE_BYTES);
+    return (uint64_t *)((uint64_t)pages + PAGE_SIZE_BYTES);
 }
 
-void* slab_realloc(void* addr, size_t size) {
-    void* chunk = NULL;
+void *slab_realloc(void *addr, size_t size) {
+    void *chunk = NULL;
     if (addr == NULL) {
         return NULL;
     }
     
     // Bypass slab re-allocator
     if ((((uint64_t)addr) & 0xfff) == 0) {
-        void* base = (void*)((uint64_t)addr - PAGE_SIZE_BYTES);
-        struct page_metadata* metadata = (struct page_metadata*)base;
+        void *base = (void *)((uint64_t)addr - PAGE_SIZE_BYTES);
+        struct page_metadata *metadata = (struct page_metadata *)base;
 
         size_t num_pages = size / PAGE_SIZE_BYTES;
         if (size % PAGE_SIZE_BYTES != 0) num_pages++;
@@ -209,7 +209,7 @@ void* slab_realloc(void* addr, size_t size) {
         return chunk;
     }
 
-    struct slab* slab = (struct slab*)((uint64_t)addr & ~0xfff);
+    struct slab *slab = (struct slab *)((uint64_t)addr & ~0xfff);
     if (size > slab->cache->chunk_size) {
         chunk = slab_alloc(size);
         if (chunk == NULL) {
@@ -223,15 +223,15 @@ void* slab_realloc(void* addr, size_t size) {
     return chunk;
 }
 
-void slab_free(void* addr) {
+void slab_free(void *addr) {
     if (addr == NULL) {
         return;
     }
 
     if ((((uint64_t)addr) & 0xfff) == 0) { // Bypass slab de-allocator
-        void* base = (void*)((uint64_t)addr - PAGE_SIZE_BYTES);
-        struct page_metadata* metadata = (struct page_metadata*)(base);
-        pfree((void*)metadata, metadata->pages_allocated + 1);
+        void *base = (void *)((uint64_t)addr - PAGE_SIZE_BYTES);
+        struct page_metadata *metadata = (struct page_metadata *)(base);
+        pfree((void *)metadata, metadata->pages_allocated + 1);
     } else { // Normal slab de-allocator
         slab_free_chunk(addr);
     }

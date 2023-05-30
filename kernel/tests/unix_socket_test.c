@@ -1,7 +1,7 @@
 #include <arch/scheduler.h>
 #include <arch/terminal.h>
+#include <sockets/unix_socket.h>
 #include <sys/misc.h>
-#include <sys/unix_socket.h>
 #include <tests/test.h>
 
 #define UNIX_BUF_LEN                        128

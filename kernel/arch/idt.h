@@ -25,7 +25,7 @@ typedef struct {
 }__attribute__((packed)) IDT_Entry;
 
 uint8_t allocate_vector(void);
-void add_descriptor(uint8_t, void*, uint8_t);
+void add_descriptor(uint8_t, void *, uint8_t);
 void set_vector_ist(uint8_t vector, int ist);
 void idt_load(void);
 void init_idt(void);

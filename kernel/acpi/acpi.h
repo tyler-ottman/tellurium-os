@@ -125,7 +125,7 @@ typedef struct mmio_dev_info {
 
 size_t get_sdt_entry_size(const struct RSDP *rsdp);
 size_t get_rsdp_size(const struct RSDP *rsdp);
-struct MADT* get_madt(void);
+struct MADT *get_madt(void);
 
 bool acpi_hpet_present(void);
 uint32_t *get_lapic_addr(void);
@@ -143,7 +143,7 @@ void init_apic_info(const struct MADT *madt);
 int acpi_irq_to_gsi(int irq);
 uint64_t find_lapic_addr(const struct MADT *madt);
 
-void* find_sdt(const char *sig);
+void *find_sdt(const char *sig);
 void init_acpi(void);
 
 #endif // ACPI_H

@@ -6,8 +6,8 @@
 #include <libc/ringbuffer.h>
 #include <libc/string.h>
 #include <stdbool.h>
+#include <sockets/unix_socket.h>
 #include <sys/misc.h>
-#include <sys/unix_socket.h>
 
 #define UNIX_SOCK_BUFF_SIZE                         0x2000
 
@@ -41,6 +41,7 @@ static int unix_socket_accept(struct socket *this, struct socket **sock,
 
     while (this->backlog_size == 0) {
         if (fd_flags & O_NONBLOCK) {
+            spinlock_release(&this->lock);
             return SKT_NONBLOCK;
         }
 
@@ -202,10 +203,9 @@ static int unix_socket_getpeername(socket_t *this, struct sockaddr *addr,
     spinlock_acquire(&this->lock);
 
     // Can only reed peer address if connected
-    int err;
     if (this->state != SOCKET_CONNECTED) {
-        err = SKT_BAD_STATE;
-        goto unix_socket_getpeername_cleanup;
+        spinlock_release(&this->lock);
+        return SKT_BAD_STATE;
     }
 
     spinlock_acquire(&this->peer->lock);
@@ -214,13 +214,11 @@ static int unix_socket_getpeername(socket_t *this, struct sockaddr *addr,
     *socklen = MAX(*socklen, sizeof(unix_addr));
 
     __memcpy(unix_addr, this->peer->local_addr, *socklen);
-    err = SKT_OK;
 
-unix_socket_getpeername_cleanup:
     spinlock_release(&this->lock);
     spinlock_release(&this->peer->lock);
 
-    return err;
+    return SKT_OK;
 }
 
 static int unix_socket_getsockname(socket_t *this, struct sockaddr *addr,
@@ -230,22 +228,19 @@ static int unix_socket_getsockname(socket_t *this, struct sockaddr *addr,
     spinlock_acquire(&this->lock);
 
     // Can only read sock address if bound
-    int err;
     if (this->state != SOCKET_BOUNDED) {
-        err = SKT_BAD_STATE;
-        goto unix_socket_getpeername_cleanup;
+        spinlock_release(&this->lock);
+        return SKT_BAD_STATE;
     }
 
     struct sockaddr_un *unix_addr = (struct sockaddr_un *)addr;
     *socklen = MAX(*socklen, sizeof(unix_addr));
 
     __memcpy(unix_addr, this->local_addr, *socklen);
-    err = SKT_OK;
 
-unix_socket_getpeername_cleanup:
     spinlock_release(&this->lock);
 
-    return err;
+    return SKT_OK;
 }
 
 static int unix_socket_listen(socket_t *this, int backlog) {
@@ -259,10 +254,9 @@ static int unix_socket_listen(socket_t *this, int backlog) {
     this->backlog_size = 0;
     this->backlog = kmalloc(this->backlog_capacity * sizeof(socket_t *));
     
-    int err;
     if (!this->backlog) {
-        err = SKT_NO_MEM;
-        goto socket_listen_cleanup;
+        spinlock_release(&this->lock);
+        return SKT_NO_MEM;
     }
 
     for (size_t i = 0; i < this->backlog_capacity; i++) {
@@ -271,10 +265,9 @@ static int unix_socket_listen(socket_t *this, int backlog) {
 
     this->state = SOCKET_LISTENING;
 
-    err = SKT_OK;
-socket_listen_cleanup:
     spinlock_release(&this->lock);
-    return err;
+
+    return SKT_OK;
 }
 
 static size_t unix_socket_recv(struct socket *this, void *buff, size_t len,

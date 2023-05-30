@@ -38,7 +38,7 @@ int fd_create(fd_table_t *fd_table, fd_t **fd, int *fd_i) {
     return FD_SUCCESS;
 }
 
-int fd_free(fd_table_t* fd_table, int fd_i) {
+int fd_free(fd_table_t *fd_table, int fd_i) {
     spinlock_acquire(&fd_table->fd_table_lock);
 
     vector_t fd_table_vec = fd_table->fd_table;
@@ -61,7 +61,7 @@ int fd_free(fd_table_t* fd_table, int fd_i) {
     return FD_SUCCESS;
 }
 
-int fd_acquire(fd_table_t* fd_table, fd_t** fd, int fd_i) {
+int fd_acquire(fd_table_t *fd_table, fd_t **fd, int fd_i) {
     spinlock_acquire(&fd_table->fd_table_lock);
 
     fd_t *fd_ret = VECTOR_GET(fd_table->fd_table, fd_i);

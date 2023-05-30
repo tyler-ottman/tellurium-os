@@ -5,10 +5,10 @@
 #include <memory/vmm.h>
 #include <sys/misc.h>
 
-static struct pcb* kernel_process = NULL;
+static struct pcb *kernel_process = NULL;
 static uint16_t pids[PROCESS_MAX] = {0};
 
-struct pcb* get_kernel_process() {
+struct pcb *get_kernel_process() {
     return kernel_process;
 }
 

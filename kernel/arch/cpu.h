@@ -51,7 +51,8 @@ typedef struct ctx {
     uint64_t ss;
 } ctx_t;
 
-struct core_local_info {
+// core-local information
+typedef struct core {
     uint64_t *kernel_stack;     // Kernel stack of running thread
     uint64_t kernel_scratch;    // Kernel scratch register for current thread
     uint32_t lapic_id;
@@ -61,7 +62,7 @@ struct core_local_info {
     struct tcb* idle_thread;
     struct tcb* current_thread;
     struct TSS tss;
-};
+} core_t;
 
 static inline void core_hlt(void) {
     for (;;) {
@@ -94,11 +95,11 @@ void done(void);
 void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d);
 struct tcb* get_thread_local(void);
 void set_thread_local(struct tcb* thread);
-struct core_local_info* get_core_local_info(void);
-void set_core_local_info(struct core_local_info* cpu_info);
-void save_context(struct core_local_info *cpu_info, ctx_t *ctx);
+struct core *get_core_local_info(void);
+void set_core_local_info(struct core* cpu_info);
+void save_context(struct core *cpu_info, ctx_t *ctx);
 void print_context(ctx_t* context);
 void init_cpu(void);
-void core_init(struct limine_smp_info* core);
+void core_init(struct limine_smp_info* limine_core_info);
 
 #endif // CPU_H

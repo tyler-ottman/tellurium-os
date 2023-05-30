@@ -9,12 +9,12 @@ volatile struct limine_memmap_request memory_map_request = {
 
 uint64_t bitmap_max_entries; // Number of page frame entries in bitmap
 uint64_t cached_index = 0; // List index in bitmap accessed
-uint8_t* bitmap; // Raw bitmap
+uint8_t *bitmap; // Raw bitmap
 size_t bitmap_size_aligned;
 
 spinlock_t pmm_lock = 0;
 
-static char* debug_limine_mmap_type[] = {
+static char *debug_limine_mmap_type[] = {
     "LIMINE_MEMMAP_USABLE",
     "LIMINE_MEMMAP_RESERVED",
     "LIMINE_MEMMAP_ACPI_RECLAIMABLES",
@@ -25,7 +25,7 @@ static char* debug_limine_mmap_type[] = {
     "LIMINE_MEMMAP_FRAMEBUFFER"
 };
 
-uint8_t* get_bitmap_addr() {
+uint8_t *get_bitmap_addr() {
     return bitmap;
 }
 
@@ -80,9 +80,9 @@ void init_pmm(void) {
 
     // Get memory map
     // kprintf("Kernel hhdm: %x\n", KERNEL_HHDM_OFFSET);
-    struct limine_memmap_response* memory_map_response = memory_map_request.response;
-    struct limine_memmap_entry** entries = memory_map_response->entries;
-    struct limine_memmap_entry* entry;
+    struct limine_memmap_response *memory_map_response = memory_map_request.response;
+    struct limine_memmap_entry **entries = memory_map_response->entries;
+    struct limine_memmap_entry *entry;
 
     // Print number of memory map entries
     size_t mmap_entries = memory_map_response->entry_count;
@@ -107,7 +107,7 @@ void init_pmm(void) {
         entry = entries[idx];
         if (entry->type == LIMINE_MEMMAP_USABLE) {
             if (entry->length > bitmap_size_aligned) {
-                bitmap = (uint8_t*)(entry->base + KERNEL_HHDM_OFFSET);
+                bitmap = (uint8_t *)(entry->base + KERNEL_HHDM_OFFSET);
                 entry->base += bitmap_size_aligned;
                 entry->length -= bitmap_size_aligned;
                 break;
@@ -116,7 +116,7 @@ void init_pmm(void) {
     }
 
     // Mark sections as allocated/free
-    __memset((void*)bitmap, 0xff, bitmap_size_aligned);
+    __memset((void *)bitmap, 0xff, bitmap_size_aligned);
     // kprintf("PMM: bitmap addr: %016x\n", bitmap);
     for (size_t idx = 0; idx < mmap_entries; idx++) {
         entry = entries[idx];
@@ -154,7 +154,7 @@ void init_pmm(void) {
     kprintf(INFO GREEN "PMM: Initialized\n");
 }
 
-void* palloc_internal(size_t pages) {
+void *palloc_internal(size_t pages) {
     while (cached_index + pages < bitmap_max_entries) {
         // Try to allocates pages at current index
         if (bitmap_available(cached_index, pages)) {
@@ -163,8 +163,8 @@ void* palloc_internal(size_t pages) {
                 uint64_t addr = (cached_index + idx) * PAGE_SIZE_BYTES;
                 bitmap_set(addr);
             }
-            void* ret = (void*)(cached_index * PAGE_SIZE_BYTES);
-            ret = (void*)((uint64_t)ret + KERNEL_HHDM_OFFSET);
+            void *ret = (void *)(cached_index * PAGE_SIZE_BYTES);
+            ret = (void *)((uint64_t)ret + KERNEL_HHDM_OFFSET);
             cached_index += pages;
             return ret;
         }
@@ -173,13 +173,13 @@ void* palloc_internal(size_t pages) {
     return NULL;
 }
 
-void* palloc(size_t pages) {
+void *palloc(size_t pages) {
     spinlock_acquire(&pmm_lock);
 
-    void* ret = (void*)palloc_internal(pages);
+    void *ret = (void *)palloc_internal(pages);
     if (!ret) {
         cached_index = 0;
-        ret = (void*)palloc_internal(pages);
+        ret = (void *)palloc_internal(pages);
     }
 
     spinlock_release(&pmm_lock);
@@ -187,7 +187,7 @@ void* palloc(size_t pages) {
     return ret;
 }
 
-void pfree(void* base, size_t pages) {
+void pfree(void *base, size_t pages) {
     spinlock_acquire(&pmm_lock);
 
     uint64_t addr = (uint64_t)base;

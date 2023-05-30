@@ -7,7 +7,7 @@
 #define SYSCALL_MMAP                                2
 #define SYSCALL_OPEN                                3
 
-extern void* ISR_syscall[];
+extern void *ISR_syscall[];
 
 void syscall_handler(ctx_t *ctx) {    
     // Syscall ID palced in RAX

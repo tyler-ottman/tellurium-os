@@ -15,11 +15,11 @@ typedef struct ioapic_version {
 
 static mmio_dev_info_t dev_info;
 
-static struct RSDP* rsdp = NULL;
-static struct MADT* madt = NULL;
-static struct HPET* hpet = NULL;
-static struct RSDT* rsdt = NULL;
-static struct XSDT* xsdt = NULL;
+static struct RSDP *rsdp = NULL;
+static struct MADT *madt = NULL;
+static struct HPET *hpet = NULL;
+static struct RSDT *rsdt = NULL;
+static struct XSDT *xsdt = NULL;
 
 size_t core_count = 0;
 
@@ -35,15 +35,15 @@ static uint64_t lapic_addr = 0;
 static uint64_t hpet_addr = 0;
 static bool is_hpet_present = true;
 
-size_t get_rsdp_size(const struct RSDP* rsdp) {
+size_t get_rsdp_size(const struct RSDP *rsdp) {
     return rsdp->revision >= 2 ? RSDP_64 : RSDP_32;
 }
 
-size_t get_sdt_entry_size(const struct RSDP* rsdp) {
+size_t get_sdt_entry_size(const struct RSDP *rsdp) {
     return get_rsdp_size(rsdp) == RSDP_64 ? 8 : 4;
 }
 
-struct MADT* get_madt() {
+struct MADT *get_madt() {
     return madt;
 }
 
@@ -51,7 +51,7 @@ bool acpi_hpet_present() {
     return is_hpet_present;
 }
 
-uint32_t* get_lapic_addr() {
+uint32_t *get_lapic_addr() {
     return (uint32_t*)lapic_addr; 
 }
 
@@ -93,11 +93,11 @@ mmio_dev_info_t get_dev_info() {
     return dev_info;
 }
 
-bool is_xsdt(const struct RSDP* rsdp) {
+bool is_xsdt(const struct RSDP *rsdp) {
     return rsdp->revision >= 2;
 }
 
-bool verify_checksum(const uint8_t* data, size_t num_bytes) {
+bool verify_checksum(const uint8_t *data, size_t num_bytes) {
     uint8_t checksum = 0;
     for (size_t i = 0; i < num_bytes; i++) {
         checksum += data[i];
@@ -111,7 +111,7 @@ int acpi_irq_to_gsi(int irq) {
     }
 
     for (size_t offset = 0x2c; offset < madt->sdt.length;) {
-        struct MADT_record* record = (struct MADT_record*)((uint8_t*)madt + offset);
+        struct MADT_record *record = (struct MADT_record *)((uint8_t *)madt + offset);
         if (record->entry_type == ENTRY_IOAPIC_INT_OVERRIDE) {
             ioapic_int_src_override_t *src = (ioapic_int_src_override_t *)record;
             if (src->irq_source == irq) {
@@ -125,13 +125,13 @@ int acpi_irq_to_gsi(int irq) {
     return irq;
 }
 
-void init_apic_info(const struct MADT* madt) {
+void init_apic_info(const struct MADT *madt) {
     for (size_t offset = 0x2c; offset < madt->sdt.length;) {
-        struct MADT_record* record = (struct MADT_record*)((uint8_t*)madt + offset);
+        struct MADT_record *record = (struct MADT_record *)((uint8_t *)madt + offset);
         int type = record->entry_type;
         
         if (type == ENTRY_LAPIC) {
-            struct proc_lapic* lapic = (struct proc_lapic*)record;
+            struct proc_lapic *lapic = (struct proc_lapic *)record;
             if (lapic->flags & 0x3) {
                 core_count++;
                 ASSERT(local_apic_index < core_count, 0,
@@ -150,11 +150,11 @@ void init_apic_info(const struct MADT* madt) {
     }
 }
 
-uint64_t find_lapic_addr(const struct MADT* madt) {
+uint64_t find_lapic_addr(const struct MADT *madt) {
     for (size_t offset = 0x2c; offset < madt->sdt.length;) {
-        struct MADT_record* record = (struct MADT_record*)((uint8_t*)madt + offset); 
+        struct MADT_record *record = (struct MADT_record *)((uint8_t *)madt + offset); 
         if (record->entry_type == LOCAL_APIC_ADDR_OVERRIDE) {
-            struct local_apic_addr_override* lapic64 = (struct local_apic_addr_override*)record;
+            struct local_apic_addr_override *lapic64 = (struct local_apic_addr_override *)record;
             return lapic64->local_apic_addr; 
         }
         
@@ -163,16 +163,16 @@ uint64_t find_lapic_addr(const struct MADT* madt) {
     return madt->local_interrupt_ctrl_addr;
 }
 
-void* find_sdt(const char* sig) {
+void *find_sdt(const char *sig) {
     struct SDT* sdt;
     size_t sdt_size = is_xsdt(rsdp) ? xsdt->sdt.length : rsdt->sdt.length;
     size_t num_sdts = (sdt_size - 36) / get_sdt_entry_size(rsdp);
 
     for (size_t i = 0; i < num_sdts; i++) {
         if (is_xsdt(rsdp)) {
-            sdt = (struct SDT*)(*((uint64_t*)xsdt->entries + i));
+            sdt = (struct SDT *)(*((uint64_t *)xsdt->entries + i));
         } else {
-            sdt = (struct SDT*)(uint64_t)((*((uint32_t*)rsdt->entries + i)));
+            sdt = (struct SDT *)(uint64_t)((*((uint32_t *)rsdt->entries + i)));
         }
         
         if (!__memcmp(sig, sdt, 4)) {
@@ -189,7 +189,7 @@ static void add_mmio_device(mmio_dev_t mmio_dev) {
 
 static bool init_dev_hpet() {
     hpet = find_sdt("HPET");
-    if (!hpet || !verify_checksum((const uint8_t*)hpet, hpet->sdt.length)) {
+    if (!hpet || !verify_checksum((const uint8_t *)hpet, hpet->sdt.length)) {
         return false;
     }
     
@@ -245,20 +245,20 @@ static bool init_madt_devices() {
 
 void init_acpi() {
     dev_info.num_devs = 0;
-    struct limine_rsdp_response* rsdp_response = kernel_rsdp_request.response;
+    struct limine_rsdp_response *rsdp_response = kernel_rsdp_request.response;
 
     rsdp = rsdp_response->address;
-    rsdt = (struct RSDT*)((uint64_t)rsdp->rsdt_address);
-    xsdt = (struct XSDT*)rsdp->xsdt_address;
+    rsdt = (struct RSDT *)((uint64_t)rsdp->rsdt_address);
+    xsdt = (struct XSDT *)rsdp->xsdt_address;
 
-    ASSERT(verify_checksum((const uint8_t*)rsdp, get_rsdp_size(rsdp)), 0,
+    ASSERT(verify_checksum((const uint8_t *)rsdp, get_rsdp_size(rsdp)), 0,
            INVALID_SDT("RSDP"));
 
     if (is_xsdt(rsdp)) {
-        ASSERT(verify_checksum((const uint8_t*)xsdt, xsdt->sdt.length), 0,
+        ASSERT(verify_checksum((const uint8_t *)xsdt, xsdt->sdt.length), 0,
                INVALID_SDT("XSDT"));
     } else {
-        ASSERT(verify_checksum((const uint8_t*)rsdt, rsdt->sdt.length), 0,
+        ASSERT(verify_checksum((const uint8_t *)rsdt, rsdt->sdt.length), 0,
                INVALID_SDT("RSDT"));
     }
 

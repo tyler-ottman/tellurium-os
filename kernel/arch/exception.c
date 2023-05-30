@@ -37,8 +37,8 @@ void exception_handler(uint8_t vector) {
 
 __attribute__((noreturn))
 void exception_handler_err(uint8_t vector, ctx_t *ctx) {
-    struct core_local_info *cpu_info = get_core_local_info();
-    int core_id = cpu_info->lapic_id;
+    core_t *core = get_core_local_info();
+    int core_id = core->lapic_id;
 
     uint64_t cr2;
     __asm__ volatile ("mov %%cr2, %0" : "=r" (cr2));
