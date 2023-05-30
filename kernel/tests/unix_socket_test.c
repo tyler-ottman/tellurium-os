@@ -59,11 +59,9 @@ void unix_socket_client(void *param) {
     const char sun_path[] = "/tmp/socket_gui";
     addr.sun_family = AF_UNIX;
     __memcpy(addr.sun_path, sun_path, __strlen(sun_path));
-    err = SKT_BAD_EVENT;
-    while (err == SKT_BAD_EVENT) {
-        err = sock->socket_connect(sock, (const struct sockaddr *)&addr,
-                                   sizeof(addr));
-    }
+
+    while (sock->socket_connect(sock, (const struct sockaddr *)&addr,
+                                sizeof(addr)) == SKT_BAD_EVENT) {}
     ASSERT(err == SKT_OK, err, "usocket_client: connect failure");
 
     const char msg1[] = "syn";

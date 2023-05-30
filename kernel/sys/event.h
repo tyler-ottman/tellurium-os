@@ -8,6 +8,8 @@
 
 #define EVENT_OK                            0
 #define EVENT_ERR                           1
+#define EVENT_NO_LISTENERS                  2
+#define EVENT_BAD_THREAD_STATE              3
 
 typedef struct event {
     spinlock_t lock;

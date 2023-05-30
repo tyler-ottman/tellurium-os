@@ -43,8 +43,8 @@ void exception_handler_err(uint8_t vector, ctx_t *ctx) {
     uint64_t cr2;
     __asm__ volatile ("mov %%cr2, %0" : "=r" (cr2));
 
-    kprintf(ERROR "[CPU%d] %s, err: %x, cr2: %x\n", core_id,
-            exception_name[vector], ctx->err, cr2);
+    kprintf(ERROR "[CPU%d] %s, err: %x, cr2: %x, pc: %x\n", core_id,
+            exception_name[vector], ctx->err, cr2, ctx->rip);
 
     core_hlt();
 

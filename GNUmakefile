@@ -41,5 +41,6 @@ $(IMAGE_NAME).iso: $(KERNEL_DIR)
 .PHONY: clean
 clean:
 	rm -rf iso_root $(IMAGE_NAME).iso
+	rm -f *.log
 	$(MAKE) -C $(KERNEL_DIR) clean
 	$(MAKE) -C $(USER_DIR) clean

@@ -134,6 +134,7 @@ void core_init(struct limine_smp_info *limine_core_info) {
 
     core->idle_thread = alloc_idle_thread();
     core->idle_thread->state = THREAD_RUNNABLE;
+    set_thread_local(core->idle_thread);
     
     __memset(&core->tss, 0, sizeof(struct TSS));
     load_tss_entry(&core->tss);

@@ -74,7 +74,7 @@ void thread_entry(thread_t *thread) {
     core->current_thread = thread;
     core->tss.ist1 = (uint64_t)thread->kernel_sp;
 
-    set_thread_local(core->current_thread);
+    set_thread_local(thread);
     thread->state = THREAD_RUNNING;
 
     spinlock_release(&thread->yield_lock);

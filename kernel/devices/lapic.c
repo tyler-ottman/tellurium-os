@@ -30,16 +30,15 @@ void lapic_write(size_t offset, uint32_t val) {
 void lapic_time_handler(ctx_t *ctx) {
     lapic_eoi();
 
-    
     save_context(ctx);
     
     // kprintf(MAGENTA"Timer Handle\n");
 
     core_t *core = get_core_local_info();
-    thread_t *current_thread = get_thread_local();
+    thread_t *thread = core->current_thread;
 
-    if (core->idle_thread != current_thread) {
-        schedule_add_thread(current_thread);
+    if (core->idle_thread != thread) {
+        schedule_add_thread(thread);
     }
 
     schedule_next_thread();

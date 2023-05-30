@@ -72,7 +72,7 @@ int event_signal(event_t *event) {
     if (event->num_listeners == 0) {
         spinlock_release(&event->lock);
         enable_interrupts();
-        return EVENT_ERR;
+        return EVENT_NO_LISTENERS;
     }
 
     for (size_t i = 0; i < LISTEN_CAPACITY; i++) {
@@ -84,7 +84,7 @@ int event_signal(event_t *event) {
             if (err) {
                 spinlock_release(&event->lock);
                 enable_interrupts();
-                return EVENT_ERR;
+                return EVENT_BAD_THREAD_STATE;
             }
         }
     }

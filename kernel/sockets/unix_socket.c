@@ -79,6 +79,7 @@ static int unix_socket_accept(struct socket *this, struct socket **sock,
     // Signal to client that connection made
     err = event_signal(&client_sock->connection_accepted);
     if (err) {
+        kprintf("unix server: %x\n", err);
         spinlock_release(&this->lock);
         return SKT_BAD_EVENT;
     }
