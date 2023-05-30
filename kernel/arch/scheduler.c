@@ -74,8 +74,8 @@ void thread_entry(thread_t *thread) {
     core->current_thread = thread;
     core->tss.ist1 = (uint64_t)thread->kernel_sp;
 
-    thread->state = THREAD_RUNNING;
     set_thread_local(core->current_thread);
+    thread->state = THREAD_RUNNING;
 
     spinlock_release(&thread->yield_lock);
 
@@ -137,7 +137,6 @@ void schedule_thread_wait(event_t *event) {
     }
 
     thread->waiting_for = event;
-    thread->state = THREAD_WAITING; // bad
 
     schedule_thread_yield(false, YIELD_WAIT);
 }
@@ -199,9 +198,6 @@ void schedule_thread_yield(bool no_return, int cause) {
 
 void schedule_thread_terminate() {
     disable_interrupts();
-    
-    thread_t *thread = get_core_local_info()->current_thread;
-    thread->state = THREAD_ZOMBIE;
 
     schedule_thread_yield(true, YIELD_TERMINATE);
 }

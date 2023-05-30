@@ -51,21 +51,21 @@ core_t *get_core_local_info() {
     return (core_t *)((uint64_t)gs_base);
 }
 
-void set_core_local_info(core_t *cpu_info) {
-    uint64_t gs_base = (uint64_t)((uint64_t)cpu_info);
+void set_core_local_info(core_t *core) {
+    uint64_t gs_base = (uint64_t)((uint64_t)core);
     set_msr(IA32_KERNEL_GS_BASE, gs_base);
 }
 
-void save_context(core_t *cpu_info, ctx_t *ctx) {
-    thread_t *cur_thread = cpu_info->current_thread;
-    if (!cur_thread) {
-        return;
-    }
+void save_context(ctx_t *ctx) {
+    core_t *core = get_core_local_info();
+    thread_t *thread = core->current_thread;
 
-    __memcpy(&cur_thread->context, ctx, sizeof(ctx_t));
+    ASSERT_RET(thread && core,);
+
+    __memcpy(&thread->context, ctx, sizeof(ctx_t));
 
     // Save scratch register
-    cur_thread->thread_scratch = cpu_info->kernel_scratch;
+    thread->thread_scratch = core->kernel_scratch;
 }
 
 static uint32_t cores_ready = 0;

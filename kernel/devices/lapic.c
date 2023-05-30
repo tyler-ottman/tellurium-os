@@ -30,12 +30,14 @@ void lapic_write(size_t offset, uint32_t val) {
 void lapic_time_handler(ctx_t *ctx) {
     lapic_eoi();
 
-    core_t *core = get_core_local_info();
-    save_context(core, ctx);
+    
+    save_context(ctx);
     
     // kprintf(MAGENTA"Timer Handle\n");
 
-    thread_t *current_thread = core->current_thread;
+    core_t *core = get_core_local_info();
+    thread_t *current_thread = get_thread_local();
+
     if (core->idle_thread != current_thread) {
         schedule_add_thread(current_thread);
     }
@@ -46,18 +48,20 @@ void lapic_time_handler(ctx_t *ctx) {
 void lapic_ipi_handler(ctx_t *ctx) {
     lapic_eoi();
 
-    core_t *core = get_core_local_info();
-    thread_t *thread = get_thread_local();
-
-    save_context(core, ctx);
-
-    if (thread->state == THREAD_ZOMBIE) { // Thread completed execution, terminate
-        thread_destroy(thread);
-    } else if (thread->state == THREAD_RUNNABLE) { // Add thread back to queue
-        schedule_add_thread(thread);
-    }
+    save_context(ctx);
 
     // kprintf(MAGENTA"IPI Handle\n");
+
+    thread_t *thread = get_thread_local();
+
+    int cause = thread->yield_cause;
+
+    if (cause == YIELD_TERMINATE) {
+        thread->state = THREAD_ZOMBIE;
+        thread_destroy(thread);
+    } else if (cause == YIELD_WAIT) {
+        thread->state = THREAD_WAITING;
+    }
 
     schedule_next_thread();
 }

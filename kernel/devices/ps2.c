@@ -89,12 +89,13 @@ void keyboard_handler(ctx_t *ctx) {
         kprintf("%c", char_format[c]);
     }
 
-    core_t *core = get_core_local_info();
-    save_context(core, ctx);
+    save_context(ctx);
     
-    thread_t *current_thread = core->current_thread;
-    if (core->idle_thread != current_thread) {
-        schedule_add_thread(current_thread);
+    core_t *core = get_core_local_info();
+    thread_t *thread = get_thread_local();
+
+    if (core->idle_thread != thread) {
+        schedule_add_thread(thread);
     }
 
     lapic_eoi();
@@ -147,12 +148,12 @@ void mouse_handler(ctx_t *ctx) {
         break;
     }
 
-    core_t *core = get_core_local_info();
-    save_context(core, ctx);
+    save_context(ctx);
 
-    thread_t *current_thread = core->current_thread;
-    if (core->idle_thread != current_thread) {
-        schedule_add_thread(current_thread);
+    core_t *core = get_core_local_info();
+    thread_t *thread = get_thread_local();
+    if (core->idle_thread != thread) {
+        schedule_add_thread(thread);
     }
 
     lapic_eoi();

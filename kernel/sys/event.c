@@ -82,6 +82,8 @@ int event_signal(event_t *event) {
             
             // Trying to notify a thread that is not yet blocked
             if (err) {
+                spinlock_release(&event->lock);
+                enable_interrupts();
                 return EVENT_ERR;
             }
         }
