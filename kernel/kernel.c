@@ -62,8 +62,8 @@ void kmain(void *param) {
     vfs_create(vfs_get_root(), "/tmp", VDIR);
     vfs_mount(NULL, vfs_get_root(), "/tmp", "tmpfs");
 
-    vnode_t *device;
-    // devfs_new_device(&device, "mouse");
+    dev_keyboard_init();
+    dev_mouse_init();
 
     // Store userapps in vfs
     tmpfs_load_userapps();

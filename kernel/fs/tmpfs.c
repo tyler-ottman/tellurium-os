@@ -121,7 +121,7 @@ static vfsops_t tmpfs_ops = {
 };
 
 void tmpfs_init() {
-    vfs_add_filesystem("tmpfs", &tmpfs_ops);
+    vfs_add_fs_meta("tmpfs", &tmpfs_ops);
 }
 
 uint64_t octal_to_int(char *src, size_t n) {

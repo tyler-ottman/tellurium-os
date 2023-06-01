@@ -9,9 +9,13 @@
 static spinlock_t vfs_lock = 0;
 static vnode_t *v_root;
 
-// List of active file systems
-static fs_t file_systems[FS_MAX];
-static int fs_count = 0;
+// List of added file system metadata
+static struct fs_meta fs_metas[FS_MAX_TYPES];
+static size_t fs_meta_count = 0;
+
+// List of mounted file systems
+static struct fs_node fs_nodes[VFS_MAX_MOUNTS];
+static size_t fs_node_count = 0;
 
 // For debugging VFS directory tree
 static void vfs_print_tree_internal(vnode_t *vnode, int cur_depth, int max_depth) {
@@ -153,6 +157,44 @@ static int vfs_path_to_node(vnode_t **ret, vnode_t *v_base, char *path) {
     return VFS_SUCCESS;
 }
 
+int vfs_mount_stub(vnode_t *mp, vnode_t *device) {
+    (void)mp;
+    (void)device;
+    return VFS_UNSUPPORTED_OP;
+}
+
+int vfs_open_stub(vnode_t *parent, const char *name) {
+    (void)parent;
+    (void)name;
+    return VFS_UNSUPPORTED_OP;
+}
+
+int vfs_close_stub(vnode_t *vnode) {
+    (void)vnode;
+    return VFS_UNSUPPORTED_OP;
+}
+
+int vfs_read_stub(void *buff, vnode_t *node, size_t size, size_t offset) {
+    (void)buff;
+    (void)node;
+    (void)size;
+    (void)offset;
+    return VFS_UNSUPPORTED_OP;
+}
+
+int vfs_write_stub(void *buff, vnode_t *node, size_t size, size_t offset) {
+    (void)buff;
+    (void)node;
+    (void)size;
+    (void)offset;
+    return VFS_UNSUPPORTED_OP;
+}
+
+int vfs_create_stub(vnode_t *node) {
+    (void)node;
+    return VFS_UNSUPPORTED_OP;
+}
+
 void vfs_print_tree(vnode_t *parent, int max_depth) {
     spinlock_acquire(&vfs_lock);
     vfs_print_tree_internal(parent, 0, max_depth);
@@ -201,36 +243,68 @@ vnode_t *vfs_alloc_node(vnode_t *parent, const char *v_name, int v_type) {
     return node;
 }
 
-int vfs_add_filesystem(const char *fs_name, vfsops_t *fs_ops) {
-    if (fs_count == FS_MAX || __strlen(fs_name) > VNODE_NAME_MAX) {
-        return 0;
-    }
+int vfs_add_fs_meta(const char *fs_name, vfsops_t *fs_ops) {
+    ASSERT_RET(fs_name && fs_ops && fs_meta_count < FS_MAX_TYPES &&
+               (__strlen(fs_name) < VNODE_NAME_MAX), VFS_INVALID_PARAMETERS);
 
-    fs_t *fs = &file_systems[fs_count++];
-    __strncpy(fs->fs_name, fs_name, __strlen(fs_name));
-    fs->vfsops = fs_ops;
+    fs_meta_t *fs_meta = &fs_metas[fs_meta_count++];
+    
+    __strncpy(fs_meta->fs_name, fs_name, __strlen(fs_name));
+    fs_meta->vfsops = fs_ops;
 
-    return 1;
+    return VFS_SUCCESS;
 }
 
-fs_t *vfs_get_filesystem(const char *fs_name) {
-    for (int i = 0; i < fs_count; i++) {
-        fs_t *fs = &file_systems[i];
-        if (__strncmp(fs->fs_name, fs_name, __strlen(fs->fs_name)) == 0) {
-            return fs;
+fs_meta_t *vfs_get_fs_meta(const char *fs_name) {
+    for (size_t i = 0; i < fs_meta_count; i++) {
+        fs_meta_t *fs_meta = &fs_metas[i];
+        size_t fs_meta_len = __strlen(fs_meta->fs_name);
+
+        if ((__strlen(fs_name) == fs_meta_len) &&
+            (!__strncmp(fs_name, fs_meta->fs_name, fs_meta_len))) {
+            return fs_meta;
         }
     }
+
     return NULL;
+}
+
+int vfs_add_fs_node(vnode_t *root, const char *fs_name) {
+    ASSERT_RET(root && fs_name, VFS_INVALID_PARAMETERS);
+
+    fs_meta_t *fs_meta = vfs_get_fs_meta(fs_name);
+    ASSERT_RET(fs_meta, VFS_NODE_MISSING);
+
+    ASSERT_RET(fs_node_count < VFS_MAX_MOUNTS, VFS_FS_ERR);
+
+    int fs_id = fs_node_count++;
+    fs_node_t *fs_node = &fs_nodes[fs_id];
+
+    fs_node->root = root;
+    fs_node->root->vfsops = fs_meta->vfsops;
+    fs_node->fs_id = fs_id;
+    fs_node->inode_count = 0;
+
+    return VFS_SUCCESS;
+}
+
+int vfs_get_fs_node(fs_node_t **fs_node, vnode_t *mountpoint) {
+    ASSERT_RET(fs_node && mountpoint, VFS_INVALID_PARAMETERS);
+
+    for (size_t i = 0; i < fs_node_count; i++) {
+        fs_node_t *node = &fs_nodes[i];
+        
+        if (node->root == mountpoint) {
+            *fs_node = node;
+            return VFS_SUCCESS;
+        }
+    }
+
+    return VFS_FS_ERR;
 }
 
 int vfs_mount(vnode_t **root, vnode_t *base, const char *path, const char *fs_name) {
     spinlock_acquire(&vfs_lock);
-
-    fs_t *fs = vfs_get_filesystem(fs_name);
-    if (fs == NULL) {
-        spinlock_release(&vfs_lock);
-        return VFS_FS_ERR;
-    }
     
     // Get vnode where fs will be mounted
     vnode_t *mountpoint = NULL;
@@ -249,8 +323,15 @@ int vfs_mount(vnode_t **root, vnode_t *base, const char *path, const char *fs_na
         *root = mountpoint;
     }
 
+    err = vfs_add_fs_node(mountpoint, fs_name);
+    if (err) {
+        spinlock_release(&vfs_lock);
+        return err;
+    }
+
     // Now mount fs to mountpoint
-    fs->vfsops->mount(mountpoint, NULL);
+    mountpoint->vfsops->mount(mountpoint, NULL);
+
     spinlock_release(&vfs_lock);
 
     return VFS_SUCCESS;
@@ -347,6 +428,8 @@ int vfs_create(vnode_t *v_base, const char *vfs_path, int type) {
 
     // vnodes not required to be mounted to fs
     if (v_parent->vfsops) {
+        node->v_mp = v_parent->v_mp;
+
         node->vfsops = v_parent->vfsops;
         node->vfsops->create(node);
     }

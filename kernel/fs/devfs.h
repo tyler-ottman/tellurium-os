@@ -8,6 +8,6 @@
 
 void devfs_init(void);
 vfsops_t *devfs_get_ops(void);
-int devfs_new_device(vnode_t **device, const char *name);
+int devfs_new_device(vnode_t **device, const char *name, vfsops_t *devops);
 
 #endif // DEVFS_H

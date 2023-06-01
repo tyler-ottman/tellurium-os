@@ -8,7 +8,8 @@
 
 #define VNODE_NAME_MAX                  64
 #define VNODE_PATH_MAX                  512
-#define FS_MAX                          10
+#define FS_MAX_TYPES                    10
+#define VFS_MAX_MOUNTS                  100
 
 #define VFS_SUCCESS                     0
 #define VFS_OPEN_FAIL                   1
@@ -22,12 +23,19 @@
 #define VFS_NO_MEM                      9
 #define VFS_NODE_UNMOUNTED              10
 #define VFS_FS_ERR                      11
+#define VFS_MOUNT_FAILURE               12
+#define VFS_UNSUPPORTED_OP              13
 
-typedef struct fs {
+typedef struct fs_meta {
     char fs_name[VNODE_NAME_MAX];
-    struct vnode *root;
     struct vfsops *vfsops;
-} fs_t;
+} fs_meta_t;
+
+typedef struct fs_node {
+    struct vnode *root;
+    size_t fs_id;
+    size_t inode_count;
+} fs_node_t;
 
 enum VTYPE {VNON, VREG, VDIR, VBLK, VSKT};
 typedef struct vnode {
@@ -52,13 +60,25 @@ typedef struct vfsops {
     int (*create)(vnode_t *node);
 } vfsops_t;
 
+// VFS operation stubs
+int vfs_mount_stub(vnode_t *mp, vnode_t *device);
+int vfs_open_stub(vnode_t *parent, const char *name);
+int vfs_close_stub(vnode_t *vnode);
+int vfs_read_stub(void *buff, vnode_t *node, size_t size, size_t offset);
+int vfs_write_stub(void *buff, vnode_t *node, size_t size, size_t offset);
+int vfs_create_stub(vnode_t *node);
+
+// VFS helper functions
 void vfs_print_tree(vnode_t *parent, int max_depth);
 int vfs_vtype_to_st_mode(int vtype);
 vnode_t *vfs_get_root(void);
 vnode_t *vnode_create(vnode_t *parent, const char *v_name, int v_type);
-int vfs_add_filesystem(const char *fs_name, vfsops_t *fs_ops);
-fs_t *vfs_get_filesystem(const char *fs_name);
+int vfs_add_fs_meta(const char *fs_name, vfsops_t *fs_ops);
+fs_meta_t *vfs_get_fs_meta(const char *fs_name);
+int vfs_add_fs_node(vnode_t *root, const char *fs_name);
+int vfs_get_fs_node(fs_node_t **fs_node, vnode_t *mountpoint);
 
+// VFS node operations
 int vfs_mount(vnode_t **root, vnode_t *base, const char *path, const char *fs_name);
 int vfs_open(vnode_t **vnode, vnode_t *base, const char *path);
 int vfs_close(vnode_t *vnode);

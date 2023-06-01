@@ -30,14 +30,25 @@ int socket_init(socket_t *this, int domain, int type, int protocol) {
     return SKT_OK;
 }
 
-int socket_backlog_pop_latest(socket_t *peer) {
-    ASSERT_RET(peer, SKT_BAD_PARAM);
+int socket_backlog_remove(socket_t *this, socket_t *remove) {
+    ASSERT_RET(this && remove, SKT_BAD_PARAM);
 
-    ASSERT_RET(peer->backlog_size != 0, SKT_BACKLOG_EMPTY);
+    ASSERT_RET(this->backlog_size != 0, SKT_BACKLOG_EMPTY);
 
-    peer->backlog[peer->backlog_size--] = NULL;
+    for (size_t i = 0; i < this->backlog_size; i++) {
+        if (this->backlog[i] != remove) {
+            continue;
+        }
 
-    return SKT_OK;
+        // Remove socket from backlog
+        for (size_t j = i; j < this->backlog_size - 1; j++) {
+            this->backlog[j] = this->backlog[j + 1];
+        }
+
+        return SKT_OK;
+    }
+
+    return SKT_BAD_PARAM;
 }
 
 int socket_add_to_peer_backlog(socket_t *this, socket_t *peer) {

@@ -79,7 +79,6 @@ static int unix_socket_accept(struct socket *this, struct socket **sock,
     // Signal to client that connection made
     err = event_signal(&client_sock->connection_accepted);
     if (err) {
-        kprintf("unix server: %x\n", err);
         spinlock_release(&this->lock);
         return SKT_BAD_EVENT;
     }
@@ -177,7 +176,7 @@ static int unix_socket_connect(struct socket *this, const struct sockaddr *addr,
     // Signal socket wants to connect to peer
     err = event_signal(&peer->connection_request);
     if (err) {
-        socket_backlog_pop_latest(peer);
+        socket_backlog_remove(peer, this);
         spinlock_release(&peer->lock);
         return SKT_BAD_EVENT;
     }

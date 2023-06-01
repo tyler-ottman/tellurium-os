@@ -8,7 +8,7 @@
 #define DEVFS_MAX_BUFFER            0x1000
 
 static vnode_t *devfs_root = NULL;
-static spinlock_t devfs_lock = 0;
+static size_t dev_id = 0;
 
 static int devfs_mount(vnode_t *mp, vnode_t *device) {
     (void)device;
@@ -35,13 +35,13 @@ static int devfs_close(vnode_t *node) {
 static int devfs_read(void *buff, vnode_t *node, size_t size, size_t offset) {
     (void)offset;
 
-    ringbuffer_t *ring = (ringbuffer_t *)node->fs_data;
+    // ringbuffer_t *ring = (ringbuffer_t *)node->fs_data;
 
-    size_t count = RINGBUFFER_READ((*ring), buff, size);
+    // size_t count = RINGBUFFER_READ((*ring), buff, size);
 
-    node->stat.st_size -= count;
+    // node->stat.st_size -= count;
 
-    return count;
+    return 1;
 }
 
 static int devfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {
@@ -85,7 +85,7 @@ void devfs_init() {
         return;
     }
 
-    vfs_add_filesystem("devfs", &devfs_ops);
+    vfs_add_fs_meta("devfs", &devfs_ops);
 
     vfs_create(vfs_get_root(), "/dev", VDIR);
 
@@ -96,8 +96,8 @@ vfsops_t *devfs_get_ops() {
     return &devfs_ops;
 }
 
-int devfs_new_device(vnode_t **device, const char *name) {
-    ASSERT_RET(name && devfs_root, DEVFS_DEVICE_INIT_ERR);
+int devfs_new_device(vnode_t **device, const char *name, vfsops_t *devops) {
+    ASSERT_RET(name && devfs_root && devops, DEVFS_DEVICE_INIT_ERR);
 
     size_t name_len = __strlen(name);
     ASSERT_RET((name_len < VNODE_NAME_MAX) && (name_len > 0),
@@ -126,7 +126,17 @@ int devfs_new_device(vnode_t **device, const char *name) {
         *device = dev;
     }
 
-    // dev->stat.st_dev = 
+    fs_node_t *fs;
+    err = vfs_get_fs_node(&fs, devfs_root);
+    if (err) {
+        return err;
+    }
+
+    dev->vfsops = devops;
+
+    dev->stat.st_ino = fs->inode_count++;
+    dev->stat.st_dev = fs->fs_id;
+    dev->stat.st_rdev = dev_id++;
 
     return 0;
 }

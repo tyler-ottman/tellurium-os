@@ -6,12 +6,15 @@
 #include <devices/lapic.h>
 #include <devices/ps2.h>
 #include <devices/serial.h>
+#include <fs/devfs.h>
 #include <libc/ringbuffer.h>
 #include <stdbool.h>
 #include <sys/misc.h>
 
 #define PS2_STATUS_OUTPUT_BUF           0x1
 #define PS2_STATUS_INPUT_BUF            0x2
+
+#define QUEUE_SIZE                      100
 
 extern void *ISR_keyboard[];
 extern void *ISR_mouse[];
@@ -53,7 +56,21 @@ static char char_shift_capslock[] = {
     '*', '\0', ' '
 };
 
+typedef struct keyboard_data {
+    uint8_t data;
+} keyboard_data_t;
+
+// Keyboard device-specific data
+vnode_t *dev_keyboard;
+spinlock_t dev_keyboard_lock = 0;
+static keyboard_data_t keyboard_packets[QUEUE_SIZE];
+static size_t keyboard_head = 0;
+static size_t keyboard_tail = 0;
+static size_t num_keyboard_packets = 0;
+
+// Keyboard Handler specific data
 static keyboard_state_t keyboard_state;
+static keyboard_data_t keyboard_data;
 
 void keyboard_handler(ctx_t *ctx) {
     (void)char_capslock;
@@ -61,6 +78,8 @@ void keyboard_handler(ctx_t *ctx) {
     (void)char_shift;
     (void)char_shift_capslock;
 
+    char *char_format = char_no_capslock; // Default
+    bool discard_keyboard_packet = false;
     uint8_t c = inb(PS2_DATA_REG);
 
     switch (c) {
@@ -76,8 +95,8 @@ void keyboard_handler(ctx_t *ctx) {
     }
 
     // testing print
-    if (c <= 0x39) {
-        char *char_format = char_no_capslock;
+    bool is_printable = c <= 0x39;
+    if (is_printable) {
         if (keyboard_state.is_capslock && keyboard_state.is_shift) {
             char_format = char_shift_capslock;
         } else if (keyboard_state.is_capslock) {
@@ -86,7 +105,28 @@ void keyboard_handler(ctx_t *ctx) {
             char_format = char_shift;
         }
         
-        kprintf("%c", char_format[c]);
+        // kprintf("%c", char_format[c]);
+    }
+
+    if (!is_printable) { // Change later when keyboard has better support
+        discard_keyboard_packet = true;
+    }
+
+    // Add keyboard packet to queue
+    if (!discard_keyboard_packet && (num_keyboard_packets < QUEUE_SIZE)) {
+        spinlock_acquire(&dev_keyboard_lock);
+
+        keyboard_data.data = char_format[c];
+        __memcpy(&keyboard_packets[keyboard_tail++], &keyboard_data,
+                 sizeof(keyboard_data));
+
+        if (keyboard_tail >= QUEUE_SIZE) {
+            keyboard_tail = 0;
+        }
+
+        num_keyboard_packets++;
+
+        spinlock_release(&dev_keyboard_lock);
     }
 
     save_context(ctx);
@@ -102,12 +142,66 @@ void keyboard_handler(ctx_t *ctx) {
     schedule_next_thread();
 }
 
+static int dev_keyboard_read(void *buff, vnode_t *node, size_t size,
+                             size_t offset) {
+    (void)node;
+    (void)offset;
+    
+    ASSERT_RET((size % sizeof(keyboard_data_t) == 0) && (size < QUEUE_SIZE), 0);
+
+    spinlock_acquire(&dev_keyboard_lock);
+
+    uint64_t *kbuff = (uint64_t *)buff;
+    size_t count;
+    for (count = 0; count < size; count++) {
+        if (num_keyboard_packets == 0) {
+            spinlock_release(&dev_keyboard_lock);
+            return count;
+        }
+
+        __memcpy(kbuff++, &keyboard_packets[keyboard_head++],
+                 sizeof(keyboard_data_t));
+
+        if (keyboard_head >= QUEUE_SIZE) {
+            keyboard_head = 0;
+        }
+
+        num_keyboard_packets--;
+    }
+
+    spinlock_release(&dev_keyboard_lock);
+
+    return count;
+}
+
+static vfsops_t keyboard_ops = {
+    vfs_mount_stub,
+    vfs_open_stub,
+    vfs_close_stub,
+    dev_keyboard_read,
+    vfs_write_stub,
+    vfs_create_stub
+};
+
+void dev_keyboard_init() {
+    devfs_new_device(&dev_keyboard, "kb0", &keyboard_ops);
+}
+
 typedef struct mouse_data {
     uint8_t flags;
     int delta_x;
     int delta_y;
 } mouse_data_t;
 
+// Mouse device-specific data
+vnode_t *dev_mouse;
+spinlock_t dev_mouse_lock = 0;
+static mouse_data_t mouse_packets[QUEUE_SIZE];
+static size_t mouse_head = 0;
+static size_t mouse_tail = 0;
+static size_t num_mouse_packets = 0;
+
+// Mouse Handler specific data
 static mouse_data_t mouse_data;
 static size_t mouse_cycle = 0;
 static bool mouse_discard = false;
@@ -140,7 +234,24 @@ void mouse_handler(ctx_t *ctx) {
             break;
         }
 
+        // Discard mouse packet if buffer full
+        if (num_mouse_packets >= QUEUE_SIZE) {
+            break;
+        }
+
         // Add mouse packet to queue
+        spinlock_acquire(&dev_mouse_lock);
+
+        __memcpy(&mouse_packets[mouse_tail++], &mouse_data,
+                 sizeof(mouse_data_t));
+
+        if (mouse_tail >= QUEUE_SIZE) {
+            mouse_tail = 0;
+        }
+
+        num_mouse_packets++;
+
+        spinlock_release(&dev_mouse_lock);
 
         break;
     default:
@@ -161,7 +272,54 @@ void mouse_handler(ctx_t *ctx) {
     schedule_next_thread();
 }
 
-static inline void ps2_wait(uint8_t status_mask) {
+static int dev_mouse_read(void *buff, vnode_t *node, size_t size,
+                          size_t offset) {
+    (void)node;
+    (void)offset;
+
+    ASSERT_RET (size == sizeof(mouse_data_t), 0);
+
+    ASSERT_RET(num_mouse_packets != 0, 0);
+
+    spinlock_acquire(&dev_mouse_lock);
+
+    mouse_data_t *packet = (mouse_data_t *)buff;
+    *packet = mouse_packets[mouse_head++];
+
+    if (mouse_head >= QUEUE_SIZE) {
+        mouse_head = 0;
+    }
+
+    num_mouse_packets--;
+
+    spinlock_release(&dev_mouse_lock);
+
+    return size;
+}
+
+static vfsops_t mouse_ops = {
+    vfs_mount_stub,
+    vfs_open_stub,
+    vfs_close_stub,
+    dev_mouse_read,
+    vfs_write_stub,
+    vfs_create_stub
+};
+
+void dev_mouse_init() {
+    devfs_new_device(&dev_mouse, "ms0", &mouse_ops);
+}
+
+void mouse_write(uint8_t byte) {
+    ps2_write(PS2_CMD_STATUS_REG, 0xd4);
+    ps2_write(PS2_DATA_REG, byte);
+}
+
+uint8_t mouse_read() {
+    return ps2_read(PS2_DATA_REG);
+}
+
+void ps2_wait(uint8_t status_mask) {
     ASSERT_RET(status_mask == PS2_STATUS_OUTPUT_BUF ||
                status_mask == PS2_STATUS_INPUT_BUF,);
 
@@ -177,7 +335,6 @@ static inline void ps2_wait(uint8_t status_mask) {
 
 void ps2_write(uint8_t port, uint8_t value) {
     ps2_wait(PS2_STATUS_INPUT_BUF);
-
     outb(port, value);
 }
 
@@ -185,15 +342,6 @@ uint8_t ps2_read(uint8_t port) {
     ps2_wait(PS2_STATUS_OUTPUT_BUF);
 
     return inb(port);
-}
-
-static inline uint8_t mouse_read() {
-    return ps2_read(PS2_DATA_REG);
-}
-
-static inline void mouse_write(uint8_t byte) {
-    ps2_write(PS2_CMD_STATUS_REG, 0xd4);
-    ps2_write(PS2_DATA_REG, byte);
 }
 
 static inline void mouse_send_command(uint8_t byte) {
