@@ -7,7 +7,7 @@
 #include <libc/kmalloc.h>
 #include <stddef.h>
 
-static spinlock_t queue_lock = 0;
+spinlock_t queue_lock = 0;
 
 static thread_t *head = NULL;
 static thread_t *tail = NULL;
@@ -53,6 +53,11 @@ thread_t *pop_thread_from_queue() {
 }
 
 void schedule_add_thread(thread_t *thread) {
+    bool i_flag = core_get_if_flag();
+    if (i_flag) {
+        disable_interrupts();
+    }
+
     spinlock_acquire(&queue_lock);
 
     if (head == NULL) {
@@ -67,6 +72,10 @@ void schedule_add_thread(thread_t *thread) {
     thread->next = NULL;
 
     spinlock_release(&queue_lock);
+
+    if (i_flag) {
+        enable_interrupts();
+    }
 }
 
 void thread_entry(thread_t *thread) {
@@ -119,6 +128,8 @@ void thread_switch(core_t *core) {
         "r" ((uint64_t *)cr3) :
         "memory"
     );
+
+    __builtin_unreachable();
 }
 
 void thread_wrapper(void *entry, void *param) {
