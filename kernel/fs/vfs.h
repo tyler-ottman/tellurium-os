@@ -84,7 +84,7 @@ int vfs_open(vnode_t **vnode, vnode_t *base, const char *path);
 int vfs_close(vnode_t *vnode);
 int vfs_read(void *buff, vnode_t *node, size_t size, size_t offset, size_t *bytes_read);
 int vfs_write(void *buff, vnode_t *node, size_t size, size_t offset, size_t *bytes_written);
-int vfs_create(vnode_t *parent, const char *vfs_name, int type);
+int vfs_create(vnode_t *vbase, const char *vfs_path, int type);
 
 void vfs_init(void);
 

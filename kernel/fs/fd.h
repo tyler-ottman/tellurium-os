@@ -7,8 +7,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define FD_SUCCESS                  1
-#define FD_FAIL                     0
+#define FD_SUCCESS                  0
+#define FD_FAIL                     1
 
 // Fd flags
 #define O_NONBLOCK                  00004000
@@ -30,7 +30,7 @@ typedef struct fd_table {
 int fd_create(fd_table_t *fd_table, fd_t **fd, int *fd_i);
 int fd_free(fd_table_t *fd_table, int fd_i);
 
-int fd_access(fd_table_t *fd_table, fd_t **fd, int fd_i);
+int fd_acquire(fd_table_t *fd_table, fd_t **fd, int fd_i);
 int fd_release(fd_table_t *fd_table, int fd_i);
 
 #endif // FD_H

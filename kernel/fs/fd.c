@@ -33,6 +33,8 @@ int fd_create(fd_table_t *fd_table, fd_t **fd, int *fd_i) {
 
     *fd = new_fd;
     *fd_i = fd_idx;
+
+    spinlock_acquire(&new_fd->fd_lock);
     spinlock_release(&fd_table->fd_table_lock);
 
     return FD_SUCCESS;
@@ -80,11 +82,14 @@ int fd_acquire(fd_table_t *fd_table, fd_t **fd, int fd_i) {
 }
 
 int fd_release(fd_table_t *fd_table, int fd_i) {
+    spinlock_acquire(&fd_table->fd_table_lock);
+
     fd_t *fd = VECTOR_GET(fd_table->fd_table, fd_i);
     if (!fd) {
         return FD_FAIL;
     }
 
+    spinlock_release(&fd_table->fd_table_lock);
     spinlock_release(&fd->fd_lock);
 
     return FD_SUCCESS;
