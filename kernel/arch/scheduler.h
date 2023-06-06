@@ -21,7 +21,7 @@ void thread_entry(thread_t *thread);
 void thread_switch(core_t *core);
 void thread_wrapper(void *entry, void *param);
 
-void schedule_thread_wait();
+void schedule_thread_wait(void);
 int schedule_notify(event_t *event, thread_t *thread);
 void schedule_thread_yield(bool no_return, int cause);
 void schedule_thread_terminate(void);

@@ -22,6 +22,6 @@ FbContext *FbContext::getInstance() {
     return instance;
 }
 
-FbMeta FbContext::getFbContext() {
-    return instance->fb_meta;
+FbMeta *FbContext::getFbContext() {
+    return &instance->fb_meta;
 }

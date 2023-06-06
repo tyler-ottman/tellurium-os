@@ -248,6 +248,14 @@ void schedule_thread_join(thread_t *thread_to_wait_on) {
     
     spinlock_acquire(&joined_queue_lock);
 
+    if (thread_to_wait_on->state == THREAD_ZOMBIE) {
+        spinlock_release(&joined_queue_lock);
+        if (i_flag) {
+            enable_interrupts();
+        }
+        return;
+    }
+
     for (size_t i = 0; i < QUEUE_MAX; i++) {
         if (!joined_threads[i]) {
             joined_threads[i] = thread;
@@ -261,5 +269,5 @@ void schedule_thread_join(thread_t *thread_to_wait_on) {
 
     if (i_flag) {
         enable_interrupts();
-    }
+    }    
 }

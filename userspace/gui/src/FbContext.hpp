@@ -22,7 +22,7 @@ public:
     FbContext(FbContext& obj) = delete;
     static FbContext *getInstance(void);
 
-    FbMeta getFbContext(void);
+    FbMeta *getFbContext(void);
 };
 
 #endif // FBCONTEXT_H
