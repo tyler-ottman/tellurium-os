@@ -6,14 +6,7 @@ override SRC_DIR = ./src
 override BIN_DIR = ./bin
 
 override LDFILE = ./linker.ld
-override CFLAGS += -I$(SRC_DIR)				\
-	-I $(SRC_DIR)							\
-	-ffreestanding							\
-	-m64									\
-	-Wall									\
-	-mgeneral-regs-only						\
-	-pipe
-
+override CFLAGS = -ffreestanding -m64 -Wall -mgeneral-regs-only -pipe
 override LDFLAGS = -T $(LDFILE) -nostartfiles
 
 override CFILES := $(shell find . -type f -name '*.cpp')
@@ -24,11 +17,10 @@ override HEADER_DEPS := $(CFILES:.cpp=.d) $(ASFILES:.S=.d)
 
 override APP_NAME := gui
 
-.PHONY: all
 all: directories $(BIN_DIR)/$(APP_NAME)
 
 $(BIN_DIR)/$(APP_NAME): $(OBJ)
-	$(CXX) $(LDFLAGS) $(OBJ) -o $(BIN_DIR)/$(APP_NAME).elf $(CFLAGS)
+	$(LD) $(OBJ) $(LDFLAGS) -o $@
 
 -include $(HEADER_DEPS)
 
@@ -43,6 +35,5 @@ directories:  $(BIN_DIR)
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-.PHONY: clean
 clean:
 	rm -rf $(BIN_DIR) $(OBJ)

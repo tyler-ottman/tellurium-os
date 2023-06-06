@@ -13,4 +13,6 @@ void *user_malloc(size_t size);
 void user_free(void *addr);
 void *user_realloc(void *addr, size_t size);
 
+void *__memcpy(void *dest, const void *src, size_t n);
+
 #endif // MEM_H

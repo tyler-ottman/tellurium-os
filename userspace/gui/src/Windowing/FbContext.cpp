@@ -1,6 +1,6 @@
 #include "FbContext.hpp"
-#include "mem.hpp"
-#include "syscalls.hpp"
+#include "ulibc/mem.hpp"
+#include "ulibc/syscalls.hpp"
 
 FbContext *FbContext::instance;
 
