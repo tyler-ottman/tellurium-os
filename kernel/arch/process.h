@@ -26,6 +26,7 @@ enum thread_state {
     THREAD_RUNNABLE,
     THREAD_BLOCKED,
     THREAD_WAITING,
+    THREAD_JOINED,
     THREAD_DELAYED,
     THREAD_RUNNING,
     THREAD_ZOMBIE
@@ -57,7 +58,7 @@ typedef struct tcb {
     uint32_t yield_cause;
     uint32_t time_slice;
     struct event *received_event;
-    struct event *waiting_for;
+    struct tcb *join_thread;
     spinlock_t yield_lock;
 
     struct tcb *prev;

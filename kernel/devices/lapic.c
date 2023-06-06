@@ -60,6 +60,8 @@ void lapic_ipi_handler(ctx_t *ctx) {
         thread_destroy(thread);
     } else if (cause == YIELD_WAIT) {
         thread->state = THREAD_WAITING;
+    } else if (cause == YIELD_JOIN) {
+        thread->state = THREAD_JOINED;
     }
 
     schedule_next_thread();

@@ -7,8 +7,15 @@
 #include <libc/kmalloc.h>
 #include <stddef.h>
 
-spinlock_t queue_lock = 0;
+#define QUEUE_MAX                           100
 
+spinlock_t joined_queue_lock = 0;
+spinlock_t ready_queue_lock = 0;
+
+// Threads waiting for other threads to terminate
+static thread_t *joined_threads[QUEUE_MAX] = {0};
+
+// Scheduler's ready threads linked list
 static thread_t *head = NULL;
 static thread_t *tail = NULL;
 
@@ -29,9 +36,9 @@ void schedule_next_thread() {
 
 // Pop next thread from front of linked list
 thread_t *pop_thread_from_queue() {
-    spinlock_acquire(&queue_lock);
+    spinlock_acquire(&ready_queue_lock);
     if (head == NULL) {
-        spinlock_release(&queue_lock);
+        spinlock_release(&ready_queue_lock);
         return NULL;
     }
 
@@ -47,7 +54,7 @@ thread_t *pop_thread_from_queue() {
     thread->prev = NULL;
     thread->next = NULL;
 
-    spinlock_release(&queue_lock);
+    spinlock_release(&ready_queue_lock);
 
     return thread;
 }
@@ -58,7 +65,7 @@ void schedule_add_thread(thread_t *thread) {
         disable_interrupts();
     }
 
-    spinlock_acquire(&queue_lock);
+    spinlock_acquire(&ready_queue_lock);
 
     if (head == NULL) {
         head = thread;
@@ -71,7 +78,7 @@ void schedule_add_thread(thread_t *thread) {
     tail = thread;
     thread->next = NULL;
 
-    spinlock_release(&queue_lock);
+    spinlock_release(&ready_queue_lock);
 
     if (i_flag) {
         enable_interrupts();
@@ -141,13 +148,11 @@ void thread_wrapper(void *entry, void *param) {
     schedule_thread_terminate();
 }
 
-void schedule_thread_wait(event_t *event) {
+void schedule_thread_wait() {
     thread_t *thread = get_core_local_info()->current_thread;
     if (thread->state != THREAD_RUNNING) {
         return;
     }
-
-    thread->waiting_for = event;
 
     schedule_thread_yield(false, YIELD_WAIT);
 }
@@ -210,5 +215,51 @@ void schedule_thread_yield(bool no_return, int cause) {
 void schedule_thread_terminate() {
     disable_interrupts();
 
+    thread_t *thread = get_core_local_info()->current_thread;
+
+    spinlock_acquire(&joined_queue_lock);
+
+    // Wake up joined threads waiting for thread to terminate 
+    for (size_t i = 0; i < QUEUE_MAX; i++) {
+        thread_t *joined_thread = joined_threads[i];
+        if (joined_thread && joined_thread->join_thread == thread) {
+            joined_thread->state = THREAD_RUNNABLE;
+
+            schedule_add_thread(joined_thread);
+            
+            joined_threads[i] = NULL;
+        }
+    }
+
+    spinlock_release(&joined_queue_lock);
+
     schedule_thread_yield(true, YIELD_TERMINATE);
+}
+
+void schedule_thread_join(thread_t *thread_to_wait_on) {
+    int i_flag = core_get_if_flag();
+    if (i_flag) {
+        disable_interrupts();
+    }
+
+    thread_t *thread = get_core_local_info()->current_thread;
+    
+    thread->join_thread = thread_to_wait_on;
+    
+    spinlock_acquire(&joined_queue_lock);
+
+    for (size_t i = 0; i < QUEUE_MAX; i++) {
+        if (!joined_threads[i]) {
+            joined_threads[i] = thread;
+            break;
+        }
+    }
+
+    spinlock_release(&joined_queue_lock);
+
+    schedule_thread_yield(false, YIELD_JOIN);
+
+    if (i_flag) {
+        enable_interrupts();
+    }
 }

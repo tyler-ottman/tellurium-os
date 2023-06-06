@@ -51,9 +51,9 @@ int event_wait(event_t *event) {
     attach_listener(thread, event);
 
     // Thread waits until event received
-    schedule_thread_wait(event);
+    schedule_thread_wait();
 
-    if (thread->received_event != thread->waiting_for) {
+    if (thread->received_event != event) {
         err = EVENT_ERR;
     }
 

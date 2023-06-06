@@ -43,16 +43,16 @@ void thread_destroy(thread_t *thread) {
     }
 
     // Remove thread from pare
-    struct pcb *parent = thread->parent;
-    for (int i = 0; i < parent->threads.cur_elements; i++) {
-        thread_t *cur_thread = VECTOR_GET(parent->threads, i);
-        if (cur_thread == thread) {
-            VECTOR_REMOVE(parent->threads, i);
-            break;
-        }
-    }
+    // struct pcb *parent = thread->parent;
+    // for (int i = 0; i < parent->threads.cur_elements; i++) {
+    //     thread_t *cur_thread = VECTOR_GET(parent->threads, i);
+    //     if (cur_thread == thread) {
+    //         VECTOR_REMOVE(parent->threads, i);
+    //         break;
+    //     }
+    // }
 
-    kfree(thread);
+    // kfree(thread);
 }
 
 thread_t *create_kernel_thread(void *entry, void *param) {
@@ -103,7 +103,7 @@ thread_t *create_kernel_thread(void *entry, void *param) {
     thread->state = THREAD_CREATED;
     thread->yield_cause = 0;
     thread->received_event = NULL;
-    thread->waiting_for = NULL;
+    thread->join_thread = NULL;
 
     thread->prev = NULL;
     thread->next = NULL;
@@ -164,7 +164,7 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
     thread->state = THREAD_CREATED;
     thread->yield_cause = 0;
     thread->received_event = NULL;
-    thread->waiting_for = NULL;
+    thread->join_thread = NULL;
     thread->yield_lock = 0;
 
     thread->prev = NULL;

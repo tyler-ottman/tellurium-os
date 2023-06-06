@@ -86,4 +86,7 @@ void unix_socket_test(void) {
 
     schedule_add_thread(server);
     schedule_add_thread(client);
+
+    schedule_thread_join(server);
+    schedule_thread_join(client);
 }
