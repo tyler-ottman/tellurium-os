@@ -1,18 +1,13 @@
 #include "Windowing/FbContext.hpp"
+#include "Windowing/Window.hpp"
 #include <stddef.h>
 #include <stdint.h>
+#include "ulibc/mem.hpp"
 #include "ulibc/syscalls.hpp"
 
 int main() {
-    FbContext *fbContext = FbContext::getInstance();
-    uint32_t *fbBuff = (uint32_t *)fbContext->getFbContext()->fb_buff;
-    
-    FbMeta *meta = fbContext->getFbContext();
-    int num_pixels = meta->fb_height * meta->fb_width;
-
-    // for (int i = 0; i < num_pixels; i++) {
-    //     fbBuff[i] = i * i / 32;
-    // }
+    GUI::Window *win1 = new GUI::Window("test", 300, 300, 50, 50);
+    win1->windowPaint(0x00f893a4);
 
     for (;;) {}
 }

@@ -1,5 +1,6 @@
 #include "mem.hpp"
 #include "syscalls.hpp"
+#include "ulibc/string.h"
 
 #define MAX(X,Y) ((X) < (Y) ? (Y) : (X))
 
@@ -34,15 +35,6 @@ void operator delete(void *addr) {
 
 void operator delete[](void *addr) {
     user_free(addr);
-}
-
-void* __memcpy(void* dest, const void* src, size_t n) {
-    char* dest_ptr = (char*)dest;
-    const char* src_ptr = (const char*)src;
-    while (n-- > 0) {
-        *(dest_ptr++) = *(src_ptr++);
-    }
-    return dest;
 }
 
 // Align num up to next number divisible by bound

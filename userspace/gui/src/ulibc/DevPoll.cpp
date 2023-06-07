@@ -1,24 +1,25 @@
 #include "DevPoll.hpp"
-#include <sys/fcntl.h>
 
 namespace Device {
-    static int mouseFd = 0;
-    static int keyboardFd = 0;
+    
+static int mouseFd = 0;
+static int keyboardFd = 0;
 
-    int mousePoll(MouseData *data) {
-        if (!mouseFd) {
-            mouseFd = syscall_open("/dev/ms0", O_RDONLY);
-        }
-
-        return syscall_read(mouseFd, (void *)data, sizeof(MouseData));
+int mousePoll(MouseData *data) {
+    if (!mouseFd) {
+        mouseFd = syscall_open("/dev/ms0", 0);
     }
 
-    int keyboardPoll(KeyboardData *data, size_t count) {
-        if (!keyboardFd) {
-            keyboardFd = syscall_open("/dev/kb0", O_RDONLY);
-        }
+    return syscall_read(mouseFd, (void *)data, sizeof(MouseData));
+}
 
-        return syscall_read(keyboardFd, (void *)data,
-                            count * sizeof(KeyboardData));
+int keyboardPoll(KeyboardData *data, size_t count) {
+    if (!keyboardFd) {
+        keyboardFd = syscall_open("/dev/kb0", 0);
     }
+
+    return syscall_read(keyboardFd, (void *)data,
+                        count * sizeof(KeyboardData));
+}
+
 }

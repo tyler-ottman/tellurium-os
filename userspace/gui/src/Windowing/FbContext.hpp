@@ -1,7 +1,9 @@
 #ifndef FBCONTEXT_H
 #define FBCONTEXT_H
 
-#include <cstdint>
+#include <stdint.h>
+
+namespace GUI {
 
 typedef struct {
     void *fb_buff;
@@ -23,6 +25,10 @@ public:
     static FbContext *getInstance(void);
 
     FbMeta *getFbContext(void);
+    void drawRect(int x_pos, int y_pos, int width, int heightin,
+                  uint32_t color);
 };
+
+}
 
 #endif // FBCONTEXT_H
