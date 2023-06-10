@@ -29,8 +29,6 @@ void lapic_write(size_t offset, uint32_t val) {
 
 void lapic_time_handler(ctx_t *ctx) {
     lapic_eoi();
-
-    save_context(ctx);
     
     // kprintf(MAGENTA"Timer Handle\n");
 
@@ -38,6 +36,7 @@ void lapic_time_handler(ctx_t *ctx) {
     thread_t *thread = core->current_thread;
 
     if (core->idle_thread != thread) {
+        save_context(ctx);
         schedule_add_thread(thread);
     }
 
@@ -47,11 +46,10 @@ void lapic_time_handler(ctx_t *ctx) {
 void lapic_ipi_handler(ctx_t *ctx) {
     lapic_eoi();
 
-    save_context(ctx);
-
     // kprintf(MAGENTA"IPI Handle\n");
 
-    thread_t *thread = get_thread_local();
+    core_t *core = get_core_local_info();
+    thread_t *thread = core->current_thread;
 
     int cause = thread->yield_cause;
 
@@ -62,6 +60,10 @@ void lapic_ipi_handler(ctx_t *ctx) {
         thread->state = THREAD_WAITING;
     } else if (cause == YIELD_JOIN) {
         thread->state = THREAD_JOINED;
+    }
+
+    if (thread != core->idle_thread) {
+        save_context(ctx);
     }
 
     schedule_next_thread();
@@ -123,7 +125,9 @@ void init_lapic() {
 }
 
 void lapic_schedule_time(uint64_t us) {
-    uint64_t ticks = us * (get_core_local_info()->lapic_freq / 1000000);
+    core_t *core = get_core_local_info();
+
+    uint64_t ticks = us * (core->lapic_freq / 1000000);
     lapic_write(LVT_INITIAL_COUNT, ticks);
 }
 

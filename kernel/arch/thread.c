@@ -6,6 +6,8 @@
 #include <memory/pmm.h>
 #include <memory/vmm.h>
 
+#define QUANTUM_DEFAULT                     1000
+
 extern void thread_wrapper(core_t *core);
 
 static spinlock_t tid_lock = 0;
@@ -15,7 +17,7 @@ static void idle_thread_spin(void) {
     // kprintf("Idle Thread reached\n");
 
     for(;;) {
-        __asm__ volatile ("pause");
+        __asm__ ("pause");
     }
 }
 
@@ -102,6 +104,7 @@ thread_t *create_kernel_thread(void *entry, void *param) {
 
     thread->state = THREAD_CREATED;
     thread->yield_cause = 0;
+    thread->quantum = QUANTUM_DEFAULT;
     thread->received_event = NULL;
     thread->join_thread = NULL;
 
@@ -163,6 +166,7 @@ thread_t *create_user_thread(struct pcb *proc, void *entry, void *param) {
 
     thread->state = THREAD_CREATED;
     thread->yield_cause = 0;
+    thread->quantum = QUANTUM_DEFAULT;
     thread->received_event = NULL;
     thread->join_thread = NULL;
     thread->yield_lock = 0;

@@ -1,5 +1,4 @@
-#ifndef FBCONTEXT_H
-#define FBCONTEXT_H
+#pragma once
 
 #include <stdint.h>
 
@@ -30,5 +29,3 @@ public:
 };
 
 }
-
-#endif // FBCONTEXT_H

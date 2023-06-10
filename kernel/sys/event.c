@@ -46,7 +46,7 @@ int event_wait(event_t *event) {
 
     disable_interrupts();
 
-    thread_t *thread = get_core_local_info()->current_thread;
+    thread_t *thread = get_thread_local();
 
     attach_listener(thread, event);
 

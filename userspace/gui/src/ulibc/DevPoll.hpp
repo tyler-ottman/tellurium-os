@@ -17,5 +17,6 @@ struct KeyboardData {
 };
 
 int mousePoll(MouseData *data);
-int keyboardPoll(uint8_t *buff, size_t count);
+int keyboardPoll(KeyboardData *buff, size_t count);
+
 }

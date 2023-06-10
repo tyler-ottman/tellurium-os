@@ -146,6 +146,7 @@ GDT_USER_DATA equ                           (0x38 | 3)
 GDT_USER_CODE equ                           (0x40 | 3)                         
 
 ISR_syscall:
+    cli
     swapgs ; Load core local info
 
     ; Save user stack pointer to temp register and load kernel rsp
@@ -161,6 +162,7 @@ ISR_syscall:
     push $0 ; err
 
     swapgs
+    sti
 
     ; Save general purpose registers
     save_context

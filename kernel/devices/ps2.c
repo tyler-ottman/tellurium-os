@@ -135,7 +135,10 @@ void keyboard_handler(ctx_t *ctx) {
     thread_t *thread = get_thread_local();
 
     if (core->idle_thread != thread) {
-        schedule_add_thread(thread);
+        // if (thread == NULL ||) {
+        //     kprintf("problem\n");
+        // }
+        schedule_add_thread(core->current_thread);
     }
 
     lapic_eoi();
@@ -259,11 +262,10 @@ void mouse_handler(ctx_t *ctx) {
         break;
     }
 
-    save_context(ctx);
-
     core_t *core = get_core_local_info();
-    thread_t *thread = get_thread_local();
-    if (core->idle_thread != thread) {
+    thread_t *thread = core->current_thread;
+    if (thread != core->idle_thread) {
+        save_context(ctx);
         schedule_add_thread(thread);
     }
 

@@ -45,6 +45,7 @@ void exception_handler_err(uint8_t vector, ctx_t *ctx) {
 
     kprintf(ERROR "[CPU%d] %s, err: %x, cr2: %x, pc: %x\n", core_id,
             exception_name[vector], ctx->err, cr2, ctx->rip);
+    kprintf(ERROR "thread running: %x\n", core->current_thread);
 
     core_hlt();
 

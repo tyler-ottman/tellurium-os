@@ -15,8 +15,7 @@ int syscall_open(const char *path, int flags) {
 int syscall_openat(int dirfd, const char *path, int flags) {
     ASSERT_RET(path, -1);
 
-    core_t *core = get_core_local_info();
-    pcb_t *proc = core->current_thread->parent;
+    pcb_t *proc = get_thread_local()->parent;
     fd_table_t *fd_table = &proc->fd_table;
 
     fd_t *fd;

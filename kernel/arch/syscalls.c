@@ -6,6 +6,7 @@
 #define SYSCALL_GET_FB_CONTEXT                      1
 #define SYSCALL_MMAP                                2
 #define SYSCALL_OPEN                                3
+#define SYSCALL_READ                                4
 
 extern void *ISR_syscall[];
 
@@ -33,8 +34,11 @@ void syscall_handler(ctx_t *ctx) {
     case SYSCALL_OPEN:
         ret = (int)syscall_open((const char *)arg1, arg2);
         break;
+    case SYSCALL_READ:
+        ret = (size_t)syscall_read(arg1, (void *)arg2, arg3);
+        break;
     default:
-        kprintf("Unknown syscall\n");
+        kprintf("Unknown syscall: %x\n", syscall_id);
         break;
     }
 

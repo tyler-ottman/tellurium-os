@@ -18,6 +18,14 @@ Window::~Window() {
 
 }
 
+void Window::setWindowID(int windowID) {
+    this->windowID = windowID;
+}
+
+int  Window::getWindowID() {
+    return this->windowID;
+}
+
 void Window::windowPaint(uint32_t color) {
     GUI::FbContext *fbContext = GUI::FbContext::getInstance();
     if (fbContext == nullptr) {

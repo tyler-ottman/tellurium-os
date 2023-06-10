@@ -56,7 +56,7 @@ typedef struct tcb {
     uint64_t *fs_base;
     uint32_t state;
     uint32_t yield_cause;
-    uint32_t time_slice;
+    uint32_t quantum;
     struct event *received_event;
     struct tcb *join_thread;
     spinlock_t yield_lock;

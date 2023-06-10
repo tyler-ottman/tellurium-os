@@ -16,6 +16,7 @@ void *operator new(size_t size);
 void *operator new[](size_t size);
 void operator delete(void *addr);
 void operator delete[](void *addr);
+void operator delete(void*, unsigned long);
 
 void *user_malloc(size_t size);
 void user_free(void *addr);

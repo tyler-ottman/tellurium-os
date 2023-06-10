@@ -27,8 +27,8 @@ typedef struct thread_queue {
 void schedule_next_thread() {
     thread_t *next_thread = pop_thread_from_queue();
 
-    if (next_thread == NULL) {
-        next_thread = get_idle_thread();
+    if (!next_thread) {
+        next_thread = get_core_local_info()->idle_thread;
     }
 
     thread_entry(next_thread);
@@ -89,6 +89,7 @@ void thread_entry(thread_t *thread) {
     core_t *core = get_core_local_info();
     core->current_thread = thread;
     core->tss.ist1 = (uint64_t)thread->kernel_sp;
+    core->tss.ist2 = (uint64_t)core->irq_stack;
 
     set_thread_local(thread);
     thread->state = THREAD_RUNNING;
@@ -106,8 +107,8 @@ void thread_switch(core_t *core) {
 
     core->kernel_stack = thread->kernel_sp;
     core->kernel_scratch = thread->thread_scratch;
-    
-    lapic_schedule_time(1000);
+
+    lapic_schedule_time(thread->quantum);
     lapic_lvt_enable(LVT_TIMER);
 
     __asm__ volatile(
@@ -149,7 +150,7 @@ void thread_wrapper(void *entry, void *param) {
 }
 
 void schedule_thread_wait() {
-    thread_t *thread = get_core_local_info()->current_thread;
+    thread_t *thread = get_thread_local();
     if (thread->state != THREAD_RUNNING) {
         return;
     }

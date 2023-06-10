@@ -1,6 +1,7 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include <devices/msr.h>
 #include <libc/vector.h>
 #include <limine.h>
 
@@ -55,6 +56,7 @@ typedef struct ctx {
 typedef struct core {
     uint64_t *kernel_stack;     // Kernel stack of running thread
     uint64_t kernel_scratch;    // Kernel scratch register for current thread
+    uint64_t *irq_stack;
     uint32_t lapic_id;
     uint32_t lapic_ipi_vector;
     uint8_t lapic_timer_vector;
@@ -91,11 +93,38 @@ static inline int core_get_if_flag(void) {
     return rflags & (1 << 9);
 }
 
+static inline core_t *get_core_local_info() {
+    int i_flag = core_get_if_flag();
+    
+    __asm__ ("cli");
+    
+    uint64_t gs_base = get_msr(IA32_KERNEL_GS_BASE);
+    
+    if (i_flag) {
+        __asm__ ("sti");
+    }
+    
+    return (core_t *)(gs_base);
+}
+
+static inline struct tcb *get_thread_local() {
+    int i_flag = core_get_if_flag();
+
+    __asm__ ("cli");
+
+    core_t *core = (core_t *)get_msr(IA32_KERNEL_GS_BASE);
+    struct tcb *thread = core->current_thread;
+
+    if (i_flag) {
+        __asm__ ("sti");
+    }
+
+    return thread;
+}
+
 void done(void);
 void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d);
-struct tcb* get_thread_local(void);
 void set_thread_local(struct tcb* thread);
-struct core *get_core_local_info(void);
 void set_core_local_info(struct core* core);
 void save_context(ctx_t *ctx);
 void print_context(ctx_t* context);

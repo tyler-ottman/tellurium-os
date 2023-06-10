@@ -37,6 +37,11 @@ void operator delete[](void *addr) {
     user_free(addr);
 }
 
+void operator delete(void* addr, unsigned long size) {
+    (void)addr;
+    (void)size;
+}
+
 // Align num up to next number divisible by bound
 static inline size_t alignUp(size_t num, size_t bound) {
     size_t ret = num / bound;

@@ -7,7 +7,6 @@
 #include <arch/syscalls.h>
 #include <arch/terminal.h>
 #include <devices/lapic.h>
-#include <devices/msr.h>
 #include <devices/serial.h>
 #include <libc/kmalloc.h>
 #include <memory/vmm.h>
@@ -36,32 +35,20 @@ void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
     );
 }
 
-thread_t *get_thread_local() {
-    uint64_t fs_base = get_msr(FS_BASE);
-    return (thread_t *)((uint64_t)fs_base);
-}
-
 void set_thread_local(thread_t *thread) {
     uint64_t fs_base = (uint64_t)((uint64_t)thread);
     set_msr(FS_BASE, fs_base);
 }
 
-core_t *get_core_local_info() {
-    uint64_t gs_base = get_msr(IA32_KERNEL_GS_BASE);
-    return (core_t *)((uint64_t)gs_base);
-}
-
 void set_core_local_info(core_t *core) {
-    uint64_t gs_base = (uint64_t)((uint64_t)core);
+    uint64_t gs_base = (uint64_t)core;
     set_msr(IA32_KERNEL_GS_BASE, gs_base);
 }
 
 void save_context(ctx_t *ctx) {
     core_t *core = get_core_local_info();
     thread_t *thread = core->current_thread;
-
-    ASSERT_RET(thread && core,);
-
+    
     __memcpy(&thread->context, ctx, sizeof(ctx_t));
 
     // Save scratch register
@@ -129,6 +116,9 @@ void core_init(struct limine_smp_info *limine_core_info) {
     set_core_local_info(core);
 
     core->kernel_stack = NULL;
+    core->irq_stack = kmalloc(4 * PAGE_SIZE_BYTES);
+    ASSERT(core->irq_stack, 0, "irq_stack no mem");
+
     core->lapic_id = limine_core_info->lapic_id;
     core->current_thread = NULL;
 

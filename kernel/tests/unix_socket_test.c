@@ -30,7 +30,8 @@ void unix_socket_server(void *param) {
     server_init = true;
 
     socket_t *receive;
-    err = sock->socket_accept(sock, &receive, (struct sockaddr *)&addr, &addrlen, 0);
+    while ((err = sock->socket_accept(sock, &receive, (struct sockaddr *)&addr,
+                               &addrlen, 0)) == SKT_BAD_EVENT) {}
     ASSERT(err == SKT_OK, err, "usocket_server: connection failure");
 
     char buff[UNIX_BUF_LEN] = {0};
@@ -60,8 +61,8 @@ void unix_socket_client(void *param) {
     addr.sun_family = AF_UNIX;
     __memcpy(addr.sun_path, sun_path, __strlen(sun_path));
 
-    while (sock->socket_connect(sock, (const struct sockaddr *)&addr,
-                                sizeof(addr)) == SKT_BAD_EVENT) {}
+    while ((err = sock->socket_connect(sock, (const struct sockaddr *)&addr,
+                                sizeof(addr))) == SKT_BAD_EVENT) {}
     ASSERT(err == SKT_OK, err, "usocket_client: connect failure");
 
     const char msg1[] = "syn";
