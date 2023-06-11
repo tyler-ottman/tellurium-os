@@ -334,10 +334,8 @@ int kprintf(const char *format, ...) {
     va_end(valist);
 
     int state = core_get_if_flag();
-    if (state) {
-        disable_interrupts();
-    }
-    // breakpoint_two();
+    
+    disable_interrupts();
 
     spinlock_acquire(&kprint_lock);
 
@@ -345,7 +343,6 @@ int kprintf(const char *format, ...) {
     terminal_printf(&kterminal, buf);
 
     spinlock_release(&kprint_lock);
-    // breakpoint_two();
     
     if (state) {
         enable_interrupts();

@@ -87,11 +87,14 @@ void schedule_add_thread(thread_t *thread) {
 
 void thread_entry(thread_t *thread) {
     core_t *core = get_core_local_info();
+    
     core->current_thread = thread;
+    
     core->tss.ist1 = (uint64_t)thread->kernel_sp;
     core->tss.ist2 = (uint64_t)core->irq_stack;
 
-    set_thread_local(thread);
+    // set_core_local_info(core);
+
     thread->state = THREAD_RUNNING;
 
     spinlock_release(&thread->yield_lock);
@@ -107,10 +110,9 @@ void thread_switch(core_t *core) {
 
     core->kernel_stack = thread->kernel_sp;
     core->kernel_scratch = thread->thread_scratch;
-
+    
     lapic_schedule_time(thread->quantum);
     lapic_lvt_enable(LVT_TIMER);
-
     __asm__ volatile(
         "mov %0, %%rsp\n\t"
         "mov %1, %%r15\n\t"

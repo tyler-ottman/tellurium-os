@@ -13,7 +13,7 @@ extern void thread_wrapper(core_t *core);
 static spinlock_t tid_lock = 0;
 static uint32_t cur_tid = 1;
 
-static void idle_thread_spin(void) {
+void idle_thread_spin(void) {
     // kprintf("Idle Thread reached\n");
 
     for(;;) {

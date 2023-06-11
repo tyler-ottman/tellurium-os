@@ -35,8 +35,9 @@ void lapic_time_handler(ctx_t *ctx) {
     core_t *core = get_core_local_info();
     thread_t *thread = core->current_thread;
 
+    save_context(ctx);
+
     if (core->idle_thread != thread) {
-        save_context(ctx);
         schedule_add_thread(thread);
     }
 
@@ -100,17 +101,16 @@ void lapic_calibrate(bool hpet_present) {
 
 void init_lapic() {
     core_t *core = get_core_local_info();
-    
+
     lapic_addr = get_lapic_addr();
     
     // Software enable local APIC
     lapic_enable();
-    // enable_interrupts();
-    
+
     // Add IDT entry for timer interrupts
     uint8_t timer_vector = allocate_vector();
     core->lapic_timer_vector = timer_vector;
-    
+
     add_descriptor(timer_vector, ISR_Timer, 0x8e);
     lapic_lvt_set_vector(LVT_TIMER, timer_vector);
 

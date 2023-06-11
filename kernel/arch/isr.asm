@@ -100,7 +100,7 @@ global ISR_Timer
 ISR_Timer:
     sub rsp, 8
     save_context
-
+    
     mov rdi, rsp
     xor rbp, rbp
     call lapic_time_handler

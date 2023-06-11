@@ -34,7 +34,7 @@ int fd_create(fd_table_t *fd_table, fd_t **fd, int *fd_i) {
     *fd = new_fd;
     *fd_i = fd_idx;
 
-    spinlock_acquire(&new_fd->fd_lock);
+    // spinlock_acquire(&new_fd->fd_lock);
     spinlock_release(&fd_table->fd_table_lock);
 
     return FD_SUCCESS;

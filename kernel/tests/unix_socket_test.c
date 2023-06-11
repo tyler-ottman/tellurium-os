@@ -30,8 +30,8 @@ void unix_socket_server(void *param) {
     server_init = true;
 
     socket_t *receive;
-    while ((err = sock->socket_accept(sock, &receive, (struct sockaddr *)&addr,
-                               &addrlen, 0)) == SKT_BAD_EVENT) {}
+    err = sock->socket_accept(sock, &receive, (struct sockaddr *)&addr,
+                              &addrlen, 0);
     ASSERT(err == SKT_OK, err, "usocket_server: connection failure");
 
     char buff[UNIX_BUF_LEN] = {0};

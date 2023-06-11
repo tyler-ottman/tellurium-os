@@ -135,9 +135,6 @@ void keyboard_handler(ctx_t *ctx) {
     thread_t *thread = get_thread_local();
 
     if (core->idle_thread != thread) {
-        // if (thread == NULL ||) {
-        //     kprintf("problem\n");
-        // }
         schedule_add_thread(core->current_thread);
     }
 

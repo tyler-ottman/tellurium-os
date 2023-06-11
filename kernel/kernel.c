@@ -68,7 +68,7 @@ void kmain(void *param) {
     // Store userapps in vfs
     tmpfs_load_userapps();
 
-    unix_socket_test();
+    // unix_socket_test();
 
     vfs_print_tree(vfs_get_root(), 4);
 

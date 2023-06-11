@@ -21,12 +21,18 @@ extern void kmain(void);
 
 static spinlock_t init_lock = 0;
 
-// Halt CPU activity
-void done() {
-    __asm__ volatile ("cli");
-    for (;;) {
-        __asm__ volatile ("hlt");
-    }
+static inline core_t *core_get_local_unsafe() {
+    core_t *core;
+
+    __asm__ (
+        "cli\n\t"
+        "swapgs\n\t"
+        "movq %%gs:0, %0\n\t"
+        "swapgs\n\t" :
+        "=r"(core)
+    );
+
+    return core;
 }
 
 void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
@@ -35,14 +41,63 @@ void cpuid(uint32_t in_a, uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
     );
 }
 
-void set_thread_local(thread_t *thread) {
-    uint64_t fs_base = (uint64_t)((uint64_t)thread);
-    set_msr(FS_BASE, fs_base);
+inline void enable_interrupts() {
+    __asm__ ("sti");
+}
+
+inline void disable_interrupts() {
+    __asm__ ("cli");
+}
+
+inline int core_get_if_flag() {
+    uint64_t rflags;
+
+    __asm__ volatile (
+        "pushfq\n\t"
+        "pop %0" :
+        "=rm" (rflags) : :
+        "memory"
+    );
+
+    return rflags & (1 << 9);
+}
+
+inline void core_hlt() {
+    for (;;) {
+        __asm__ ("hlt");
+    }
+}
+
+inline thread_t *get_thread_local() {
+    int i_flag = core_get_if_flag();
+    
+    core_t *core = core_get_local_unsafe();
+    thread_t *thread = core->current_thread;
+
+    if (i_flag) {
+        __asm__ ("sti");
+    }
+
+    return thread;
+}
+
+inline core_t *get_core_local_info() {
+    int i_flag = core_get_if_flag();
+
+    core_t *core = core_get_local_unsafe();
+
+    if (i_flag) {
+        __asm__ ("sti");
+    }
+    
+    return core;
 }
 
 void set_core_local_info(core_t *core) {
-    uint64_t gs_base = (uint64_t)core;
-    set_msr(IA32_KERNEL_GS_BASE, gs_base);
+    core->self = core;
+    
+    set_msr(IA32_KERNEL_GS_BASE, (uint64_t)core);
+    set_msr(GS_BASE, (uint64_t)core);
 }
 
 void save_context(ctx_t *ctx) {
@@ -116,27 +171,24 @@ void core_init(struct limine_smp_info *limine_core_info) {
     set_core_local_info(core);
 
     core->kernel_stack = NULL;
-    core->irq_stack = kmalloc(4 * PAGE_SIZE_BYTES);
-    ASSERT(core->irq_stack, 0, "irq_stack no mem");
-
-    core->lapic_id = limine_core_info->lapic_id;
-    core->current_thread = NULL;
-
-    core->idle_thread = alloc_idle_thread();
-    core->idle_thread->state = THREAD_RUNNABLE;
-    set_thread_local(core->idle_thread);
+    core->irq_stack = kmalloc(4 * PAGE_SIZE_BYTES);    
+    ASSERT(core->irq_stack, ERR_NO_MEM, NULL);
     
+    core->lapic_id = limine_core_info->lapic_id;
+    
+    core->current_thread = NULL;
+    
+    core->idle_thread = alloc_idle_thread();
+    ASSERT(core->idle_thread, ERR_NO_MEM, NULL);
+    core->idle_thread->state = THREAD_RUNNABLE;
+   
     __memset(&core->tss, 0, sizeof(struct TSS));
     load_tss_entry(&core->tss);
-    
+
     init_lapic();
-
-    // LAPIC Timer IDT Entry uses stack stored in IST1
+    
     set_vector_ist(core->lapic_timer_vector, 1);
-
-    // LAPIC IPI IDT Entry
     set_vector_ist(core->lapic_ipi_vector, 1);
-
     for (int i = 0; i < 20; i++) {
         set_vector_ist(i, 1);
     }
