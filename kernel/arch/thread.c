@@ -14,8 +14,6 @@ static spinlock_t tid_lock = 0;
 static uint32_t cur_tid = 1;
 
 void idle_thread_spin(void) {
-    // kprintf("Idle Thread reached\n");
-
     for(;;) {
         __asm__ ("pause");
     }

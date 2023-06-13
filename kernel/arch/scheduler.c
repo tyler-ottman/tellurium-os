@@ -90,10 +90,7 @@ void thread_entry(thread_t *thread) {
     
     core->current_thread = thread;
     
-    core->tss.ist1 = (uint64_t)thread->kernel_sp;
-    core->tss.ist2 = (uint64_t)core->irq_stack;
-
-    // set_core_local_info(core);
+    core->tss.ist1 = (uint64_t)core->irq_stack;
 
     thread->state = THREAD_RUNNING;
 
@@ -110,7 +107,7 @@ void thread_switch(core_t *core) {
 
     core->kernel_stack = thread->kernel_sp;
     core->kernel_scratch = thread->thread_scratch;
-    
+
     lapic_schedule_time(thread->quantum);
     lapic_lvt_enable(LVT_TIMER);
     __asm__ volatile(

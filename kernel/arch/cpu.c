@@ -175,7 +175,7 @@ void core_init(struct limine_smp_info *limine_core_info) {
     ASSERT(core->irq_stack, ERR_NO_MEM, NULL);
     
     core->lapic_id = limine_core_info->lapic_id;
-    
+
     core->current_thread = NULL;
     
     core->idle_thread = alloc_idle_thread();

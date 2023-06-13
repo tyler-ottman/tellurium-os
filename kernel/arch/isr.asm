@@ -139,8 +139,8 @@ ISR_mouse:
 
 global ISR_syscall
 
-CORE_LOCAL_INFO_KERNEL_STACK equ            0x0
-CORE_LOCAL_INFO_KERNEL_SCRATCH equ          0x8
+CORE_LOCAL_INFO_KERNEL_STACK equ            0x8
+CORE_LOCAL_INFO_KERNEL_SCRATCH equ          0x10
 
 GDT_USER_DATA equ                           (0x38 | 3)
 GDT_USER_CODE equ                           (0x40 | 3)                         
