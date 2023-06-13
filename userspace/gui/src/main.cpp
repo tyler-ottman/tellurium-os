@@ -17,10 +17,21 @@ int main() {
         .data = 0
     };
 
+    Device::MouseData mouse = {
+        .flags = 0,
+        .delta_x = 0,
+        .delta_y = 0
+    };
+
     wm->refreshScreen();
 
     while (1) {
-        if (Device::keyboardPoll(&key, 1)) {
+        // if (Device::keyboardPoll(&key, 1)) {
+        //     // wm->refreshScreen();
+        // }
+
+        if (Device::mousePoll(&mouse)) {
+            wm->mouseHandle(&mouse);
             wm->refreshScreen();
         }
     }

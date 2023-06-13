@@ -240,8 +240,6 @@ void mouse_handler(ctx_t *ctx) {
         }
 
         // Add mouse packet to queue
-        spinlock_acquire(&dev_mouse_lock);
-
         __memcpy(&mouse_packets[mouse_tail++], &mouse_data,
                  sizeof(mouse_data_t));
 
@@ -250,8 +248,6 @@ void mouse_handler(ctx_t *ctx) {
         }
 
         num_mouse_packets++;
-
-        spinlock_release(&dev_mouse_lock);
 
         break;
     default:
@@ -280,7 +276,7 @@ static int dev_mouse_read(void *buff, vnode_t *node, size_t size,
 
     ASSERT_RET(num_mouse_packets != 0, 0);
 
-    spinlock_acquire(&dev_mouse_lock);
+    // spinlock_acquire(&dev_mouse_lock);
 
     mouse_data_t *packet = (mouse_data_t *)buff;
     *packet = mouse_packets[mouse_head++];
@@ -291,7 +287,7 @@ static int dev_mouse_read(void *buff, vnode_t *node, size_t size,
 
     num_mouse_packets--;
 
-    spinlock_release(&dev_mouse_lock);
+    // spinlock_release(&dev_mouse_lock);
 
     return size;
 }

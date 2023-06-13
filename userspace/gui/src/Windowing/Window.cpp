@@ -26,6 +26,22 @@ int  Window::getWindowID() {
     return this->windowID;
 }
 
+int Window::getXPos() {
+    return this->xPos;
+}
+
+int Window::getYPos() {
+    return this->yPos;
+}
+
+int Window::getWidth() {
+    return this->width;
+}
+
+int Window::getHeight() {
+    return this->height;
+}
+
 void Window::windowPaint(uint32_t color) {
     GUI::FbContext *fbContext = GUI::FbContext::getInstance();
     if (fbContext == nullptr) {

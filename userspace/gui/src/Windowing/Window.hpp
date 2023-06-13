@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "ulibc/DevPoll.hpp"
 
 namespace GUI {
 
@@ -21,6 +22,11 @@ public:
 
     void setWindowID(int windowID);
     int getWindowID(void);
+    int getXPos(void);
+    int getYPos(void);
+    int getWidth(void);
+    int getHeight(void);
+
     void windowPaint(uint32_t color);
 };
 
