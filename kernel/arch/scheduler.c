@@ -107,7 +107,6 @@ void thread_switch() {
     uint64_t cr3 = (uint64_t)(map->pml4_base) - KERNEL_HHDM_OFFSET;
 
     lapic_schedule_time(thread->quantum);
-    lapic_lvt_enable(LVT_TIMER);
 
     __asm__ volatile(
         "mov %0, %%rsp\n\t"

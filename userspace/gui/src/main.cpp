@@ -13,13 +13,17 @@ int main() {
     wm->createWindow("test", 100, 150, 400, 400);
     wm->createWindow("test", 200, 100, 200, 600);
 
-    // Device::KeyboardData key = {
-    //     .data = 0
-    // };
-
-    // Device::keyboardPoll(&key, 1);
+    Device::KeyboardData key = {
+        .data = 0
+    };
 
     wm->refreshScreen();
+
+    while (1) {
+        if (Device::keyboardPoll(&key, 1)) {
+            wm->refreshScreen();
+        }
+    }
 
     for (;;) {}
 }

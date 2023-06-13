@@ -4,15 +4,11 @@
 #include <sys/misc.h>
 
 size_t syscall_read(int fd, void *buf, size_t count) {
-    kprintf("got here\n");
     ASSERT_RET(buf, -1);
 
-    pcb_t *proc = get_thread_local()->parent;
-
-    
-    
+    pcb_t *proc = get_thread_local()->parent;        
     fd_t *read_fd;
-    
+
     int err = fd_acquire(&proc->fd_table, &read_fd, fd);
     if (err) {
         return -1;
@@ -26,6 +22,10 @@ size_t syscall_read(int fd, void *buf, size_t count) {
     }
 
     fd_release(&proc->fd_table, fd);
+
+    if (bytes_read) {
+        // kprintf("%c", *((char *)buf));
+    }
 
     return bytes_read;
 }

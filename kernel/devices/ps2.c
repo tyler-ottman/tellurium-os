@@ -114,7 +114,7 @@ void keyboard_handler(ctx_t *ctx) {
 
     // Add keyboard packet to queue
     if (!discard_keyboard_packet && (num_keyboard_packets < QUEUE_SIZE)) {
-        spinlock_acquire(&dev_keyboard_lock);
+        // spinlock_acquire(&dev_keyboard_lock);
 
         keyboard_data.data = char_format[c];
         __memcpy(&keyboard_packets[keyboard_tail++], &keyboard_data,
@@ -126,7 +126,7 @@ void keyboard_handler(ctx_t *ctx) {
 
         num_keyboard_packets++;
 
-        spinlock_release(&dev_keyboard_lock);
+        // spinlock_release(&dev_keyboard_lock);
     }
 
     save_context(ctx);
@@ -149,13 +149,13 @@ static int dev_keyboard_read(void *buff, vnode_t *node, size_t size,
     
     ASSERT_RET((size % sizeof(keyboard_data_t) == 0) && (size < QUEUE_SIZE), 0);
 
-    spinlock_acquire(&dev_keyboard_lock);
+    // spinlock_acquire(&dev_keyboard_lock);
 
     uint64_t *kbuff = (uint64_t *)buff;
     size_t count;
     for (count = 0; count < size; count++) {
         if (num_keyboard_packets == 0) {
-            spinlock_release(&dev_keyboard_lock);
+            // spinlock_release(&dev_keyboard_lock);
             return count;
         }
 
@@ -169,7 +169,7 @@ static int dev_keyboard_read(void *buff, vnode_t *node, size_t size,
         num_keyboard_packets--;
     }
 
-    spinlock_release(&dev_keyboard_lock);
+    // spinlock_release(&dev_keyboard_lock);
 
     return count;
 }

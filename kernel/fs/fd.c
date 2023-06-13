@@ -2,13 +2,12 @@
 #include <libc/kmalloc.h>
 
 int fd_create(fd_table_t *fd_table, fd_t **fd, int *fd_i) {
-    vector_t vec_fd_table = fd_table->fd_table;
     spinlock_acquire(&fd_table->fd_table_lock);
 
     // Find empty file descriptor entry in table
     int fd_idx = -1;
-    for (int i = 0; i < VECTOR_SIZE(vec_fd_table); i++) {
-        if (!VECTOR_GET(vec_fd_table, i)) {
+    for (int i = 0; i < VECTOR_SIZE(fd_table->fd_table); i++) {
+        if (!VECTOR_GET(fd_table->fd_table, i)) {
             fd_idx = i;
             break;
         }
@@ -25,10 +24,20 @@ int fd_create(fd_table_t *fd_table, fd_t **fd, int *fd_i) {
     new_fd->vnode = NULL;
 
     if (fd_idx == -1) { // Resize fd table
-        fd_idx = VECTOR_SIZE(vec_fd_table);
-        VECTOR_PUSH_BACK(vec_fd_table, new_fd);
-    } else {
-        VECTOR_SET(vec_fd_table, fd_idx, new_fd);
+        size_t old_size = VECTOR_SIZE(fd_table->fd_table);
+
+        VECTOR_PUSH_BACK(fd_table->fd_table, new_fd);
+        for (int i = old_size; i < VECTOR_SIZE(fd_table->fd_table); i++) {
+            if (VECTOR_GET(fd_table->fd_table, i) == new_fd) {
+                fd_idx = i;
+                break;
+            }
+        }
+
+        if (fd_idx == -1) {
+            spinlock_release(&fd_table->fd_table_lock);
+            return FD_FAIL;
+        }
     }
 
     *fd = new_fd;
@@ -63,7 +72,7 @@ int fd_free(fd_table_t *fd_table, int fd_i) {
     return FD_SUCCESS;
 }
 
-int fd_acquire(fd_table_t *fd_table, fd_t **fd, int fd_i) {
+int fd_acquire(fd_table_t *fd_table, fd_t **fd, int fd_i) {    
     spinlock_acquire(&fd_table->fd_table_lock);
 
     fd_t *fd_ret = VECTOR_GET(fd_table->fd_table, fd_i);
@@ -83,7 +92,7 @@ int fd_acquire(fd_table_t *fd_table, fd_t **fd, int fd_i) {
 
 int fd_release(fd_table_t *fd_table, int fd_i) {
     spinlock_acquire(&fd_table->fd_table_lock);
-
+    
     fd_t *fd = VECTOR_GET(fd_table->fd_table, fd_i);
     if (!fd) {
         return FD_FAIL;
