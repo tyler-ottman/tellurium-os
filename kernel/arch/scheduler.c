@@ -88,28 +88,27 @@ void schedule_add_thread(thread_t *thread) {
 void thread_entry(thread_t *thread) {
     core_t *core = get_core_local_info();
     
-    core->current_thread = thread;
-    
+    core->kernel_stack = thread->kernel_sp;
+    core->kernel_scratch = thread->thread_scratch;
     core->tss.ist1 = (uint64_t)core->irq_stack;
+    core->current_thread = thread;
 
     thread->state = THREAD_RUNNING;
 
     spinlock_release(&thread->yield_lock);
 
-    thread_switch(core);
+    thread_switch();
 }
 
-void thread_switch(core_t *core) {
-    thread_t *thread = core->current_thread;
-    struct pagemap *map = core->current_thread->parent->pmap;
+void thread_switch() {
+    thread_t *thread = get_thread_local();
+    struct pagemap *map = thread->parent->pmap;
 
     uint64_t cr3 = (uint64_t)(map->pml4_base) - KERNEL_HHDM_OFFSET;
 
-    core->kernel_stack = thread->kernel_sp;
-    core->kernel_scratch = thread->thread_scratch;
-
     lapic_schedule_time(thread->quantum);
     lapic_lvt_enable(LVT_TIMER);
+
     __asm__ volatile(
         "mov %0, %%rsp\n\t"
         "mov %1, %%r15\n\t"

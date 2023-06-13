@@ -18,7 +18,7 @@ void schedule_next_thread(void);
 thread_t *pop_thread_from_queue(void);
 void schedule_add_thread(thread_t *thread);
 void thread_entry(thread_t *thread);
-void thread_switch(core_t *core);
+void thread_switch(void);
 void thread_wrapper(void *entry, void *param);
 
 void schedule_thread_wait(void);
