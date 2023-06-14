@@ -15,6 +15,8 @@ private:
     int width;
     int height;
 
+    int color;
+
     int windowID;
 public:
     Window(const char *w_name, int xPos, int yPos, int width, int height);
@@ -26,6 +28,10 @@ public:
     int getYPos(void);
     int getWidth(void);
     int getHeight(void);
+    int getColor(void);
+
+    void setXPos(int xPos);
+    void setYPos(int yPos);
 
     void windowPaint(uint32_t color);
 };

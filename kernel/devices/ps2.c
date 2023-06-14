@@ -14,7 +14,7 @@
 #define PS2_STATUS_OUTPUT_BUF           0x1
 #define PS2_STATUS_INPUT_BUF            0x2
 
-#define QUEUE_SIZE                      100
+#define QUEUE_SIZE                      200
 
 extern void *ISR_keyboard[];
 extern void *ISR_mouse[];

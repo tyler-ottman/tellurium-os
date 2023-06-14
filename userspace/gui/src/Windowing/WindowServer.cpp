@@ -48,12 +48,13 @@ Window *WindowServer::removeWindow(int windowID) {
     }
 
     Window *window = this->windows[windowID];
-    window->setWindowID(-1);
 
     for (int i = windowID; i < this->numWindows - 1; i++) {
         this->windows[i] = this->windows[i + 1];
+        this->windows[i]->setWindowID(i);
     }
-
+    
+    this->windows[this->numWindows - 1] = nullptr;
     this->numWindows--;
 
     return window;
@@ -73,42 +74,60 @@ void WindowServer::fillBackground() {
 void WindowServer::refreshScreen() {
     this->fillBackground();
 
-    int tmp_counter = 1;
     for (Window *window : this->windows) {
         if (window) {
-            window->windowPaint(300 * tmp_counter++);
+            window->windowPaint(window->getColor());
         }
     }
 
-    this->context->drawRect(this->xPos, this->yPos, 10, 10, 0xffffffff);
+    this->context->drawRect(this->mouseXPos, this->mouseYPos, 10, 10,
+                            0xffffffff);
 }
 
 void WindowServer::mouseHandle(Device::MouseData *data) {
     this->updateMousePos(data);
 
     bool newMouseState = data->flags & 0x1;
-    if (newMouseState && !this->oldLeftState) {
-        for (int i = this->numWindows - 1; i >= 0; i--) {
-            Window *window = this->windows[i];
+    if (newMouseState) {
+        if (!this->oldLeftState) {
+            for (int i = this->numWindows - 1; i >= 0; i--) {
+                Window *window = this->windows[i];
 
-            if (this->mouseInBounds(window)) {
-                this->removeWindow(window->getWindowID());
-                this->appendWindow(window);
+                if (this->mouseInBounds(window)) {
+                    this->removeWindow(window->getWindowID());
+                    this->appendWindow(window);
 
-                break;
+                    this->dragX = data->delta_x + window->getXPos();
+                    this->dragY = data->delta_y + window->getYPos();
+                    this->selectedWindow = window;
+
+                    break;
+                }
             }
         }
+    } else {
+        this->selectedWindow = nullptr;
+    }
+
+    if (this->selectedWindow) {
+        selectedWindow->setXPos(selectedWindow->getXPos() + data->delta_x);
+        selectedWindow->setYPos(selectedWindow->getYPos() - data->delta_y);
     }
 
     this->oldLeftState = newMouseState;
 
-    this->refreshScreen();
+    if (this->nEvents++ == 15) {
+        this->refreshScreen();
+        this->nEvents = 0;
+    }
 }
 
 WindowServer::WindowServer()
     : maxWindows(WINDOW_MAX),
       isImgLoaded(false),
       oldLeftState(false),
+      selectedWindow(nullptr),
+      nEvents(0),
       numWindows(0) {
 
     for (int i = 0; i < this->maxWindows; i++) {
@@ -118,8 +137,8 @@ WindowServer::WindowServer()
     this->context = GUI::FbContext::getInstance();
 
     FbMeta *meta = this->context->getFbContext();
-    this->xPos = meta->fb_width / 2;
-    this->yPos = meta->fb_height / 2;
+    this->mouseXPos = meta->fb_width / 2;
+    this->mouseYPos = meta->fb_height / 2;
 }
 
 WindowServer::~WindowServer() {
@@ -127,24 +146,24 @@ WindowServer::~WindowServer() {
 }
 
 void WindowServer::updateMousePos(Device::MouseData *data) {
-    int xNewPos = this->xPos + data->delta_x;
-    int yNewPos = this->yPos - data->delta_y;
+    int xNewPos = this->mouseXPos + data->delta_x;
+    int yNewPos = this->mouseYPos - data->delta_y;
 
     FbMeta *meta = this->context->getFbContext();
     if (xNewPos >= 0 && xNewPos < (int)meta->fb_width) {
-        this->xPos = xNewPos;
+        this->mouseXPos = xNewPos;
     }
 
     if (yNewPos >= 0 && yNewPos < (int)meta->fb_height) {
-        this->yPos = yNewPos;
+        this->mouseYPos = yNewPos;
     }
 }
 
 bool WindowServer::mouseInBounds(Window *window) {
-    return ((this->xPos >= window->getXPos()) &&
-            (this->xPos <= (window->getXPos() + window->getWidth())) &&
-            (this->yPos >= window->getYPos()) &&
-            (this->yPos <= (window->getYPos() + window->getHeight())));
+    return ((this->mouseXPos >= window->getXPos()) &&
+            (this->mouseXPos <= (window->getXPos() + window->getWidth())) &&
+            (this->mouseYPos >= window->getYPos()) &&
+            (this->mouseYPos <= (window->getYPos() + window->getHeight())));
 }
 
 }

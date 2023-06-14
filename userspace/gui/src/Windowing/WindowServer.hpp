@@ -36,9 +36,17 @@ private:
     bool isImgLoaded;
 
     // Mouse data
-    int xPos;
-    int yPos;
+    int mouseXPos;
+    int mouseYPos;
     bool oldLeftState;
+
+    // Selected window data
+    int dragX;
+    int dragY;
+    Window *selectedWindow;
+
+    // Event counter to facilitate refresh rate
+    int nEvents;
 
     int numWindows;
     Window *windows[WINDOW_MAX];
