@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "Windowing/Rect.hpp"
 
 namespace GUI {
 
@@ -24,7 +25,7 @@ public:
     static FbContext *getInstance(void);
 
     FbMeta *getFbContext(void);
-    void drawRect(int x_pos, int y_pos, int width, int heightin,
+    void drawRect(int x_pos, int y_pos, int width, int height,
                   uint32_t color);
 };
 

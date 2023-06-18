@@ -7,7 +7,7 @@ namespace GUI {
 
 class Window {
 
-private:
+protected:
     char *windowName;
 
     int xPos;
