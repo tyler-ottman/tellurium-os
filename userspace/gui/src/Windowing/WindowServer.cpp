@@ -55,8 +55,7 @@ Window *WindowServer::removeWindow(int windowID) {
         this->windows[i]->setWindowID(i);
     }
     
-    this->windows[this->numWindows - 1] = nullptr;
-    this->numWindows--;
+    this->windows[--this->numWindows] = nullptr;
 
     return window;
 }
@@ -64,8 +63,7 @@ Window *WindowServer::removeWindow(int windowID) {
 void WindowServer::fillBackground() {
     if (!this->isImgLoaded) {
         FbMeta *meta = context->getFbContext();
-        context->drawRect(0, 0, meta->fb_width, meta->fb_height,
-                          DEFAULT_COLOR);
+        context->drawRect(0, 0, meta->fb_width, meta->fb_height, DEFAULT_COLOR);
         return;
     }
 
@@ -73,33 +71,54 @@ void WindowServer::fillBackground() {
 }
 
 void WindowServer::refreshScreen() {
-    // this->fillBackground();
+    context->resetClippedList();
 
-    // for (Window *window : this->windows) {
-    //     if (window) {
-    //         window->windowPaint(window->getColor());
-    //     }
-    // }
+    Rect desktop(0, context->getFbContext()->fb_height - 1, 0,
+                 context->getFbContext()->fb_width - 1);
+    context->addClippedRect(&desktop);
 
     for (int i = 0; i < numWindows; i++) {
         Window *win = windows[i];
+
         Rect rect(win->getYPos(), win->getYPos() + win->getHeight() - 1,
                   win->getXPos(), win->getXPos() + win->getWidth() - 1);
 
-        addClippedRect(&rect);
+        context->reshapeRegion(&rect);
     }
 
-    for (int i = 0; i < numRegions; i++) {
-        Rect *rect = &clippedRects[i];
+    context->drawRect(0, 0, context->getFbContext()->fb_width,
+                      context->getFbContext()->fb_height, 0x006769);
 
-        context->drawRect(rect->getLeft(), rect->getTop(),
-                          rect->getRight() - rect->getLeft() + 1,
-                          rect->getBottom() - rect->getTop() + 1,
-                          0xFF00FF00);
+    context->resetClippedList();
+
+    for (int i = 0; i < numWindows; i++) {
+        Window *win = windows[i];
+
+        Rect rect(win->getYPos(), win->getYPos() + win->getHeight() - 1,
+                  win->getXPos(), win->getXPos() + win->getWidth() - 1);
+        context->addClippedRect(&rect);
+
+        while (numWindows) {
+            
+        }
     }
 
     this->context->drawRect(this->mouseXPos, this->mouseYPos, 10, 10,
                             0xffffffff);
+
+    // for (int i = 0; i < numWindows; i++) {
+    //     Window *win = windows[i];
+
+    //     Rect rect(win->getYPos(), win->getYPos() + win->getHeight() - 1,
+    //               win->getXPos(), win->getXPos() + win->getWidth() - 1);
+
+    //     context->addClippedRect(&rect);
+    // }
+
+    // context->drawClippedRegions();
+
+    // this->context->drawRect(this->mouseXPos, this->mouseYPos, 10, 10,
+    //                         0xffffffff);
 }
 
 void WindowServer::mouseHandle(Device::MouseData *data) {
@@ -115,8 +134,6 @@ void WindowServer::mouseHandle(Device::MouseData *data) {
                     this->removeWindow(window->getWindowID());
                     this->appendWindow(window);
 
-                    this->dragX = data->delta_x + window->getXPos();
-                    this->dragY = data->delta_y + window->getYPos();
                     this->selectedWindow = window;
 
                     break;
@@ -145,7 +162,6 @@ WindowServer::WindowServer()
       isImgLoaded(false),
       oldLeftState(false),
       selectedWindow(nullptr),
-      numRegions(0),
       nEvents(0),
       numWindows(0) {
 
@@ -158,63 +174,10 @@ WindowServer::WindowServer()
     FbMeta *meta = this->context->getFbContext();
     this->mouseXPos = meta->fb_width / 2;
     this->mouseYPos = meta->fb_height / 2;
-
-    clippedRects = new Rect[CLIPPED_MAX];
 }
 
 WindowServer::~WindowServer() {
 
-}
-
-void WindowServer::addClippedRect(Rect *rect) {
-    for (int i = 0; i < numRegions; i++) {
-        Rect *clipped = &clippedRects[i];
-
-        if (!clipped->isIntersect(rect)) {
-            continue;
-        }
-
-        // Update and split selected clipped region
-        removeClippedRect(i);
-
-        Rect splitRects[4];
-        int count = clipped->split(splitRects, rect);
-
-        for (int j = 0; j < count; j++) {
-            appendClippedRect(&splitRects[j]);
-        }
-
-        i = 0;
-    }
-
-    appendClippedRect(rect);
-}
-
-void WindowServer::appendClippedRect(Rect *rect) {
-    if (numRegions >= CLIPPED_MAX) {
-        return;
-    }
-
-    for (int i = 0; i < CLIPPED_MAX; i++) {
-        if (clippedRects[i].isFree()) {
-            clippedRects[i] = *rect;
-            break;
-        }
-    }
-}
-
-void WindowServer::removeClippedRect(int index) {
-    if (index < 0 || index >= numRegions) {
-        return;
-    }
-
-    clippedRects[--numRegions].reset();
-}
-
-void WindowServer::resetClipList() {
-    for (int i = 0; i < CLIPPED_MAX; i++) {
-        clippedRects[i].reset();
-    }
 }
 
 void WindowServer::updateMousePos(Device::MouseData *data) {

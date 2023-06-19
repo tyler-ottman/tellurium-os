@@ -15,7 +15,6 @@ public:
 
     bool isIntersect(Rect *rect);
     int split(Rect *splitRects, Rect *crossRect);
-    void reset(void);
 
     int getLeft(void);
     int getRight(void);
@@ -27,15 +26,11 @@ public:
     void setTop(int top);
     void setBottom(int bottom);
 
-    void setUsed(void);
-    bool isFree(void);
-
 private:
     int top;
     int bottom;
     int left;
     int right;
-    bool free;
 };
 
 }

@@ -3,9 +3,9 @@
 namespace GUI {
 
 Rect::Rect(int top, int bottom, int left, int right)
-    : top(top), bottom(bottom), left(left), right(right), free(false) {}
+    : top(top), bottom(bottom), left(left), right(right) {}
 
-Rect::Rect() : free(false) {
+Rect::Rect() {
 
 }
 
@@ -18,7 +18,6 @@ Rect::Rect(Rect &rect) {
     this->bottom = rect.getBottom();
     this->left = rect.getLeft();
     this->right = rect.getRight();
-    this->free = false;
 }
 
 bool Rect::isIntersect(Rect *rect) {
@@ -28,10 +27,11 @@ bool Rect::isIntersect(Rect *rect) {
 
 int Rect::split(Rect *splitRects, Rect *cutRect) {
     int numRegions = 0;
-    Rect thisCopy(top, bottom, left, right);
+    // Rect thisCopy(top, bottom, left, right);
+    Rect thisCopy = *this;
 
-    if (getLeft() > cutRect->getLeft() &&
-        getLeft() <= cutRect->getRight()) {
+    if (cutRect->getLeft() >= thisCopy.getLeft() &&
+        cutRect->getLeft() <= thisCopy.getRight()) {
         Rect clippedRegion(thisCopy.getTop(), thisCopy.getBottom(),
                            thisCopy.getLeft(), cutRect->getLeft() - 1);
 
@@ -73,10 +73,6 @@ int Rect::split(Rect *splitRects, Rect *cutRect) {
     return numRegions;
 }
 
-void Rect::reset() {
-    free = true;
-}
-
 int Rect::getLeft() {
     return left;
 }
@@ -107,10 +103,6 @@ void Rect::setTop(int top) {
 
 void Rect::setBottom(int bottom) {
     this->bottom = bottom;
-}
-
-bool Rect::isFree() {
-    return free;
 }
 
 }

@@ -70,8 +70,8 @@ void Window::windowPaint(uint32_t color) {
         return;
     }
 
-    fbContext->drawRect(this->xPos, this->yPos, this->width, this->height,
-                        color);
+    // fbContext->drawRect(this->xPos, this->yPos, this->width, this->height,
+    //                     color);
 }
 
 }

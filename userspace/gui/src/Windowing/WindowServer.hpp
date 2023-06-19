@@ -7,7 +7,6 @@
 #include "Windowing/Window.hpp"
 
 #define WINDOW_MAX                          10
-#define CLIPPED_MAX                         100
 #define DEFAULT_COLOR                       0x00000000 // 0xed872d
 
 namespace GUI {
@@ -29,11 +28,6 @@ public:
 private:
     WindowServer();
     ~WindowServer();
-    
-    void addClippedRect(Rect *rect);
-    void appendClippedRect(Rect *rect);
-    void removeClippedRect(int index);
-    void resetClipList(void);
 
     void updateMousePos(Device::MouseData *data);
     bool mouseInBounds(Window *window);
@@ -48,13 +42,7 @@ private:
     Window *mouseWindow;
 
     // Selected window data
-    int dragX;
-    int dragY;
     Window *selectedWindow;
-
-    // Clipped region info
-    int numRegions;
-    Rect *clippedRects;
 
     // Event counter to facilitate refresh rate
     int nEvents;
