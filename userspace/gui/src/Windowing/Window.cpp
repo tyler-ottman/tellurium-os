@@ -10,22 +10,36 @@ uint8_t pseudo_rand_8() {
 
 namespace GUI {
 
-Window::Window(const char *w_name, int xPos, int yPos, int width, int height) {
-    this->xPos = xPos;
-    this->yPos = yPos;
-    this->width = width;
-    this->height = height;
+void Window::updateRect() {
+    Rect::setTop(y);
+    Rect::setBottom(y + height - 1);
+    Rect::setLeft(x);
+    Rect::setRight(x + width - 1);
+}
 
-    this->color = 0xff000000 |
-                  pseudo_rand_8() << 16 |
-                  pseudo_rand_8() << 8 |
+Window::Window(const char *w_name, int x, int y, int width, int height)
+    : x(x), y(y), width(width), height(height) {
+    this->color = 0xff000000 | pseudo_rand_8() << 16 | pseudo_rand_8() << 8 |
                   pseudo_rand_8();
 
     this->windowName = new char[__strlen(w_name)];
+
+    updateRect();
 }
 
 Window::~Window() {
 
+}
+
+bool Window::isIntersect(Rect *rect) {
+    return Rect::isIntersect(rect);
+}
+
+void Window::updatePosition(int xNew, int yNew) {
+    x = xNew;
+    y = yNew;
+
+    updateRect();
 }
 
 void Window::setWindowID(int windowID) {
@@ -37,11 +51,11 @@ int  Window::getWindowID() {
 }
 
 int Window::getXPos() {
-    return this->xPos;
+    return this->x;
 }
 
 int Window::getYPos() {
-    return this->yPos;
+    return this->y;
 }
 
 int Window::getWidth() {
@@ -56,22 +70,22 @@ int Window::getColor() {
     return this->color;
 }
 
-void Window::setXPos(int xPos) {
-    this->xPos = xPos;
+void Window::setXPos(int x) {
+    this->x = x;
 }
 
-void Window::setYPos(int yPos) {
-    this->yPos = yPos;
+void Window::setYPos(int y) {
+    this->y = y;
 }
 
-void Window::windowPaint(uint32_t color) {
+void Window::windowPaint() {
     GUI::FbContext *fbContext = GUI::FbContext::getInstance();
     if (fbContext == nullptr) {
         return;
     }
 
-    // fbContext->drawRect(this->xPos, this->yPos, this->width, this->height,
-    //                     color);
+    fbContext->drawRect(this->x, this->y, this->width, this->height,
+                        this->color);
 }
 
 }

@@ -27,7 +27,6 @@ bool Rect::isIntersect(Rect *rect) {
 
 int Rect::split(Rect *splitRects, Rect *cutRect) {
     int numRegions = 0;
-    // Rect thisCopy(top, bottom, left, right);
     Rect thisCopy = *this;
 
     if (cutRect->getLeft() >= thisCopy.getLeft() &&

@@ -23,7 +23,7 @@ Window *WindowServer::createWindow(const char *w_name, int x_pos, int y_pos,
         return window;
     }
 
-    if (!this->appendWindow(window)) {
+    if (!appendWindow(window)) {
         delete window;
         return nullptr;
     }
@@ -32,36 +32,36 @@ Window *WindowServer::createWindow(const char *w_name, int x_pos, int y_pos,
 }
 
 Window *WindowServer::appendWindow(Window *window) {
-    if (this->numWindows == WINDOW_MAX) {
+    if (numWindows == WINDOW_MAX) {
         return nullptr;
     }
 
-    int windowID = this->numWindows++;
-    this->windows[windowID] = window;
+    int windowID = numWindows++;
+    windows[windowID] = window;
     window->setWindowID(windowID);
 
     return window;
 }
 
 Window *WindowServer::removeWindow(int windowID) {
-    if (windowID < 0 || windowID >= this->numWindows) {
+    if (windowID < 0 || windowID >= numWindows) {
         return nullptr;
     }
 
-    Window *window = this->windows[windowID];
+    Window *window = windows[windowID];
 
-    for (int i = windowID; i < this->numWindows - 1; i++) {
-        this->windows[i] = this->windows[i + 1];
-        this->windows[i]->setWindowID(i);
+    for (int i = windowID; i < numWindows - 1; i++) {
+        windows[i] = windows[i + 1];
+        windows[i]->setWindowID(i);
     }
     
-    this->windows[--this->numWindows] = nullptr;
+    windows[--numWindows] = nullptr;
 
     return window;
 }
 
 void WindowServer::fillBackground() {
-    if (!this->isImgLoaded) {
+    if (!isImgLoaded) {
         FbMeta *meta = context->getFbContext();
         context->drawRect(0, 0, meta->fb_width, meta->fb_height, DEFAULT_COLOR);
         return;
@@ -77,6 +77,7 @@ void WindowServer::refreshScreen() {
                  context->getFbContext()->fb_width - 1);
     context->addClippedRect(&desktop);
 
+    // Calculate clipping for background
     for (int i = 0; i < numWindows; i++) {
         Window *win = windows[i];
 
@@ -86,74 +87,69 @@ void WindowServer::refreshScreen() {
         context->reshapeRegion(&rect);
     }
 
+    // Draw background
     context->drawRect(0, 0, context->getFbContext()->fb_width,
                       context->getFbContext()->fb_height, 0x006769);
-
     context->resetClippedList();
 
+    // Calculate clipping for each window
     for (int i = 0; i < numWindows; i++) {
         Window *win = windows[i];
 
-        Rect rect(win->getYPos(), win->getYPos() + win->getHeight() - 1,
-                  win->getXPos(), win->getXPos() + win->getWidth() - 1);
-        context->addClippedRect(&rect);
+        context->addClippedRect((Rect *)win);
+        
+        for (int j = win->getWidth() + 1; j < numWindows; j++) {
+            Window *aboveWin = windows[j];
 
-        while (numWindows) {
-            
+            if (win->isIntersect((Rect *)aboveWin)) {
+                context->reshapeRegion((Rect *)aboveWin);
+            }
         }
+
+        win->windowPaint();
+
+        context->resetClippedList();
     }
 
-    this->context->drawRect(this->mouseXPos, this->mouseYPos, 10, 10,
-                            0xffffffff);
-
-    // for (int i = 0; i < numWindows; i++) {
-    //     Window *win = windows[i];
-
-    //     Rect rect(win->getYPos(), win->getYPos() + win->getHeight() - 1,
-    //               win->getXPos(), win->getXPos() + win->getWidth() - 1);
-
-    //     context->addClippedRect(&rect);
-    // }
-
-    // context->drawClippedRegions();
-
-    // this->context->drawRect(this->mouseXPos, this->mouseYPos, 10, 10,
-    //                         0xffffffff);
+    // Draw mouse
+    context->drawRect(mouseXPos, mouseYPos, 10, 10, 0xffffffff);
 }
 
 void WindowServer::mouseHandle(Device::MouseData *data) {
-    this->updateMousePos(data);
+    updateMousePos(data);
 
     bool newMouseState = data->flags & 0x1;
     if (newMouseState) {
-        if (!this->oldLeftState) {
-            for (int i = this->numWindows - 1; i >= 0; i--) {
-                Window *window = this->windows[i];
+        if (!oldLeftState) {
+            for (int i = numWindows - 1; i >= 0; i--) {
+                Window *window = windows[i];
 
-                if (this->mouseInBounds(window)) {
-                    this->removeWindow(window->getWindowID());
-                    this->appendWindow(window);
+                if (mouseInBounds(window)) {
+                    removeWindow(window->getWindowID());
+                    appendWindow(window);
 
-                    this->selectedWindow = window;
+                    selectedWindow = window;
 
                     break;
                 }
             }
         }
     } else {
-        this->selectedWindow = nullptr;
+        selectedWindow = nullptr;
     }
 
-    if (this->selectedWindow) {
-        selectedWindow->setXPos(selectedWindow->getXPos() + data->delta_x);
-        selectedWindow->setYPos(selectedWindow->getYPos() - data->delta_y);
+    
+    if (selectedWindow) {
+        selectedWindow->updatePosition(
+            selectedWindow->getXPos() + data->delta_x,
+            selectedWindow->getYPos() - data->delta_y);
     }
 
-    this->oldLeftState = newMouseState;
+    oldLeftState = newMouseState;
 
-    if (this->nEvents++ == 15) {
-        this->refreshScreen();
-        this->nEvents = 0;
+    if (nEvents++ == 15) {
+        refreshScreen();
+        nEvents = 0;
     }
 }
 
@@ -165,15 +161,15 @@ WindowServer::WindowServer()
       nEvents(0),
       numWindows(0) {
 
-    for (int i = 0; i < this->maxWindows; i++) {
-        this->windows[i] = nullptr;
+    for (int i = 0; i < maxWindows; i++) {
+        windows[i] = nullptr;
     }
 
-    this->context = GUI::FbContext::getInstance();
+    context = GUI::FbContext::getInstance();
 
-    FbMeta *meta = this->context->getFbContext();
-    this->mouseXPos = meta->fb_width / 2;
-    this->mouseYPos = meta->fb_height / 2;
+    FbMeta *meta = context->getFbContext();
+    mouseXPos = meta->fb_width / 2;
+    mouseYPos = meta->fb_height / 2;
 }
 
 WindowServer::~WindowServer() {
@@ -181,24 +177,24 @@ WindowServer::~WindowServer() {
 }
 
 void WindowServer::updateMousePos(Device::MouseData *data) {
-    int xNewPos = this->mouseXPos + data->delta_x;
-    int yNewPos = this->mouseYPos - data->delta_y;
+    int xNewPos = mouseXPos + data->delta_x;
+    int yNewPos = mouseYPos - data->delta_y;
 
-    FbMeta *meta = this->context->getFbContext();
+    FbMeta *meta = context->getFbContext();
     if (xNewPos >= 0 && xNewPos < (int)meta->fb_width) {
-        this->mouseXPos = xNewPos;
+        mouseXPos = xNewPos;
     }
 
     if (yNewPos >= 0 && yNewPos < (int)meta->fb_height) {
-        this->mouseYPos = yNewPos;
+        mouseYPos = yNewPos;
     }
 }
 
 bool WindowServer::mouseInBounds(Window *window) {
-    return ((this->mouseXPos >= window->getXPos()) &&
-            (this->mouseXPos <= (window->getXPos() + window->getWidth())) &&
-            (this->mouseYPos >= window->getYPos()) &&
-            (this->mouseYPos <= (window->getYPos() + window->getHeight())));
+    return ((mouseXPos >= window->getXPos()) &&
+            (mouseXPos <= (window->getXPos() + window->getWidth())) &&
+            (mouseYPos >= window->getYPos()) &&
+            (mouseYPos <= (window->getYPos() + window->getHeight())));
 }
 
 }

@@ -5,22 +5,27 @@
 
 namespace GUI {
 
-class Window {
+class Window: public Rect {
 
 protected:
     char *windowName;
 
-    int xPos;
-    int yPos;
+    int x;
+    int y;
     int width;
     int height;
 
     int color;
 
     int windowID;
+    void updateRect(void);
+
 public:
-    Window(const char *w_name, int xPos, int yPos, int width, int height);
+    Window(const char *name, int x, int y, int width, int height);
     ~Window();
+
+    bool isIntersect(Rect *rect);
+    void updatePosition(int xNew, int yNew);
 
     void setWindowID(int windowID);
     int getWindowID(void);
@@ -30,10 +35,10 @@ public:
     int getHeight(void);
     int getColor(void);
 
-    void setXPos(int xPos);
-    void setYPos(int yPos);
+    void setXPos(int x);
+    void setYPos(int y);
 
-    void windowPaint(uint32_t color);
+    void windowPaint(void);
 };
 
 }
