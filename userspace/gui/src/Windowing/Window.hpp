@@ -24,7 +24,8 @@ public:
     Window(const char *name, int x, int y, int width, int height);
     ~Window();
 
-    bool isIntersect(Rect *rect);
+    bool intersects(Rect *rect);
+
     void updatePosition(int xNew, int yNew);
 
     void setWindowID(int windowID);

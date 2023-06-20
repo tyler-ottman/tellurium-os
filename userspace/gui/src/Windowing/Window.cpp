@@ -31,8 +31,8 @@ Window::~Window() {
 
 }
 
-bool Window::isIntersect(Rect *rect) {
-    return Rect::isIntersect(rect);
+bool Window::intersects(Rect *rect) {
+    return Rect::intersects(rect);
 }
 
 void Window::updatePosition(int xNew, int yNew) {

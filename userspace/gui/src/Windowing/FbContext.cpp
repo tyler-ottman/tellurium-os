@@ -59,6 +59,22 @@ void FbContext::drawClippedRect(int x, int y, int width, int height,
     if (xMax > area->getRight() + 1) {
         xMax = area->getRight() + 1;
     }
+
+    if (area->getLeft() < 0) {
+        x = 0;
+    }
+
+    if (area->getRight() > screen->getRight()) {
+        xMax = screen->getRight();
+    }
+
+    if (area->getTop() < 0) {
+        y = 0;
+    }
+
+    if (area->getBottom() > screen->getBottom()) {
+        yMax = screen->getBottom();
+    }
     
     for (int i = y; i < yMax; i++) {
         for (int j = x; j < xMax; j++) {
@@ -103,7 +119,7 @@ void FbContext::reshapeRegion(Rect *rect) {
     for (int i = 0; i < numRegions; i++) {
         Rect *clipped = &clippedRects[i];
 
-        if (!clipped->isIntersect(rect)) {
+        if (!clipped->intersects(rect)) {
             continue;
         }
 

@@ -13,7 +13,8 @@ public:
     ~Rect();
     Rect(Rect &rect);
 
-    bool isIntersect(Rect *rect);
+    bool intersects(Rect *rect);
+    bool contains(Rect *rect);
     int split(Rect *splitRects, Rect *crossRect);
 
     int getLeft(void);

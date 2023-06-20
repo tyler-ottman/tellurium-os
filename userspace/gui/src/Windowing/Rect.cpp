@@ -20,9 +20,16 @@ Rect::Rect(Rect &rect) {
     this->right = rect.getRight();
 }
 
-bool Rect::isIntersect(Rect *rect) {
+bool Rect::intersects(Rect *rect) {
     return (left <= rect->getRight() && right >= rect->getLeft() &&
             top <= rect->getBottom() && bottom >= rect->getTop());
+}
+
+bool Rect::contains(Rect *rect) {
+    return (top <= rect->getTop() && top < rect->getBottom() &&
+            bottom >= rect->getBottom() && bottom > rect->getTop() &&
+            left <= rect->getLeft() && left < rect->getRight() &&
+            right >= rect->getRight() && right > rect->getLeft());
 }
 
 int Rect::split(Rect *splitRects, Rect *cutRect) {

@@ -79,12 +79,7 @@ void WindowServer::refreshScreen() {
 
     // Calculate clipping for background
     for (int i = 0; i < numWindows; i++) {
-        Window *win = windows[i];
-
-        Rect rect(win->getYPos(), win->getYPos() + win->getHeight() - 1,
-                  win->getXPos(), win->getXPos() + win->getWidth() - 1);
-
-        context->reshapeRegion(&rect);
+        context->reshapeRegion((Rect *)windows[i]);
     }
 
     // Draw background
@@ -95,19 +90,16 @@ void WindowServer::refreshScreen() {
     // Calculate clipping for each window
     for (int i = 0; i < numWindows; i++) {
         Window *win = windows[i];
-
         context->addClippedRect((Rect *)win);
         
         for (int j = win->getWidth() + 1; j < numWindows; j++) {
             Window *aboveWin = windows[j];
-
-            if (win->isIntersect((Rect *)aboveWin)) {
+            if (win->intersects((Rect *)aboveWin)) {
                 context->reshapeRegion((Rect *)aboveWin);
             }
         }
 
         win->windowPaint();
-
         context->resetClippedList();
     }
 
