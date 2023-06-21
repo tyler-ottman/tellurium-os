@@ -20,6 +20,36 @@ Rect::Rect(Rect &rect) {
     this->right = rect.getRight();
 }
 
+bool Rect::intersect(Rect *res, Rect *rect) {
+    if (!(left <= rect->getRight() && right >= rect->getLeft() &&
+          top <= rect->getBottom() && bottom >= rect->getTop())) {
+        return false;
+    }
+
+    *res = *this;
+
+    if (rect->getLeft() >= res->getLeft() &&
+        rect->getLeft() <= res->getRight()) {
+        res->setLeft(rect->getLeft());
+    }
+
+    if (rect->getTop() >= res->getTop() && rect->getTop() <= res->getBottom()) {
+        res->setTop(rect->getTop());
+    }
+
+    if (rect->getRight() >= res->getLeft() &&
+        rect->getRight() <= res->getRight()) {
+        res->setRight(rect->getRight());
+    }
+
+    if (rect->getBottom() >= res->getTop() &&
+        rect->getBottom() <= res->getBottom()) {
+        res->setBottom(rect->getBottom());
+    }
+
+    return true;
+}
+
 bool Rect::intersects(Rect *rect) {
     return (left <= rect->getRight() && right >= rect->getLeft() &&
             top <= rect->getBottom() && bottom >= rect->getTop());

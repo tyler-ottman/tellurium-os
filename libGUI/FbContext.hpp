@@ -33,6 +33,7 @@ public:
     void removeClippedRect(int index);
     void resetClippedList(void);
     void drawClippedRegions(void);
+    void intersectClippedRect(Rect *rect);
 
     int getRegions(void) {return numRegions;}
 private:

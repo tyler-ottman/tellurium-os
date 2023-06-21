@@ -178,4 +178,18 @@ void FbContext::drawClippedRegions() {
     }
 }
 
+void FbContext::intersectClippedRect(Rect *rect) {
+    // resetClippedList();
+
+    for (int i = 0; i < numRegions; i++) {
+        Rect *currentRect = &clippedRects[i];
+        Rect intersectRect;
+
+        bool ret = currentRect->intersect(&intersectRect, rect);
+        if (ret) {
+            appendClippedRect(&intersectRect);
+        }
+    }
+}
+
 }

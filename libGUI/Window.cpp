@@ -17,18 +17,115 @@ void Window::updateRect() {
     Rect::setRight(x + width - 1);
 }
 
-Window::Window(const char *w_name, int x, int y, int width, int height)
-    : x(x), y(y), width(width), height(height) {
-    this->color = 0xff000000 | pseudo_rand_8() << 16 | pseudo_rand_8() << 8 |
+Window::Window(const char *w_name, int x, int y, int width, int height,
+               uint16_t flags)
+    : x(x),
+      y(y),
+      width(width),
+      height(height),
+      flags(flags),
+      lastMouseState(0),
+      windowID(-1),
+      context(FbContext::getInstance()),
+      parent(nullptr),
+      maxWindows(WINDOW_MAX),
+      numWindows(0),
+      selectedWindow(nullptr),
+      dragX(0),
+      dragY(0) {
+    color = 0xff000000 | pseudo_rand_8() << 16 | pseudo_rand_8() << 8 |
                   pseudo_rand_8();
 
     this->windowName = new char[__strlen(w_name)];
+
+    for (int i = 0; i < maxWindows; i++) {
+        windows[i] = nullptr;
+    }
 
     updateRect();
 }
 
 Window::~Window() {
 
+}
+
+Window *Window::createWindow(const char *w_name, int x_pos, int y_pos,
+                                   int width, int height) {
+    Window *window = new Window(w_name, x_pos, y_pos, width, height, 0);
+    if (!window) {
+        return window;
+    }
+
+    if (!appendWindow(window)) {
+        delete window;
+        return nullptr;
+    }
+
+    return window;
+}
+
+Window *Window::appendWindow(Window *window) {
+    if (numWindows == WINDOW_MAX) {
+        return nullptr;
+    }
+
+    int windowID = numWindows++;
+    windows[windowID] = window;
+    window->setWindowID(windowID);
+
+    return window;
+}
+
+Window *Window::removeWindow(int windowID) {
+    if (windowID < 0 || windowID >= numWindows) {
+        return nullptr;
+    }
+
+    Window *window = windows[windowID];
+
+    for (int i = windowID; i < numWindows - 1; i++) {
+        windows[i] = windows[i + 1];
+        windows[i]->setWindowID(i);
+    }
+    
+    windows[--numWindows] = nullptr;
+
+    return window;
+}
+
+void Window::applyBoundClipping(bool recurse) {
+    int screenX = getXPos();
+    int screenY = getYPos();
+
+    Rect rect;
+
+    if ((!(flags & WIN_NODECORATION)) && recurse) {
+        screenX += WIN_BORDERWIDTH;
+        screenY += WIN_TITLEHEIGHT;
+        rect = Rect(screenY,
+                    screenY + height - WIN_TITLEHEIGHT - WIN_BORDERWIDTH - 1,
+                    screenX, screenX + width - (2 * WIN_BORDERWIDTH) - 1);
+    } else {
+        rect =
+            Rect(screenY, screenY + height - 1, screenX, screenX + width - 1);
+    }
+
+    if (!parent) {
+        context->addClippedRect(&rect);
+        return;
+    }
+
+    parent->applyBoundClipping(true);
+
+    context->intersectClippedRect(&rect);
+
+    // Get list of windows that intersect above current window
+    for (int i = getWindowID() + 1; i < numWindows; i++) {
+        Window *aboveWin = windows[i];
+        if (intersects(aboveWin)) {
+            context->reshapeRegion(aboveWin);
+        }
+    }
 }
 
 bool Window::intersects(Rect *rect) {
@@ -51,11 +148,32 @@ int  Window::getWindowID() {
 }
 
 int Window::getXPos() {
-    return this->x;
+    // int xTranslate = 0;
+
+    // Window *curWindow = this;
+
+    // while(curWindow->parent) {
+    //     xTranslate += x;
+    //     curWindow = curWindow->parent;
+    // }
+
+    // return xTranslate;
+
+    return x;
 }
 
 int Window::getYPos() {
-    return this->y;
+    // int yTranslate = 0;
+
+    // Window *curWindow = this;
+
+    // while(curWindow->parent) {
+    //     yTranslate += y;
+    //     curWindow = curWindow->parent;
+    // }
+
+    // return yTranslate;
+    return y;
 }
 
 int Window::getWidth() {
@@ -79,13 +197,26 @@ void Window::setYPos(int y) {
 }
 
 void Window::windowPaint() {
-    GUI::FbContext *fbContext = GUI::FbContext::getInstance();
-    if (fbContext == nullptr) {
-        return;
+    applyBoundClipping(false);
+
+    if (!(flags & WIN_NODECORATION)) {
+        context->intersectClippedRect(this);
     }
 
-    fbContext->drawRect(this->x, this->y, this->width, this->height,
-                        this->color);
+    for (int i = 0; i < numWindows; i++) {
+        Window *child = windows[i];
+
+        context->reshapeRegion(child);
+    }
+
+    context->drawRect(x, y, width, height, color);
+
+    context->resetClippedList();
+    
+    // Call paint for child windows
+    for (int i = 0; i < numWindows; i++) {
+        windows[i]->windowPaint();
+    }
 }
 
 }

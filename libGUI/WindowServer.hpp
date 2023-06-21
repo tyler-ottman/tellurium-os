@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "ulibc/DevPoll.hpp"
+#include "libGUI/Desktop.hpp"
 #include "libGUI/FbContext.hpp"
 #include "libGUI/Window.hpp"
 
@@ -14,42 +15,19 @@ namespace GUI {
 class WindowServer {
 public:
     static WindowServer *getInstance();
-    Window *createWindow(const char *w_name, int x_pos, int y_pos, int width,
-                         int height);
 
-    Window *appendWindow(Window *window);
-    Window *removeWindow(int windowID);
-
-    void fillBackground(void);
     void refreshScreen(void);
-
     void mouseHandle(Device::MouseData *data);
 
+    void createWindow(const char *name, int x, int y, int width, int height);
 private:
     WindowServer();
     ~WindowServer();
 
-    void updateMousePos(Device::MouseData *data);
-    bool mouseInBounds(Window *window);
-
-    const int maxWindows;
-    bool isImgLoaded;
-
-    // Mouse data
-    int mouseXPos;
-    int mouseYPos;
-    bool oldLeftState;
-    Window *mouseWindow;
-
-    // Selected window data
-    Window *selectedWindow;
-
     // Event counter to facilitate refresh rate
     int nEvents;
 
-    int numWindows;
-    Window *windows[WINDOW_MAX];
-    FbContext *context;
+    Desktop *desktop;
 
     static WindowServer *instance;
 };
