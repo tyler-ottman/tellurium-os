@@ -1,4 +1,4 @@
-#include "Windowing/WindowServer.hpp"
+#include "libGUI/WindowServer.hpp"
 #include "ulibc/mem.hpp"
 #include "ulibc/string.h"
 

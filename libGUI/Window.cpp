@@ -1,7 +1,7 @@
 #include "ulibc/mem.hpp"
 #include "ulibc/string.h"
-#include "Windowing/FbContext.hpp"
-#include "Windowing/Window.hpp"
+#include "libGUI/FbContext.hpp"
+#include "libGUI/Window.hpp"
 
 uint8_t pseudo_rand_8() {
     static uint16_t seed = 0;

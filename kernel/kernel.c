@@ -73,5 +73,5 @@ void kmain(void *param) {
     vfs_print_tree(vfs_get_root(), 4);
 
     // Load GUI environment    
-    create_user_process("/tmp/gui.elf");
+    create_user_process("/tmp/testbench.elf");
 }

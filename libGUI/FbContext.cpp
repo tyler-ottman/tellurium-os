@@ -18,7 +18,7 @@ FbContext *FbContext::getInstance() {
     if (instance) {
         return instance;
     }
-
+    
     instance = new FbContext();
 
     syscall_get_fb_context(&instance->fb_meta);

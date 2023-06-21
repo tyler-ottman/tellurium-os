@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "Windowing/Rect.hpp"
+#include "Rect.hpp"
 
 #define CLIPPED_MAX                         200
 

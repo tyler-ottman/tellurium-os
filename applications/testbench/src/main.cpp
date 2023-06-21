@@ -1,6 +1,6 @@
-#include "Windowing/FbContext.hpp"
-#include "Windowing/Window.hpp"
-#include "Windowing/WindowServer.hpp"
+#include "libGUI/FbContext.hpp"
+#include "libGUI/Window.hpp"
+#include "libGUI/WindowServer.hpp"
 #include <stddef.h>
 #include <stdint.h>
 #include "ulibc/DevPoll.hpp"

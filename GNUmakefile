@@ -3,7 +3,9 @@ override MAKEFLAGS += -rR
 override IMAGE_NAME := tellurium
 override LIMINE_DIR := ../limine
 override KERNEL_DIR := kernel
-override USER_DIR := userspace
+override LIBGUI_DIR := libGUI
+override ULIBC_DIR := ulibc
+override APPS_DIR := applications
 
 .PHONY: all
 all: $(IMAGE_NAME).iso
@@ -15,16 +17,16 @@ all-hdd: $(IMAGE_NAME).hdd
 run: $(IMAGE_NAME).iso
 	qemu-system-x86_64 -M q35 -m 2G -cdrom $(IMAGE_NAME).iso -boot d
 
-.PHONY: $(KERNEL_DIR)
+.PHONY: $(KERNEL_DIR) $(APPS_DIR)
 kernel:
 	$(MAKE) -C $(KERNEL_DIR)
-	$(MAKE) -C $(USER_DIR)
+	$(MAKE) -C $(APPS_DIR)
 
 $(IMAGE_NAME).iso: $(KERNEL_DIR)
 	rm -rf iso_root
 	mkdir -p iso_root
 	cp $(KERNEL_DIR)/kernel.elf \
-		$(USER_DIR)/userspace.tar \
+		$(APPS_DIR)/userspace.tar \
 		limine.cfg \
         $(LIMINE_DIR)/limine.sys \
         $(LIMINE_DIR)/limine-cd.bin \
@@ -43,4 +45,6 @@ clean:
 	rm -rf iso_root $(IMAGE_NAME).iso
 	rm -f *.log
 	$(MAKE) -C $(KERNEL_DIR) clean
-	$(MAKE) -C $(USER_DIR) clean
+	$(MAKE) -C $(APPS_DIR) clean
+	$(MAKE) -C $(LIBGUI_DIR) clean
+	$(MAKE) -C $(ULIBC_DIR) clean

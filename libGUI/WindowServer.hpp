@@ -3,8 +3,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "ulibc/DevPoll.hpp"
-#include "Windowing/FbContext.hpp"
-#include "Windowing/Window.hpp"
+#include "libGUI/FbContext.hpp"
+#include "libGUI/Window.hpp"
 
 #define WINDOW_MAX                          10
 #define DEFAULT_COLOR                       0x00000000 // 0xed872d

@@ -1,4 +1,4 @@
-#include "Windowing/Rect.hpp"
+#include "Rect.hpp"
 
 namespace GUI {
 
