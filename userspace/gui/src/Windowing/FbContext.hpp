@@ -34,7 +34,7 @@ public:
     void resetClippedList(void);
     void drawClippedRegions(void);
 
-
+    int getRegions(void) {return numRegions;}
 private:
     // Clipped region info
     int numRegions;

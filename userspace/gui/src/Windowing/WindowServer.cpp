@@ -79,31 +79,40 @@ void WindowServer::refreshScreen() {
 
     // Calculate clipping for background
     for (int i = 0; i < numWindows; i++) {
-        context->reshapeRegion((Rect *)windows[i]);
+        context->reshapeRegion(windows[i]);
     }
 
     // Draw background
     context->drawRect(0, 0, context->getFbContext()->fb_width,
-                      context->getFbContext()->fb_height, 0x006769);
-    context->resetClippedList();
+                      context->getFbContext()->fb_height, 0);
 
     // Calculate clipping for each window
     for (int i = 0; i < numWindows; i++) {
+        context->resetClippedList();
+
         Window *win = windows[i];
-        context->addClippedRect((Rect *)win);
+        context->addClippedRect(win);
         
-        for (int j = win->getWidth() + 1; j < numWindows; j++) {
+        for (int j = win->getWindowID() + 1; j < numWindows; j++) {
             Window *aboveWin = windows[j];
-            if (win->intersects((Rect *)aboveWin)) {
-                context->reshapeRegion((Rect *)aboveWin);
+            if (win->intersects(aboveWin)) {
+                context->reshapeRegion(aboveWin);
             }
         }
 
-        win->windowPaint();
-        context->resetClippedList();
+        if (context->getRegions() != 0) {
+            win->windowPaint();
+        }
     }
 
+    // for (int i = 0; i < numWindows; i++) {
+    //     context->addClippedRect(windows[i]);
+    // }
+
+    // context->drawClippedRegions();
+
     // Draw mouse
+    context->resetClippedList();
     context->drawRect(mouseXPos, mouseYPos, 10, 10, 0xffffffff);
 }
 
@@ -139,7 +148,7 @@ void WindowServer::mouseHandle(Device::MouseData *data) {
 
     oldLeftState = newMouseState;
 
-    if (nEvents++ == 15) {
+    if (nEvents++ == 10) {
         refreshScreen();
         nEvents = 0;
     }

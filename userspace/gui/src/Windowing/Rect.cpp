@@ -26,15 +26,18 @@ bool Rect::intersects(Rect *rect) {
 }
 
 bool Rect::contains(Rect *rect) {
-    return (top <= rect->getTop() && top < rect->getBottom() &&
-            bottom >= rect->getBottom() && bottom > rect->getTop() &&
-            left <= rect->getLeft() && left < rect->getRight() &&
-            right >= rect->getRight() && right > rect->getLeft());
+    return (top <= rect->getTop() && bottom >= rect->getBottom() &&
+            left <= rect->getLeft() && right >= rect->getRight());
 }
 
 int Rect::split(Rect *splitRects, Rect *cutRect) {
     int numRegions = 0;
     Rect thisCopy = *this;
+
+    // if (cutRect->contains(&thisCopy)) {
+    //     splitRects[numRegions++] = *cutRect;
+    //     return numRegions;
+    // }
 
     if (cutRect->getLeft() >= thisCopy.getLeft() &&
         cutRect->getLeft() <= thisCopy.getRight()) {
