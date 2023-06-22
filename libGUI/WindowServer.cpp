@@ -17,7 +17,7 @@ WindowServer *WindowServer::getInstance() {
 }
 
 void WindowServer::refreshScreen() {
-    desktop->windowPaint();
+    desktop->drawWindow();
 }
 
 void WindowServer::mouseHandle(Device::MouseData *data) {
@@ -30,8 +30,8 @@ void WindowServer::mouseHandle(Device::MouseData *data) {
 }
 
 void WindowServer::createWindow(const char *name, int x, int y, int width,
-                                int height) {
-    desktop->createWindow(name, x, y, width, height);
+                                int height, uint16_t flags) {
+    desktop->createWindow(name, x, y, width, height, flags);
 }
 
 WindowServer::WindowServer() : nEvents(0) {

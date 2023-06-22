@@ -9,9 +9,7 @@ public:
     Desktop(void);
     ~Desktop();
 
-    
-
-    void windowPaint(void);
+    void drawWindow(void);
     void onMouseMove(Device::MouseData *data);
 
 private:

@@ -6,9 +6,11 @@ APPLICATIONS :=		\
 
 # Verify that user application's elf is name 'app.elf'
 all:
+	rm -f $(APP_TAR).tar
 	tar -cf $(APP_TAR).tar --files-from /dev/null
 	for app in $(APPLICATIONS); do		\
-		$(MAKE) -C $$app;				\
+		$(MAKE) -C $$app clean;				\
+		$(MAKE) -C $$app;					\
 		tar --append --file=$(APP_TAR).tar -C $$app/bin/ $$app.elf;	\
 	done
 

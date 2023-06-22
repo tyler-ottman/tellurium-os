@@ -6,7 +6,7 @@ Desktop::Desktop()
     : Window("desktop", 0, 0,
              FbContext::getInstance()->getFbContext()->fb_width,
              FbContext::getInstance()->getFbContext()->fb_height,
-             WIN_NODECORATION) {
+             0) {
     mouseX = width / 2;
     mouseY = height / 2;
 }
@@ -15,11 +15,11 @@ Desktop::~Desktop() {
 
 }
 
-void Desktop::windowPaint() {
-    Window::windowPaint();
+void Desktop::drawWindow() {
+    Window::drawWindow();
 
-    context->resetClippedList();
-    context->drawRect(mouseX, mouseY, 10, 10, 0xffffffff);
+    // Draw mouse
+    context->drawRectNoRegion(mouseX, mouseY, 10, 10, 0xffffffff);
 }
 
 void Desktop::onMouseMove(Device::MouseData *data) {

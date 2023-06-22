@@ -84,21 +84,26 @@ void FbContext::drawClippedRect(int x, int y, int width, int height,
 }
 
 void FbContext::drawRect(int x, int y, int width, int height, uint32_t color) {
-    if (numRegions) {
-        for (int i = 0; i < numRegions; i++) {
-            drawClippedRect(x, y, width, height, color, &clippedRects[i]);
-        }
-    } else {
-        drawClippedRect(x, y, width, height, color, screen);
+    for (int i = 0; i < numRegions; i++) {
+        drawClippedRect(x, y, width, height, color, &clippedRects[i]);
     }
 }
 
+void FbContext::drawRectNoRegion(int x, int y, int width, int height,
+                                 uint32_t color) {
+    drawClippedRect(x, y, width, height, color, screen);
+}
+
 void FbContext::drawVerticalLine(int xPos, int yPos, int length, int color) {
-    drawClippedRect(xPos, yPos, 1, length, color, screen);
+    for (int i = 0; i < numRegions; i++) {
+        drawClippedRect(xPos, yPos, 1, length, color, &clippedRects[i]);
+    }
 }
 
 void FbContext::drawHorizontalLine(int xPos, int yPos, int length, int color) {
-    drawClippedRect(xPos, yPos, length, 1, color, screen);
+    for (int i = 0; i < numRegions; i++) {
+        drawClippedRect(xPos, yPos, length, 1, color, &clippedRects[i]);
+    }
 }
 
 void FbContext::drawOutlinedRect(int xPos, int yPos, int width, int height,
@@ -139,6 +144,7 @@ void FbContext::reshapeRegion(Rect *rect) {
 
 void FbContext::appendClippedRect(Rect *rect) {
     if (numRegions >= CLIPPED_MAX) {
+        // __asm__ ("cli");
         return;
     }
 
@@ -179,17 +185,18 @@ void FbContext::drawClippedRegions() {
 }
 
 void FbContext::intersectClippedRect(Rect *rect) {
-    // resetClippedList();
-
+    int appendedRects = 0;
     for (int i = 0; i < numRegions; i++) {
         Rect *currentRect = &clippedRects[i];
         Rect intersectRect;
 
         bool ret = currentRect->intersect(&intersectRect, rect);
         if (ret) {
-            appendClippedRect(&intersectRect);
+            clippedRects[appendedRects++] = intersectRect;
         }
     }
+
+    numRegions = appendedRects;
 }
 
 }

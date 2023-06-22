@@ -10,13 +10,6 @@ uint8_t pseudo_rand_8() {
 
 namespace GUI {
 
-void Window::updateRect() {
-    Rect::setTop(y);
-    Rect::setBottom(y + height - 1);
-    Rect::setLeft(x);
-    Rect::setRight(x + width - 1);
-}
-
 Window::Window(const char *w_name, int x, int y, int width, int height,
                uint16_t flags)
     : x(x),
@@ -50,8 +43,8 @@ Window::~Window() {
 }
 
 Window *Window::createWindow(const char *w_name, int x_pos, int y_pos,
-                                   int width, int height) {
-    Window *window = new Window(w_name, x_pos, y_pos, width, height, 0);
+                             int width, int height, uint16_t flags) {
+    Window *window = new Window(w_name, x_pos, y_pos, width, height, flags);
     if (!window) {
         return window;
     }
@@ -60,6 +53,9 @@ Window *Window::createWindow(const char *w_name, int x_pos, int y_pos,
         delete window;
         return nullptr;
     }
+
+    window->parent = this;
+    window->flags = WIN_DECORATE;
 
     return window;
 }
@@ -99,12 +95,12 @@ void Window::applyBoundClipping(bool recurse) {
 
     Rect rect;
 
-    if ((!(flags & WIN_NODECORATION)) && recurse) {
-        screenX += WIN_BORDERWIDTH;
-        screenY += WIN_TITLEHEIGHT;
+    if ((flags & WIN_DECORATE) && recurse) {
         rect = Rect(screenY,
-                    screenY + height - WIN_TITLEHEIGHT - WIN_BORDERWIDTH - 1,
-                    screenX, screenX + width - (2 * WIN_BORDERWIDTH) - 1);
+                    screenY + height - TITLE_HEIGHT - BORDER_WIDTH - 1,
+                    screenX, screenX + width - (2 * BORDER_WIDTH) - 1);
+        // rect =
+        //     Rect(screenY, screenY + height - 1, screenX, screenX + width - 1);
     } else {
         rect =
             Rect(screenY, screenY + height - 1, screenX, screenX + width - 1);
@@ -115,13 +111,24 @@ void Window::applyBoundClipping(bool recurse) {
         return;
     }
 
+    // Reduce drawing to parent window
     parent->applyBoundClipping(true);
 
+    // Reduce visibility to main drawing area
     context->intersectClippedRect(&rect);
 
-    // Get list of windows that intersect above current window
-    for (int i = getWindowID() + 1; i < numWindows; i++) {
-        Window *aboveWin = windows[i];
+    // Get ID of current window from parent's view
+    int winID = -1;
+    for (int i = 0; i < parent->numWindows; i++) {
+        if (parent->windows[i] == this) {
+            winID = i;
+            break;
+        }
+    }
+
+    // Occlude areas of window where siblings overlap on top   
+    for (int i = winID + 1; i < parent->numWindows; i++) {
+        Window *aboveWin = parent->windows[i];
         if (intersects(aboveWin)) {
             context->reshapeRegion(aboveWin);
         }
@@ -139,6 +146,37 @@ void Window::updatePosition(int xNew, int yNew) {
     updateRect();
 }
 
+void Window::drawWindow() {
+    context->resetClippedList();
+
+    applyBoundClipping(false);
+
+    for (int i = 0; i < numWindows; i++) {
+        context->reshapeRegion(windows[i]);
+    }
+
+    if (flags & WIN_DECORATE) {
+        drawBorder();
+
+        int xNew = x + BORDER_WIDTH;
+        int yNew = y + TITLE_HEIGHT;
+        Rect mainWindow(yNew,
+                        yNew + height - TITLE_HEIGHT - BORDER_WIDTH - 1,
+                        xNew, xNew + width - 2 * BORDER_WIDTH - 1);
+
+        context->intersectClippedRect(&mainWindow);
+    }
+
+    if (context->getRegions() != 0) {
+        context->drawRect(x, y, width, height, color);
+    }
+    
+    // Call paint for child windows
+    for (int i = 0; i < numWindows; i++) {
+        windows[i]->drawWindow();
+    }
+}
+
 void Window::setWindowID(int windowID) {
     this->windowID = windowID;
 }
@@ -148,31 +186,10 @@ int  Window::getWindowID() {
 }
 
 int Window::getXPos() {
-    // int xTranslate = 0;
-
-    // Window *curWindow = this;
-
-    // while(curWindow->parent) {
-    //     xTranslate += x;
-    //     curWindow = curWindow->parent;
-    // }
-
-    // return xTranslate;
-
     return x;
 }
 
 int Window::getYPos() {
-    // int yTranslate = 0;
-
-    // Window *curWindow = this;
-
-    // while(curWindow->parent) {
-    //     yTranslate += y;
-    //     curWindow = curWindow->parent;
-    // }
-
-    // return yTranslate;
     return y;
 }
 
@@ -196,27 +213,22 @@ void Window::setYPos(int y) {
     this->y = y;
 }
 
-void Window::windowPaint() {
-    applyBoundClipping(false);
+void Window::drawBorder() {
+    context->drawOutlinedRect(x, y, width, height, BORDER_COLOR);
+    context->drawOutlinedRect(x + 1, y + 1, width - 2, height - 2, BORDER_COLOR);
+    context->drawOutlinedRect(x + 2, y + 2, width - 4, height - 4, BORDER_COLOR);
 
-    if (!(flags & WIN_NODECORATION)) {
-        context->intersectClippedRect(this);
-    }
+    context->drawHorizontalLine(x + 3, y + 28, width - 6, BORDER_COLOR);
+    context->drawHorizontalLine(x + 3, y + 29, width - 6, BORDER_COLOR);
+    context->drawHorizontalLine(x + 3, y + 30, width - 6, BORDER_COLOR);
+    context->drawRect(x + 3, y + 3, width - 6, 25, BORDER_COLOR);
+}
 
-    for (int i = 0; i < numWindows; i++) {
-        Window *child = windows[i];
-
-        context->reshapeRegion(child);
-    }
-
-    context->drawRect(x, y, width, height, color);
-
-    context->resetClippedList();
-    
-    // Call paint for child windows
-    for (int i = 0; i < numWindows; i++) {
-        windows[i]->windowPaint();
-    }
+void Window::updateRect() {
+    Rect::setTop(y);
+    Rect::setBottom(y + height - 1);
+    Rect::setLeft(x);
+    Rect::setRight(x + width - 1);
 }
 
 }

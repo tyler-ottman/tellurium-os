@@ -9,9 +9,9 @@
 
 int main() {
     GUI::WindowServer *wm = GUI::WindowServer::getInstance();
-    wm->createWindow("test", 10, 10, 300, 200);
-    wm->createWindow("test", 100, 150, 400, 400);
-    wm->createWindow("test", 200, 100, 200, 600);
+    wm->createWindow("test", 10, 10, 300, 200, WIN_DECORATE);
+    wm->createWindow("test", 100, 150, 400, 400, WIN_DECORATE);
+    wm->createWindow("test", 200, 100, 200, 600, WIN_DECORATE);
 
     Device::KeyboardData key = {
         .data = 0

@@ -23,6 +23,7 @@ override OBJ := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(ASFILES:.S=.o) $(NASMFILES
 all: $(LIBNAME)
 
 $(LIBNAME): $(OBJ)
+	rm -rf $(LIBNAME).a
 	ar r $(LIBNAME).a $(OBJ)
 
 %.o: %.s

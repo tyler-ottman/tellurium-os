@@ -20,6 +20,8 @@ run: $(IMAGE_NAME).iso
 .PHONY: $(KERNEL_DIR) $(APPS_DIR)
 kernel:
 	$(MAKE) -C $(KERNEL_DIR)
+	$(MAKE) -C $(LIBGUI_DIR)
+	$(MAKE) -C $(ULIBC_DIR)
 	$(MAKE) -C $(APPS_DIR)
 
 $(IMAGE_NAME).iso: $(KERNEL_DIR)

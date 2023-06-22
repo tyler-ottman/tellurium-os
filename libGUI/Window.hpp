@@ -4,9 +4,11 @@
 #include "ulibc/DevPoll.hpp"
 
 #define WINDOW_MAX                          10
-#define WIN_TITLEHEIGHT                     31 
-#define WIN_BORDERWIDTH                     3
-#define WIN_NODECORATION                    1
+#define TITLE_HEIGHT                        31 
+#define WIN_DECORATE                        1
+
+#define BORDER_COLOR                        0xff333333
+#define BORDER_WIDTH                        3
 
 namespace GUI {
 
@@ -18,7 +20,7 @@ public:
     ~Window();
 
     Window *createWindow(const char *w_name, int x_pos, int y_pos, int width,
-                         int height);
+                         int height, uint16_t flags);
     Window *appendWindow(Window *window);
     Window *removeWindow(int windowID);
 
@@ -26,6 +28,9 @@ public:
 
     bool intersects(Rect *rect);
     void updatePosition(int xNew, int yNew);
+
+    void drawWindow(void);
+    
 
     void setWindowID(int windowID);
     int getWindowID(void);
@@ -38,10 +43,8 @@ public:
     void setXPos(int x);
     void setYPos(int y);
 
-    void windowPaint(void);
-    
-
 protected:
+    void drawBorder(void);
     void updateRect(void);
 
     char *windowName;

@@ -22,6 +22,7 @@ public:
 
     // Framebuffer operations
     void drawRect(int x, int y, int width, int height, uint32_t color);
+    void drawRectNoRegion(int x, int y, int width, int height, uint32_t color);
     void drawVerticalLine(int xPos, int yPos, int length, int color);
     void drawHorizontalLine(int xPos, int yPos, int length, int color);
     void drawOutlinedRect(int xPos, int yPos, int width, int length, int color);
