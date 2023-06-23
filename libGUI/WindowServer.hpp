@@ -19,8 +19,8 @@ public:
     void refreshScreen(void);
     void mouseHandle(Device::MouseData *data);
 
-    void createWindow(const char *name, int x, int y, int width, int height,
-                      uint16_t flags);
+    Window *createWindow(const char *name, int x, int y, int width, int height,
+                         uint16_t flags);
 
    private:
     WindowServer();

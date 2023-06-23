@@ -22,36 +22,10 @@ void Desktop::drawWindow() {
     context->drawRectNoRegion(mouseX, mouseY, 10, 10, 0xffffffff);
 }
 
-void Desktop::onMouseMove(Device::MouseData *data) {
+void Desktop::onMouseEvent(Device::MouseData *data) {
+    Window::onMouseEvent(data, mouseX, mouseY);
+
     updateMousePos(data);
-
-    bool newMouseState = data->flags & 0x1;
-    if (newMouseState) {
-        if (!(lastMouseState)) {
-            for (int i = numWindows - 1; i >= 0; i--) {
-                Window *window = windows[i];
-
-                if (mouseInBounds(window)) {
-                    removeWindow(window->getWindowID());
-                    appendWindow(window);
-
-                    selectedWindow = window;
-
-                    break;
-                }
-            }
-        }
-    } else {
-        selectedWindow = nullptr;
-    }
-
-    if (selectedWindow) {
-        selectedWindow->updatePosition(
-            selectedWindow->getXPos() + data->delta_x,
-            selectedWindow->getYPos() - data->delta_y);
-    }
-
-    lastMouseState = newMouseState;
 }
 
 void Desktop::updateMousePos(Device::MouseData *data) {

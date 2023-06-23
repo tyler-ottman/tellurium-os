@@ -21,7 +21,7 @@ void WindowServer::refreshScreen() {
 }
 
 void WindowServer::mouseHandle(Device::MouseData *data) {
-    desktop->onMouseMove(data);
+    desktop->onMouseEvent(data);
 
     if (nEvents++ == 10) {
         refreshScreen();
@@ -29,9 +29,9 @@ void WindowServer::mouseHandle(Device::MouseData *data) {
     }
 }
 
-void WindowServer::createWindow(const char *name, int x, int y, int width,
-                                int height, uint16_t flags) {
-    desktop->createWindow(name, x, y, width, height, flags);
+Window *WindowServer::createWindow(const char *name, int x, int y, int width,
+                                   int height, uint16_t flags) {
+    return desktop->createWindow(name, x, y, width, height, flags);
 }
 
 WindowServer::WindowServer() : nEvents(0) {

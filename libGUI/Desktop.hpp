@@ -10,8 +10,10 @@ public:
     ~Desktop();
 
     void drawWindow(void);
-    void onMouseMove(Device::MouseData *data);
-
+    void onMouseEvent(Device::MouseData *data);
+    
+    int getMouseX(void) { return mouseX; }
+    int getMouseY(void) { return mouseY; }
 private:
     void updateMousePos(Device::MouseData *data);
     bool mouseInBounds(Window *window);

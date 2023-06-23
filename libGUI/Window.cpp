@@ -1,5 +1,6 @@
 #include "ulibc/mem.hpp"
 #include "ulibc/string.h"
+#include "libGUI/Button.hpp"
 #include "libGUI/FbContext.hpp"
 #include "libGUI/Window.hpp"
 
@@ -19,11 +20,12 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
       flags(flags),
       lastMouseState(0),
       windowID(-1),
+      type(WindowDefault),
       context(FbContext::getInstance()),
       parent(nullptr),
       maxWindows(WINDOW_MAX),
       numWindows(0),
-      selectedWindow(nullptr),
+      dragWindow(nullptr),
       dragX(0),
       dragY(0) {
     color = 0xff000000 | pseudo_rand_8() << 16 | pseudo_rand_8() << 8 |
@@ -55,7 +57,6 @@ Window *Window::createWindow(const char *w_name, int x_pos, int y_pos,
     }
 
     window->parent = this;
-    window->flags = WIN_DECORATE;
 
     return window;
 }
@@ -68,6 +69,7 @@ Window *Window::appendWindow(Window *window) {
     int windowID = numWindows++;
     windows[windowID] = window;
     window->setWindowID(windowID);
+    window->parent = this;
 
     return window;
 }
@@ -146,6 +148,88 @@ void Window::updatePosition(int xNew, int yNew) {
     updateRect();
 }
 
+bool Window::onMouseEvent(Device::MouseData *data, int mouseX, int mouseY) {
+    bool isNewMousePressed = data->flags & 0x1;
+
+    for (int i = numWindows - 1; i >= 0; i--) {
+        Window *child = windows[i];
+
+        if (!child->mouseInBounds(mouseX, mouseY)) {
+            continue;
+        }
+
+        // Non-terminal reached, window select event
+        if (isNewMousePressed && !isLastMousePressed() && !dragWindow) {
+            onWindowStackTop(child);
+        }
+
+        // Terminal reached, window drag event
+        if (dragWindow && child->isMovable() && isNewMousePressed &&
+            isLastMousePressed() && child->isOnMenuBar(mouseX, mouseY)) {
+            return onWindowDrag(child, data);
+        }
+
+        // Pass event to child window
+        child->onMouseEvent(data, mouseX, mouseY);
+    }
+
+    // If here, event is on a leaf window
+
+    // Window released from dragging
+    if (isLastMousePressed() && !isNewMousePressed) {
+        return onWindowRelease();
+    }
+
+    // Window click event
+    if (isNewMousePressed && !isLastMousePressed()) {
+        return onWindowClick();
+    }
+
+    return true;
+}
+
+bool Window::onWindowStackTop(Window *win) {
+    moveToTop(win);
+
+    dragWindow = win;
+
+    return true;
+}
+
+bool Window::onWindowDrag(Window *win, Device::MouseData *data) {
+    win->updateChildPositions(data);
+
+    return true;
+}
+
+bool Window::onWindowRelease() {
+    dragWindow = nullptr;
+    lastMouseState &= ~(1);
+
+    return true;
+}
+
+bool Window::onWindowClick() {
+    switch (type) {
+    case GUI::WindowButton: ((Button *)this)->onMouseClick(); break;
+    case GUI::WindowDefault: break;
+    }
+
+    lastMouseState |= 0x1;
+
+    return true;
+}
+
+bool Window::mouseInBounds(int mouseX, int mouseY) {
+    return ((mouseX >= x) && (mouseX <= (x + width)) && (mouseY >= y) &&
+            (mouseY <= (y + height)));
+}
+
+bool Window::isOnMenuBar(int mouseX, int mouseY) {
+    return (mouseY >= y && mouseY < (y + TITLE_HEIGHT) && mouseX >= x &&
+            mouseX < (x + TITLE_WIDTH));
+}
+
 void Window::drawWindow() {
     context->resetClippedList();
 
@@ -167,18 +251,17 @@ void Window::drawWindow() {
         context->intersectClippedRect(&mainWindow);
     }
 
-    if (context->getRegions() != 0) {
+    if (type == GUI::WindowDefault) {
         context->drawRect(x, y, width, height, color);
+    } else if (type == GUI::WindowButton) {
+        ((Button *)this)->drawWindow();
     }
+    
     
     // Call paint for child windows
     for (int i = 0; i < numWindows; i++) {
         windows[i]->drawWindow();
     }
-}
-
-void Window::setWindowID(int windowID) {
-    this->windowID = windowID;
 }
 
 int  Window::getWindowID() {
@@ -205,12 +288,22 @@ int Window::getColor() {
     return this->color;
 }
 
+void Window::setWindowID(int windowID) {
+    this->windowID = windowID;
+}
+
 void Window::setXPos(int x) {
     this->x = x;
 }
 
 void Window::setYPos(int y) {
     this->y = y;
+}
+
+void Window::moveToTop(Window *win) {
+    removeWindow(win->getWindowID());
+    
+    appendWindow(win);
 }
 
 void Window::drawBorder() {
@@ -229,6 +322,17 @@ void Window::updateRect() {
     Rect::setBottom(y + height - 1);
     Rect::setLeft(x);
     Rect::setRight(x + width - 1);
+}
+
+void Window::updateChildPositions(Device::MouseData *data) {
+    for (int i = 0; i < numWindows; i++) {
+        windows[i]->updateChildPositions(data);
+    }
+
+    x += data->delta_x;
+    y -= data->delta_y;
+
+    updateRect();
 }
 
 }
