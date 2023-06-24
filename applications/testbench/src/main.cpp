@@ -14,13 +14,13 @@ int main() {
     GUI::Window *win = wm->createWindow("test", 100, 150, 400, 400, WIN_DECORATE);
     wm->createWindow("test", 200, 100, 200, 600, WIN_DECORATE);
 
-    GUI::Button *button = new GUI::Button(307, 357, 80, 30);
+    GUI::Button *button = new GUI::Button(280, 357, 80, 30);
     win->appendWindow(button);
 
-    button = new GUI::Button(200, 250, 80, 30);
+    button = new GUI::Button(175, 250, 80, 30);
     win->appendWindow(button);
 
-    GUI::Window *smallWin = wm->createWindow("test", 300, 200, 40, 40, 0);
+    GUI::Window *smallWin = new GUI::Window("test", 300, 200, 100, 100, WIN_DECORATE);
     win->appendWindow(smallWin);
 
     Device::KeyboardData key = {

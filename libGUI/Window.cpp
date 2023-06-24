@@ -92,20 +92,13 @@ Window *Window::removeWindow(int windowID) {
 }
 
 void Window::applyBoundClipping(bool recurse) {
-    int screenX = getXPos();
-    int screenY = getYPos();
-
     Rect rect;
 
-    if ((flags & WIN_DECORATE) && recurse) {
-        rect = Rect(screenY,
-                    screenY + height - TITLE_HEIGHT - BORDER_WIDTH - 1,
-                    screenX, screenX + width - (2 * BORDER_WIDTH) - 1);
-        // rect =
-        //     Rect(screenY, screenY + height - 1, screenX, screenX + width - 1);
+    if (isMovable() && recurse && parent) {
+        rect = Rect(y + TITLE_HEIGHT, y + height - BORDER_WIDTH - 1,
+                    x + BORDER_WIDTH, x + width - BORDER_WIDTH - 1);
     } else {
-        rect =
-            Rect(screenY, screenY + height - 1, screenX, screenX + width - 1);
+        rect = Rect(y, y + height - 1, x, x + width - 1);
     }
 
     if (!parent) {
@@ -159,7 +152,8 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX, int mouseY) {
         }
 
         // Non-terminal reached, window select event
-        if (isNewMousePressed && !isLastMousePressed() && !dragWindow) {
+        if (isNewMousePressed && !isLastMousePressed() && !dragWindow &&
+            child->isMovable()) {
             onWindowStackTop(child);
         }
 
@@ -231,7 +225,7 @@ bool Window::isOnMenuBar(int mouseX, int mouseY) {
 }
 
 void Window::drawWindow() {
-    context->resetClippedList();
+    // context->resetClippedList();
 
     applyBoundClipping(false);
 
@@ -241,7 +235,7 @@ void Window::drawWindow() {
 
     if (flags & WIN_DECORATE) {
         drawBorder();
-
+        
         int xNew = x + BORDER_WIDTH;
         int yNew = y + TITLE_HEIGHT;
         Rect mainWindow(yNew,
@@ -257,6 +251,7 @@ void Window::drawWindow() {
         ((Button *)this)->drawWindow();
     }
     
+    context->resetClippedList();
     
     // Call paint for child windows
     for (int i = 0; i < numWindows; i++) {
