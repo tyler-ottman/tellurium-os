@@ -72,7 +72,6 @@ protected:
     int width;
     int height;
     uint16_t flags;
-    uint8_t lastMouseState;
     int color;
     int windowID;
     int type;
@@ -84,9 +83,8 @@ protected:
     const int maxWindows;
     int numWindows;
     
-    Window *dragWindow;
-    int dragX;
-    int dragY;
+    static uint8_t lastMouseState;
+    static Window *selectedWindow;
 };
 
 }

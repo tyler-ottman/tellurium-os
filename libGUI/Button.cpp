@@ -17,7 +17,11 @@ void Button::onMouseClick() {
 
 void Button::drawWindow() {
     color = colorToggle ? 0xff01796f : 0xffca3433;
-    context->drawRect(x, y, width, height, color);
+    context->drawRect(x + 2, y + 2, width - 4, height - 4, color);
+
+    context->drawOutlinedRect(x, y, width, height, 0xffff66cc);
+    context->drawOutlinedRect(x + 1, y + 1, width - 2, height - 2, 0xffff66cc);
+    
 }
 
 }
