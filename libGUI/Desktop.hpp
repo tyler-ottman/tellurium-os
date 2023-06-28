@@ -11,6 +11,7 @@ public:
 
     void drawWindow(void);
     void onMouseEvent(Device::MouseData *data);
+    void applyDirtyMouse(void);
     
     int getMouseX(void) { return mouseX; }
     int getMouseY(void) { return mouseY; }

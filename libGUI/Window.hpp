@@ -7,7 +7,10 @@
 #define WINDOW_MAX                          10
 #define TITLE_HEIGHT                        31
 #define TITLE_WIDTH                         (width)
-#define WIN_DECORATE                        1
+
+
+#define WIN_DECORATE                        0x0001
+#define WIN_REFRESH_NEEDED                  0x0002
 
 #define BORDER_COLOR                        0xff333333
 #define BORDER_WIDTH                        3
@@ -32,6 +35,7 @@ public:
     Window *removeWindow(int windowID);
 
     void applyBoundClipping(bool recurse);
+    void applyDirtyDrag(void);
 
     bool intersects(Rect *rect);
     void updatePosition(int xNew, int yNew);
@@ -41,15 +45,10 @@ public:
     // Mouse events
     bool onMouseEvent(Device::MouseData *data, int mouseX, int mouseY);
     bool onWindowRaise(void);
-    bool onWindowDrag(Window *win, Device::MouseData *data);
+    bool onWindowDrag(Device::MouseData *data);
     bool onWindowRelease(void);
     bool onWindowClick(void);
     
-    bool mouseInBounds(int mouseX, int mouseY);
-    bool isMovable(void) { return (flags & WIN_DECORATE); }
-    bool isOnMenuBar(int mouseX, int mouseY);
-    bool isLastMousePressed(void) { return (lastMouseState & 0x1); }
-
     int getWindowID(void);
     int getXPos(void);
     int getYPos(void);
@@ -59,6 +58,15 @@ public:
     void setWindowID(int windowID);
     void setXPos(int x);
     void setYPos(int y);
+    bool isLastMousePressed(void);
+    bool isMovable(void);
+    bool isRefreshNeeded(void);
+    bool isOnMenuBar(int mouseX, int mouseY);
+    bool isMouseInBounds(int mouseX, int mouseY);
+    
+    // Flag bitwise operations
+    void setRefresh(void);
+    void resetRefresh(void);
 
 protected:
     void moveToTop(Window *window);
@@ -83,7 +91,7 @@ protected:
     Window *windows[WINDOW_MAX];
     const int maxWindows;
     int numWindows;
-    
+
     static uint8_t lastMouseState;
 
     // Info for window dragging and dirty regions

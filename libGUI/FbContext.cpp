@@ -180,10 +180,8 @@ void FbContext::intersectClippedRect(Rect *rect) {
 
 void FbContext::moveClippedToDirty() {
     for (int i = 0; i < numClipped; i++) {
-        dirtyRects[i] = clippedRects[i];
+        dirtyRects[numDirty++] = clippedRects[i];
     }
-
-    numDirty = numClipped;
     
     resetClippedList();
 }

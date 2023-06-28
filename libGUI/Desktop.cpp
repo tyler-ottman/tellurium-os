@@ -18,39 +18,14 @@ Desktop::~Desktop() {
 }
 
 void Desktop::drawWindow() {
-    context->resetClippedList();
-    context->resetDirtyList();
-
-    if (selectedWindow) { // Generate dirty region
-        int tempX = selectedWindow->getXPos();
-        int tempY = selectedWindow->getYPos();
-
-        selectedWindow->updatePosition(xOld, yOld);
-        context->addClippedRect(selectedWindow);
-        selectedWindow->updatePosition(tempX, tempY);
-        context->addClippedRect(selectedWindow);
-
-        context->moveClippedToDirty();
-
-        xOld = selectedWindow->getXPos();
-        yOld = selectedWindow->getYPos();
-    } else { // Simple mouse movement
-        if (forceRefresh) {
-            forceRefresh = false;
-        } else {
-            Rect oldMouse(oldMouseY, oldMouseY + 10 - 1, oldMouseX,
-                      oldMouseX + 10 - 1);
-            Rect newMouse(mouseY, mouseY + 10 - 1, mouseX, mouseX + 10 - 1);
-            
-            context->addClippedRect(&oldMouse);
-            context->addClippedRect(&newMouse);
-            context->moveClippedToDirty();
-
-            oldMouseX = mouseX;
-            oldMouseY = mouseY;
-        }
-        
+    if (forceRefresh) {
+        Window::drawWindow();
+        forceRefresh = false;
     }
+
+    // If window was dragged since last refresh, update it
+    applyDirtyDrag();
+    applyDirtyMouse();
 
     Window::drawWindow();
 
@@ -59,11 +34,42 @@ void Desktop::drawWindow() {
 }
 
 void Desktop::onMouseEvent(Device::MouseData *data) {
+    context->resetClippedList();
+    context->resetDirtyList();
+
     Window::onMouseEvent(data, mouseX, mouseY);
+
+    // Regions that need immediate refresh
+    if (context->getNumDirty()) {
+        applyDirtyMouse();
+
+        Window::drawWindow();
+
+        context->drawRectNoRegion(mouseX, mouseY, 10, 10, 0xffffffff);
+        context->resetDirtyList();
+    }
 
     updateMousePos(data);
 
     lastMouseState = data->flags;
+}
+
+void Desktop::applyDirtyMouse(void) {
+    // If mouse position changed since last refresh
+    if (!(oldMouseX == mouseX && oldMouseY == mouseY)) {
+        // Original mouse position
+        Rect oldMouse(oldMouseY, oldMouseY + 10 - 1, oldMouseX, oldMouseX + 10 - 1);
+        context->addClippedRect(&oldMouse);
+
+        // New mouse position
+        Rect newMouse(mouseY, mouseY + 10 - 1, mouseX, mouseX + 10 - 1);
+        context->addClippedRect(&newMouse);
+
+        oldMouseX = mouseX;
+        oldMouseY = mouseY;
+
+        context->moveClippedToDirty();
+    }
 }
 
 void Desktop::updateMousePos(Device::MouseData *data) {
