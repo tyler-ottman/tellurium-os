@@ -13,6 +13,8 @@ namespace GUI {
 
 uint8_t Window::lastMouseState = 0;
 Window *Window::selectedWindow = nullptr;
+int Window::xOld = 0;
+int Window::yOld = 0;
 
 Window::Window(const char *w_name, int x, int y, int width, int height,
                uint16_t flags)
@@ -25,6 +27,7 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
       type(WindowDefault),
       context(FbContext::getInstance()),
       parent(nullptr),
+      activeChild(nullptr),
       maxWindows(WINDOW_MAX),
       numWindows(0) {
     color = 0xff000000 | pseudo_rand_8() << 16 | pseudo_rand_8() << 8 |
@@ -101,7 +104,18 @@ void Window::applyBoundClipping(bool recurse) {
     }
 
     if (!parent) {
-        context->addClippedRect(&rect);
+        if (context->getNumDirty()) {
+            Rect *dirtyRegions = context->getDirtyRegions();
+            
+            for (int i = 0; i < context->getNumDirty(); i++) {
+                context->addClippedRect(&dirtyRegions[i]);
+            }
+
+            context->intersectClippedRect(&rect);
+        } else {
+            context->addClippedRect(&rect);
+        }
+
         return;
     }
 
@@ -153,19 +167,21 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX, int mouseY) {
         // Non-terminal reached, window select event
         if (isNewMousePressed && !isLastMousePressed() && // !dragWindow && 
             child->isMovable()) {
-            onWindowStackTop(child);
+            child->onWindowRaise();
 
             if (child->isOnMenuBar(mouseX, mouseY) && !selectedWindow) {
                 selectedWindow = child;
+                xOld = selectedWindow->getXPos();
+                yOld = selectedWindow->getYPos();
+                break;
             }
         }
 
         // Terminal reached, window drag event
-        if (selectedWindow && child->isMovable() && isNewMousePressed &&
-            isLastMousePressed() && child->isOnMenuBar(mouseX, mouseY) &&
-            selectedWindow == child) {
-            return onWindowDrag(child, data);
-        }
+        // if (selectedWindow == child && child->isMovable() && isNewMousePressed &&
+        //     /*isLastMousePressed() && */ child->isOnMenuBar(mouseX, mouseY)) {
+        //     return onWindowDrag(child, data);
+        // }
 
         // Pass event to child window
         child->onMouseEvent(data, mouseX, mouseY);
@@ -174,9 +190,14 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX, int mouseY) {
     }
 
     // If here, event is on a leaf window
+    if (this == selectedWindow && selectedWindow->isMovable() && isNewMousePressed &&
+        selectedWindow->isOnMenuBar(mouseX, mouseY)) {
+        return onWindowDrag(selectedWindow, data);
+    }
 
     // Window released from dragging
     if (isLastMousePressed() && !isNewMousePressed) {
+        // __asm__ ("cli");
         return onWindowRelease();
     }
 
@@ -188,10 +209,15 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX, int mouseY) {
     return true;
 }
 
-bool Window::onWindowStackTop(Window *win) {
-    moveToTop(win);
+bool Window::onWindowRaise() {
+    if (!parent || parent->activeChild == this) {
+        return false;
+    }
 
-    // dragWindow = win;
+    parent->removeWindow(windowID);
+    parent->appendWindow(this);
+
+    parent->activeChild = this;
 
     return true;
 }
@@ -204,7 +230,7 @@ bool Window::onWindowDrag(Window *win, Device::MouseData *data) {
 
 bool Window::onWindowRelease() {
     selectedWindow = nullptr;
-    lastMouseState &= ~(1);
+    // lastMouseState &= ~(1);
 
     return true;
 }
@@ -215,7 +241,7 @@ bool Window::onWindowClick() {
     case GUI::WindowDefault: break;
     }
 
-    lastMouseState |= 0x1;
+    // lastMouseState |= 0x1;
 
     return true;
 }
@@ -233,7 +259,7 @@ bool Window::isOnMenuBar(int mouseX, int mouseY) {
 void Window::drawWindow() {
     applyBoundClipping(false);
 
-    if (flags & WIN_DECORATE) {
+    if (isMovable() && parent) {
         drawBorder();
         
         int xNew = x + BORDER_WIDTH;
@@ -245,10 +271,12 @@ void Window::drawWindow() {
         context->intersectClippedRect(&mainWindow);
     }
 
+    // Remove child window clipped rectangles
     for (int i = 0; i < numWindows; i++) {
         context->reshapeRegion(windows[i]);
     }
 
+    // Draw self
     if (type == GUI::WindowDefault) {
         context->drawRect(x, y, width, height, color);
     } else if (type == GUI::WindowButton) {
@@ -256,11 +284,29 @@ void Window::drawWindow() {
     }
     
     context->resetClippedList();
-    
-    // Call paint for child windows
+
+    Rect *dirtyRegions = context->getDirtyRegions();
     for (int i = 0; i < numWindows; i++) {
         context->resetClippedList();
-        windows[i]->drawWindow();
+
+        Window *child = windows[i];
+
+        if (context->getNumDirty()) {
+            bool isIntersect = false;
+            for (int j = 0; j < context->getNumDirty(); j++) {
+                Rect *dirtyRegion = &dirtyRegions[j];
+                if (child->intersects(dirtyRegion)) {
+                    isIntersect = true;
+                    break;
+                }
+            }
+
+            if (!isIntersect) {
+                continue;
+            }
+        }
+
+        child->drawWindow();
     }
 }
 
@@ -307,6 +353,10 @@ void Window::moveToTop(Window *win) {
 }
 
 void Window::drawBorder() {
+    if (!parent) {
+        return;
+    }
+
     context->drawOutlinedRect(x, y, width, height, BORDER_COLOR);
     context->drawOutlinedRect(x + 1, y + 1, width - 2, height - 2, BORDER_COLOR);
     context->drawOutlinedRect(x + 2, y + 2, width - 4, height - 4, BORDER_COLOR);
@@ -314,7 +364,10 @@ void Window::drawBorder() {
     context->drawHorizontalLine(x + 3, y + 28, width - 6, BORDER_COLOR);
     context->drawHorizontalLine(x + 3, y + 29, width - 6, BORDER_COLOR);
     context->drawHorizontalLine(x + 3, y + 30, width - 6, BORDER_COLOR);
-    context->drawRect(x + 3, y + 3, width - 6, 25, BORDER_COLOR);
+
+    // Menu bar
+    context->drawRect(x + 3, y + 3, width - 6, 25,
+                      parent->activeChild == this ? 0xff545454 : BORDER_COLOR);
 }
 
 void Window::updateRect() {

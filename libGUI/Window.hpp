@@ -40,7 +40,7 @@ public:
     
     // Mouse events
     bool onMouseEvent(Device::MouseData *data, int mouseX, int mouseY);
-    bool onWindowStackTop(Window *win);
+    bool onWindowRaise(void);
     bool onWindowDrag(Window *win, Device::MouseData *data);
     bool onWindowRelease(void);
     bool onWindowClick(void);
@@ -78,13 +78,21 @@ protected:
 
     FbContext *context;
     Window *parent;
+    Window *activeChild;
 
     Window *windows[WINDOW_MAX];
     const int maxWindows;
     int numWindows;
     
     static uint8_t lastMouseState;
+
+    // Info for window dragging and dirty regions
     static Window *selectedWindow;
+
+    // Use (X, Y) position of selectedWindow on last refresh
+    // to calculate dirty rectangles
+    static int xOld;
+    static int yOld;
 };
 
 }

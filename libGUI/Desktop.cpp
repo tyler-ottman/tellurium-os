@@ -6,9 +6,11 @@ Desktop::Desktop()
     : Window("desktop", 0, 0,
              FbContext::getInstance()->getFbContext()->fb_width,
              FbContext::getInstance()->getFbContext()->fb_height,
-             0) {
+             WIN_DECORATE), forceRefresh(true) {
     mouseX = width / 2;
     mouseY = height / 2;
+    oldMouseX = mouseX;
+    oldMouseY = mouseY;
 }
 
 Desktop::~Desktop() {
@@ -16,6 +18,40 @@ Desktop::~Desktop() {
 }
 
 void Desktop::drawWindow() {
+    context->resetClippedList();
+    context->resetDirtyList();
+
+    if (selectedWindow) { // Generate dirty region
+        int tempX = selectedWindow->getXPos();
+        int tempY = selectedWindow->getYPos();
+
+        selectedWindow->updatePosition(xOld, yOld);
+        context->addClippedRect(selectedWindow);
+        selectedWindow->updatePosition(tempX, tempY);
+        context->addClippedRect(selectedWindow);
+
+        context->moveClippedToDirty();
+
+        xOld = selectedWindow->getXPos();
+        yOld = selectedWindow->getYPos();
+    } else { // Simple mouse movement
+        if (forceRefresh) {
+            forceRefresh = false;
+        } else {
+            Rect oldMouse(oldMouseY, oldMouseY + 10 - 1, oldMouseX,
+                      oldMouseX + 10 - 1);
+            Rect newMouse(mouseY, mouseY + 10 - 1, mouseX, mouseX + 10 - 1);
+            
+            context->addClippedRect(&oldMouse);
+            context->addClippedRect(&newMouse);
+            context->moveClippedToDirty();
+
+            oldMouseX = mouseX;
+            oldMouseY = mouseY;
+        }
+        
+    }
+
     Window::drawWindow();
 
     // Draw mouse
@@ -26,6 +62,8 @@ void Desktop::onMouseEvent(Device::MouseData *data) {
     Window::onMouseEvent(data, mouseX, mouseY);
 
     updateMousePos(data);
+
+    lastMouseState = data->flags;
 }
 
 void Desktop::updateMousePos(Device::MouseData *data) {

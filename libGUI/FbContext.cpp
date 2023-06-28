@@ -26,7 +26,11 @@ FbContext *FbContext::getInstance() {
     instance->screen = new Rect(0, instance->fb_meta.fb_height - 1, 0,
                                 instance->fb_meta.fb_width - 1);
 
-    instance->numRegions = 0;
+    instance->numDirty = 0;
+    instance->dirtyRects = new Rect[CLIPPED_MAX];
+
+    instance->clippingEnabled = false;
+    instance->numClipped = 0;
     instance->clippedRects = new Rect[CLIPPED_MAX];
 
     return instance;
@@ -84,7 +88,7 @@ void FbContext::drawClippedRect(int x, int y, int width, int height,
 }
 
 void FbContext::drawRect(int x, int y, int width, int height, uint32_t color) {
-    for (int i = 0; i < numRegions; i++) {
+    for (int i = 0; i < numClipped; i++) {
         drawClippedRect(x, y, width, height, color, &clippedRects[i]);
     }
 }
@@ -95,13 +99,13 @@ void FbContext::drawRectNoRegion(int x, int y, int width, int height,
 }
 
 void FbContext::drawVerticalLine(int xPos, int yPos, int length, int color) {
-    for (int i = 0; i < numRegions; i++) {
+    for (int i = 0; i < numClipped; i++) {
         drawClippedRect(xPos, yPos, 1, length, color, &clippedRects[i]);
     }
 }
 
 void FbContext::drawHorizontalLine(int xPos, int yPos, int length, int color) {
-    for (int i = 0; i < numRegions; i++) {
+    for (int i = 0; i < numClipped; i++) {
         drawClippedRect(xPos, yPos, length, 1, color, &clippedRects[i]);
     }
 }
@@ -121,7 +125,7 @@ void FbContext::addClippedRect(Rect *rect) {
 }
 
 void FbContext::reshapeRegion(Rect *rect) {
-    for (int i = 0; i < numRegions; i++) {
+    for (int i = 0; i < numClipped; i++) {
         Rect *clipped = &clippedRects[i];
 
         if (!clipped->intersects(rect)) {
@@ -142,31 +146,6 @@ void FbContext::reshapeRegion(Rect *rect) {
     }
 }
 
-void FbContext::appendClippedRect(Rect *rect) {
-    if (numRegions >= CLIPPED_MAX) {
-        // __asm__ ("cli");
-        return;
-    }
-
-    clippedRects[numRegions++] = *rect;
-}
-
-void FbContext::removeClippedRect(int index) {
-    if (index < 0 || index >= numRegions) {
-        return;
-    }
-
-    for (int i = index; i < numRegions - 1; i++) {
-        clippedRects[i] = clippedRects[i + 1];
-    }
-
-    numRegions--;
-}
-
-void FbContext::resetClippedList() {
-    numRegions = 0;
-}
-
 void FbContext::drawClippedRegions() {
     int pixels = fb_meta.fb_height * fb_meta.fb_width;
     uint32_t *pixelBuff = (uint32_t *)fb_meta.fb_buff;
@@ -175,7 +154,7 @@ void FbContext::drawClippedRegions() {
         pixelBuff[i] = 0;
     }
 
-    for (int i = 0; i < numRegions; i++) {
+    for (int i = 0; i < numClipped; i++) {
         Rect *rect = &clippedRects[i];
 
         drawOutlinedRect(rect->getLeft(), rect->getTop(),
@@ -186,7 +165,7 @@ void FbContext::drawClippedRegions() {
 
 void FbContext::intersectClippedRect(Rect *rect) {
     int appendedRects = 0;
-    for (int i = 0; i < numRegions; i++) {
+    for (int i = 0; i < numClipped; i++) {
         Rect *currentRect = &clippedRects[i];
         Rect intersectRect;
 
@@ -196,7 +175,65 @@ void FbContext::intersectClippedRect(Rect *rect) {
         }
     }
 
-    numRegions = appendedRects;
+    numClipped = appendedRects;
+}
+
+void FbContext::moveClippedToDirty() {
+    for (int i = 0; i < numClipped; i++) {
+        dirtyRects[i] = clippedRects[i];
+    }
+
+    numDirty = numClipped;
+    
+    resetClippedList();
+}
+
+void FbContext::appendClippedRect(Rect *rect) {
+    if (numClipped >= CLIPPED_MAX) {
+        return;
+    }
+
+    clippedRects[numClipped++] = *rect;
+}
+
+void FbContext::removeClippedRect(int index) {
+    if (index < 0 || index >= numClipped) {
+        return;
+    }
+
+    for (int i = index; i < numClipped - 1; i++) {
+        clippedRects[i] = clippedRects[i + 1];
+    }
+
+    numClipped--;
+}
+
+void FbContext::resetClippedList() {
+    numClipped = 0;
+}
+
+void FbContext::appendDirtyRect(Rect *rect) {
+    if (numDirty >= CLIPPED_MAX) {
+        return;
+    }
+
+    dirtyRects[numDirty++] = *rect;
+}
+
+void FbContext::removeDirtyRect(int index) {
+    if (index < 0 || index >= numDirty) {
+        return;
+    }
+
+    for (int i = index; i < numClipped - 1; i++) {
+        dirtyRects[i] = dirtyRects[i + 1];
+    }
+
+    numDirty--;
+}
+
+void FbContext::resetDirtyList() {
+    numDirty = 0;
 }
 
 }

@@ -20,6 +20,10 @@ private:
 
     int mouseX;
     int mouseY;
+    int oldMouseX;
+    int oldMouseY;
+
+    bool forceRefresh;
 };
 
 }

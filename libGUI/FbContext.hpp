@@ -30,16 +30,33 @@ public:
     // Clipped Rectangle Operations
     void addClippedRect(Rect *rect);
     void reshapeRegion(Rect *rect);
-    void appendClippedRect(Rect *rect);
-    void removeClippedRect(int index);
-    void resetClippedList(void);
     void drawClippedRegions(void);
     void intersectClippedRect(Rect *rect);
 
-    int getRegions(void) {return numRegions;}
+    // Dirty Rectangle Operations
+    void moveClippedToDirty(void);
+
+    // List operations
+    void appendClippedRect(Rect *rect);
+    void removeClippedRect(int index);
+    void resetClippedList(void);
+
+    void appendDirtyRect(Rect *rect);
+    void removeDirtyRect(int index);
+    void resetDirtyList(void);
+
+    int getNumClipped(void) { return numClipped; }
+    int getNumDirty(void) { return numDirty; }
+
+    Rect *getDirtyRegions(void) { return dirtyRects; }
 private:
+    // Dirty region info
+    int numDirty;
+    Rect *dirtyRects;
+
     // Clipped region info
-    int numRegions;
+    bool clippingEnabled;
+    int numClipped;
     Rect *clippedRects;
 
     FbMeta fb_meta;
