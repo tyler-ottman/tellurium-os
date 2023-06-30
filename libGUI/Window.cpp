@@ -1,7 +1,6 @@
-#include "libGUI/Window.hpp"
-
 #include "libGUI/Button.hpp"
 #include "libGUI/FbContext.hpp"
+#include "libGUI/Window.hpp"
 #include "ulibc/mem.hpp"
 #include "ulibc/string.h"
 
@@ -26,6 +25,7 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
       flags(flags),
       windowID(-1),
       type(WindowDefault),
+      menuBar(nullptr),
       context(FbContext::getInstance()),
       parent(nullptr),
       activeChild(nullptr),
@@ -41,6 +41,16 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
     }
 
     updateRect();
+
+    // Attach menu bar
+    if (isDecorable()) {
+        MenuBar *menuBar = new MenuBar(x + BORDER_WIDTH, y + BORDER_WIDTH,
+                                       width - 2 * BORDER_WIDTH, TITLE_HEIGHT);
+
+        if (menuBar) {
+            attachMenuBar(menuBar);
+        }
+    }
 }
 
 Window::~Window() {}
@@ -92,12 +102,25 @@ Window *Window::removeWindow(int windowID) {
     return window;
 }
 
+bool Window::attachMenuBar(MenuBar *menuBar) {
+    // Menu bar already exists
+    if (this->menuBar) {
+        return false;
+    }
+
+    appendWindow(menuBar);
+    this->menuBar = menuBar;
+
+    return true;
+}
+
 void Window::applyBoundClipping(bool recurse) {
     Rect rect;
 
-    if (isMovable() && recurse && parent) {
-        rect = Rect(y + TITLE_HEIGHT, y + height - BORDER_WIDTH - 1,
-                    x + BORDER_WIDTH, x + width - BORDER_WIDTH - 1);
+    if (isDecorable() && recurse && parent) {
+        // rect = Rect(y + TITLE_HEIGHT, y + height - BORDER_WIDTH - 1,
+        //             x + BORDER_WIDTH, x + width - BORDER_WIDTH - 1);
+        rect = Rect(y, y + height - 1, x, x + width - 1);
     } else {
         rect = Rect(y, y + height - 1, x, x + width - 1);
     }
@@ -188,29 +211,23 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX, int mouseY) {
             continue;
         }
 
-        // Non-terminal reached, window select event
-        if (isNewMousePressed && !isLastMousePressed() && child->isMovable()) {
-            child->onWindowRaise();
-
-            if (child->isOnMenuBar(mouseX, mouseY)) {  // Event is on self
-                break;
-            }
-        }
-
         // Pass event to child window
-        child->onMouseEvent(data, mouseX, mouseY);
+        return child->onMouseEvent(data, mouseX, mouseY);
+    }
 
-        break;
+    // Window raise event
+    if (isNewMousePressed && !isLastMousePressed() && isDecorable()) {
+        return onWindowRaise();
     }
 
     // If here, event is on a leaf window
-    if (this == selectedWindow && selectedWindow->isMovable() &&
+    if (this == selectedWindow && selectedWindow->isDecorable() &&
         isNewMousePressed && selectedWindow->isOnMenuBar(mouseX, mouseY)) {
         return selectedWindow->onWindowDrag(data);
     }
 
     // Window released from dragging
-    if (selectedWindow && isLastMousePressed() && !isNewMousePressed) {
+    if (this == selectedWindow && isLastMousePressed() && !isNewMousePressed) {
         return onWindowRelease();
     }
 
@@ -227,25 +244,35 @@ bool Window::onWindowRaise() {
         return false;
     }
 
+    Window *prevParent = parent;
+
+    // Get top level window to stack on top
+    while (prevParent->parent) {
+        prevParent = prevParent->parent;
+    }
+
     parent->removeWindow(windowID);
     parent->appendWindow(this);
 
     parent->activeChild = this;
 
     // Update unselected menu bar's color
-    if (selectedWindow && selectedWindow != this) {
-        int xNew = selectedWindow->x + BORDER_WIDTH;
-        int yNew = selectedWindow->y + TITLE_HEIGHT;
-        Rect menuBar(
-            yNew,
-            yNew + selectedWindow->height - TITLE_HEIGHT - BORDER_WIDTH - 1,
-            xNew, xNew + selectedWindow->width - 2 * BORDER_WIDTH - 1);
+    // if (selectedWindow && selectedWindow != this) {
+    //     int xNew = selectedWindow->x + BORDER_WIDTH;
+    //     int yNew = selectedWindow->y + TITLE_HEIGHT;
+    //     Rect menuBar(
+    //         yNew,
+    //         yNew + selectedWindow->height - TITLE_HEIGHT - BORDER_WIDTH - 1,
+    //         xNew, xNew + selectedWindow->width - 2 * BORDER_WIDTH - 1);
 
-        context->addClippedRect(&menuBar);
-    }
+    //     context->addClippedRect(&menuBar);
+    // }
 
     selectedWindow = this;
-    selectedWindow->setRefresh();
+
+    if (selectedWindow->getXPos() == 175) {
+        __asm__ ("cli");
+    }
 
     xOld = selectedWindow->getXPos();
     yOld = selectedWindow->getYPos();
@@ -277,6 +304,9 @@ bool Window::onWindowClick() {
         case GUI::WindowButton:
             ((Button *)this)->onMouseClick();
             break;
+        case GUI::WindowMenuBar:
+            // ((MenuBar *)this)->
+            break;
         case GUI::WindowDefault:
             break;
     }
@@ -287,7 +317,7 @@ bool Window::onWindowClick() {
 void Window::drawWindow() {
     applyBoundClipping(false);
 
-    if (isMovable() && parent) {
+    if (isDecorable() && parent) {
         drawBorder();
 
         int xNew = x + BORDER_WIDTH;
@@ -357,7 +387,7 @@ void Window::setYPos(int y) { this->y = y; }
 
 bool Window::isLastMousePressed() { return lastMouseState & 0x1; }
 
-bool Window::isMovable() { return flags & WIN_DECORATE; }
+bool Window::isDecorable() { return flags & WIN_DECORATE; }
 
 bool Window::isRefreshNeeded() { return flags & WIN_REFRESH_NEEDED; }
 
@@ -370,10 +400,6 @@ bool Window::isMouseInBounds(int mouseX, int mouseY) {
     return ((mouseX >= x) && (mouseX <= (x + width)) && (mouseY >= y) &&
             (mouseY <= (y + height)));
 }
-
-void Window::setRefresh() { flags |= WIN_REFRESH_NEEDED; }
-
-void Window::resetRefresh() { flags &= ~(WIN_REFRESH_NEEDED); }
 
 void Window::moveToTop(Window *win) {
     removeWindow(win->getWindowID());
@@ -418,5 +444,12 @@ void Window::updateChildPositions(Device::MouseData *data) {
 
     updateRect();
 }
+
+MenuBar::MenuBar(int x, int y, int width, int height)
+    : Window::Window("menuBar", x, y, width, height, 0) {
+    type = GUI::WindowMenuBar;
+}
+
+MenuBar::~MenuBar() {}
 
 }  // namespace GUI

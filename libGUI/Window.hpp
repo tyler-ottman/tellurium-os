@@ -8,7 +8,6 @@
 #define TITLE_HEIGHT                        31
 #define TITLE_WIDTH                         (width)
 
-
 #define WIN_DECORATE                        0x0001
 #define WIN_REFRESH_NEEDED                  0x0002
 
@@ -18,9 +17,12 @@
 namespace GUI {
 
 enum WindowType {
-    WindowDefault,
     WindowButton,
+    WindowDefault,
+    WindowMenuBar
 };
+
+class MenuBar;
 
 class Window: public Rect {
 
@@ -33,6 +35,7 @@ public:
                          int height, uint16_t flags);
     Window *appendWindow(Window *window);
     Window *removeWindow(int windowID);
+    bool attachMenuBar(MenuBar *menuBar);
 
     void applyBoundClipping(bool recurse);
     void applyDirtyDrag(void);
@@ -42,6 +45,8 @@ public:
 
     void drawWindow(void);
     
+    // Mouse event stubs
+
     // Mouse events
     bool onMouseEvent(Device::MouseData *data, int mouseX, int mouseY);
     bool onWindowRaise(void);
@@ -59,14 +64,10 @@ public:
     void setXPos(int x);
     void setYPos(int y);
     bool isLastMousePressed(void);
-    bool isMovable(void);
+    bool isDecorable(void);
     bool isRefreshNeeded(void);
     bool isOnMenuBar(int mouseX, int mouseY);
     bool isMouseInBounds(int mouseX, int mouseY);
-    
-    // Flag bitwise operations
-    void setRefresh(void);
-    void resetRefresh(void);
 
 protected:
     void moveToTop(Window *window);
@@ -83,6 +84,8 @@ protected:
     int color;
     int windowID;
     int type;
+
+    MenuBar *menuBar;
 
     FbContext *context;
     Window *parent;
@@ -101,6 +104,12 @@ protected:
     // to calculate dirty rectangles
     static int xOld;
     static int yOld;
+};
+
+class MenuBar : public Window {
+public:
+    MenuBar(int x, int y, int width, int height);
+    ~MenuBar();
 };
 
 }
