@@ -9,7 +9,8 @@
 #define TITLE_WIDTH                         (width)
 
 #define WIN_DECORATE                        0x0001
-#define WIN_REFRESH_NEEDED                  0x0002
+#define WIN_MOVABLE                         0x0002
+#define WIN_REFRESH_NEEDED                  0x0003
 
 #define BORDER_COLOR                        0xff333333
 #define BORDER_WIDTH                        3
@@ -65,6 +66,7 @@ public:
     void setYPos(int y);
     bool isLastMousePressed(void);
     bool isDecorable(void);
+    bool isMovable(void);
     bool isRefreshNeeded(void);
     bool isOnMenuBar(int mouseX, int mouseY);
     bool isMouseInBounds(int mouseX, int mouseY);
@@ -110,6 +112,15 @@ class MenuBar : public Window {
 public:
     MenuBar(int x, int y, int width, int height);
     ~MenuBar();
+
+    void onMouseClick(void);
+
+    void drawMenuBar(void);
+
+    uint32_t getBarColor(void);
+    void setBarColor(uint32_t color);
+private:
+    uint32_t barColor;
 };
 
 }

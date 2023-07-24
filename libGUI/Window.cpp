@@ -42,14 +42,11 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
 
     updateRect();
 
-    // Attach menu bar
-    if (isDecorable()) {
-        MenuBar *menuBar = new MenuBar(x + BORDER_WIDTH, y + BORDER_WIDTH,
-                                       width - 2 * BORDER_WIDTH, TITLE_HEIGHT);
+    // Menu bar can only be attached to movable windows
+    if (isMovable()) {
+        MenuBar *menuBar = new MenuBar(x, y, width, TITLE_HEIGHT);
 
-        if (menuBar) {
-            attachMenuBar(menuBar);
-        }
+        attachMenuBar(menuBar);
     }
 }
 
@@ -216,7 +213,9 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX, int mouseY) {
     }
 
     // Window raise event
-    if (isNewMousePressed && !isLastMousePressed() && isDecorable()) {
+    if (isNewMousePressed && !isLastMousePressed() && (isMovable() ||
+        type == GUI::WindowMenuBar)) {
+        __asm__ ("cli");
         return onWindowRaise();
     }
 
@@ -257,21 +256,17 @@ bool Window::onWindowRaise() {
     parent->activeChild = this;
 
     // Update unselected menu bar's color
-    // if (selectedWindow && selectedWindow != this) {
-    //     int xNew = selectedWindow->x + BORDER_WIDTH;
-    //     int yNew = selectedWindow->y + TITLE_HEIGHT;
-    //     Rect menuBar(
-    //         yNew,
-    //         yNew + selectedWindow->height - TITLE_HEIGHT - BORDER_WIDTH - 1,
-    //         xNew, xNew + selectedWindow->width - 2 * BORDER_WIDTH - 1);
+    if (selectedWindow && selectedWindow != this) {
+        if (selectedWindow->menuBar) {
+            selectedWindow->menuBar->setBarColor(BORDER_COLOR);
 
-    //     context->addClippedRect(&menuBar);
-    // }
+            context->addClippedRect(selectedWindow->menuBar);
+        }
+    }
 
     selectedWindow = this;
-
-    if (selectedWindow->getXPos() == 175) {
-        __asm__ ("cli");
+    if (selectedWindow->menuBar) {
+        selectedWindow->menuBar->setBarColor(0xff00ff00);
     }
 
     xOld = selectedWindow->getXPos();
@@ -305,7 +300,7 @@ bool Window::onWindowClick() {
             ((Button *)this)->onMouseClick();
             break;
         case GUI::WindowMenuBar:
-            // ((MenuBar *)this)->
+            ((MenuBar *)this)->onMouseClick();
             break;
         case GUI::WindowDefault:
             break;
@@ -317,16 +312,16 @@ bool Window::onWindowClick() {
 void Window::drawWindow() {
     applyBoundClipping(false);
 
-    if (isDecorable() && parent) {
-        drawBorder();
+    // if (isDecorable() && parent) {
+        // drawBorder();
 
-        int xNew = x + BORDER_WIDTH;
-        int yNew = y + TITLE_HEIGHT;
-        Rect mainWindow(yNew, yNew + height - TITLE_HEIGHT - BORDER_WIDTH - 1,
-                        xNew, xNew + width - 2 * BORDER_WIDTH - 1);
+        // int xNew = x + BORDER_WIDTH;
+        // int yNew = y + TITLE_HEIGHT;
+        // Rect mainWindow(yNew, yNew + height - TITLE_HEIGHT - BORDER_WIDTH - 1,
+        //                 xNew, xNew + width - 2 * BORDER_WIDTH - 1);
 
-        context->intersectClippedRect(&mainWindow);
-    }
+        // context->intersectClippedRect(&mainWindow);
+    // }
 
     // Remove child window clipped rectangles
     for (int i = 0; i < numWindows; i++) {
@@ -338,10 +333,13 @@ void Window::drawWindow() {
         context->drawRect(x, y, width, height, color);
     } else if (type == GUI::WindowButton) {
         ((Button *)this)->drawWindow();
+    } else if (type == GUI::WindowMenuBar && parent) {
+        ((MenuBar *)this)->drawMenuBar();
     }
 
     context->resetClippedList();
 
+    // Redraw children if they intersect with dirty region
     Rect *dirtyRegions = context->getDirtyRegions();
     for (int i = 0; i < numWindows; i++) {
         context->resetClippedList();
@@ -389,6 +387,8 @@ bool Window::isLastMousePressed() { return lastMouseState & 0x1; }
 
 bool Window::isDecorable() { return flags & WIN_DECORATE; }
 
+bool Window::isMovable() { return flags & WIN_MOVABLE; }
+
 bool Window::isRefreshNeeded() { return flags & WIN_REFRESH_NEEDED; }
 
 bool Window::isOnMenuBar(int mouseX, int mouseY) {
@@ -408,23 +408,7 @@ void Window::moveToTop(Window *win) {
 }
 
 void Window::drawBorder() {
-    if (!parent) {
-        return;
-    }
-
-    context->drawOutlinedRect(x, y, width, height, BORDER_COLOR);
-    context->drawOutlinedRect(x + 1, y + 1, width - 2, height - 2,
-                              BORDER_COLOR);
-    context->drawOutlinedRect(x + 2, y + 2, width - 4, height - 4,
-                              BORDER_COLOR);
-
-    context->drawHorizontalLine(x + 3, y + 28, width - 6, BORDER_COLOR);
-    context->drawHorizontalLine(x + 3, y + 29, width - 6, BORDER_COLOR);
-    context->drawHorizontalLine(x + 3, y + 30, width - 6, BORDER_COLOR);
-
-    // Menu bar
-    context->drawRect(x + 3, y + 3, width - 6, 25,
-                      parent->activeChild == this ? 0xff545454 : BORDER_COLOR);
+    
 }
 
 void Window::updateRect() {
@@ -446,10 +430,38 @@ void Window::updateChildPositions(Device::MouseData *data) {
 }
 
 MenuBar::MenuBar(int x, int y, int width, int height)
-    : Window::Window("menuBar", x, y, width, height, 0) {
+    : Window::Window("menuBar", x, y, width, height, 0),
+    barColor(BORDER_COLOR) {
     type = GUI::WindowMenuBar;
 }
 
 MenuBar::~MenuBar() {}
+
+void MenuBar::onMouseClick() {
+
+}
+
+void MenuBar::drawMenuBar() {
+    // context->drawOutlinedRect(x, y, width, height, BORDER_COLOR);
+    // context->drawOutlinedRect(x + 1, y + 1, width - 2, height - 2,
+    //                           BORDER_COLOR);
+    // context->drawOutlinedRect(x + 2, y + 2, width - 4, height - 4,
+    //                           BORDER_COLOR);
+
+    // context->drawHorizontalLine(x + 3, y + 28, width - 6, BORDER_COLOR);
+    // context->drawHorizontalLine(x + 3, y + 29, width - 6, BORDER_COLOR);
+    // context->drawHorizontalLine(x + 3, y + 30, width - 6, BORDER_COLOR);
+
+    // Menu bar
+    context->drawRect(x, y, width, 32, getBarColor());
+}
+
+uint32_t MenuBar::getBarColor() {
+    return barColor;
+}
+
+void MenuBar::setBarColor(uint32_t color) {
+    barColor = color;
+}
 
 }  // namespace GUI
