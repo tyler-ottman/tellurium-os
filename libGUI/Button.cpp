@@ -13,6 +13,10 @@ Button::~Button() {
 
 void Button::onMouseClick() {
     colorToggle ^= 1;
+
+    // Button dirty, needs refresh
+    context->addClippedRect(this);
+    context->moveClippedToDirty();
 }
 
 void Button::drawWindow() {

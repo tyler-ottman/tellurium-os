@@ -14,6 +14,7 @@
 
 #define BORDER_COLOR                        0xff333333
 #define BORDER_WIDTH                        3
+#define MENUBAR_SELECT                      0xff545454
 
 namespace GUI {
 
@@ -54,6 +55,8 @@ public:
     bool onWindowDrag(Device::MouseData *data);
     bool onWindowRelease(void);
     bool onWindowClick(void);
+    bool onWindowSelect(void);
+    bool onWindowUnselect(void);
     
     int getWindowID(void);
     int getXPos(void);
@@ -114,12 +117,15 @@ public:
     ~MenuBar();
 
     void onMouseClick(void);
+    void onBarSelect(void);
+    void onBarUnselect(void);
 
     void drawMenuBar(void);
 
     uint32_t getBarColor(void);
-    void setBarColor(uint32_t color);
 private:
+    void setBarColor(uint32_t color);
+
     uint32_t barColor;
 };
 

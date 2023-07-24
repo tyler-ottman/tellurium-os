@@ -13,16 +13,17 @@ int main() {
     wm->createWindow("test", 10, 10, 300, 200, WIN_MOVABLE | WIN_DECORATE);
     GUI::Window *win = wm->createWindow("test", 100, 150, 400, 400,
                                         WIN_MOVABLE | WIN_DECORATE);
-    // wm->createWindow("test", 200, 100, 200, 600, WIN_DECORATE);
+    wm->createWindow("test", 200, 100, 200, 600, WIN_MOVABLE | WIN_DECORATE);
 
-    // GUI::Button *button = new GUI::Button(280, 357, 80, 30);
-    // win->appendWindow(button);
+    GUI::Button *button = new GUI::Button(280, 357, 80, 30);
+    win->appendWindow(button);
 
-    // button = new GUI::Button(175, 250, 80, 30);
-    // win->appendWindow(button);
+    button = new GUI::Button(175, 250, 80, 30);
+    win->appendWindow(button);
 
-    // GUI::Window *smallWin = new GUI::Window("test", 300, 200, 100, 100, WIN_DECORATE);
-    // win->appendWindow(smallWin);
+    GUI::Window *smallWin =
+        new GUI::Window("test", 300, 200, 100, 100, WIN_MOVABLE | WIN_DECORATE);
+    win->appendWindow(smallWin);
 
     Device::KeyboardData key = {
         .data = 0

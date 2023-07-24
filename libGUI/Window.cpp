@@ -198,7 +198,8 @@ void Window::updatePosition(int xNew, int yNew) {
     updateRect();
 }
 
-bool Window::onMouseEvent(Device::MouseData *data, int mouseX, int mouseY) {
+bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
+                                 int mouseY) {
     bool isNewMousePressed = data->flags & 0x1;
 
     for (int i = numWindows - 1; i >= 0; i--) {
@@ -212,17 +213,18 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX, int mouseY) {
         return child->onMouseEvent(data, mouseX, mouseY);
     }
 
-    // Window raise event
+    // Window raise event (non-terminal event)
     if (isNewMousePressed && !isLastMousePressed() && (isMovable() ||
         type == GUI::WindowMenuBar)) {
-        __asm__ ("cli");
-        return onWindowRaise();
+        Window *windowRaise = type == WindowMenuBar ? parent : this;
+        windowRaise->onWindowRaise();
     }
 
-    // If here, event is on a leaf window
-    if (this == selectedWindow && selectedWindow->isDecorable() &&
-        isNewMousePressed && selectedWindow->isOnMenuBar(mouseX, mouseY)) {
-        return selectedWindow->onWindowDrag(data);
+    // Terminal events
+
+    // Event on menu bar, drag its window
+    if (isNewMousePressed && type == GUI::WindowMenuBar) {
+        return parent->onWindowDrag(data);
     }
 
     // Window released from dragging
@@ -243,37 +245,39 @@ bool Window::onWindowRaise() {
         return false;
     }
 
-    Window *prevParent = parent;
+    Window *topWindow = this;
+    Window *prevWindow = topWindow;
 
     // Get top level window to stack on top
-    while (prevParent->parent) {
-        prevParent = prevParent->parent;
+    while (topWindow->parent) {
+        prevWindow = topWindow;
+        topWindow = topWindow->parent;
     }
 
-    parent->removeWindow(windowID);
-    parent->appendWindow(this);
-
-    parent->activeChild = this;
-
-    // Update unselected menu bar's color
-    if (selectedWindow && selectedWindow != this) {
-        if (selectedWindow->menuBar) {
-            selectedWindow->menuBar->setBarColor(BORDER_COLOR);
-
-            context->addClippedRect(selectedWindow->menuBar);
-        }
+    // If desktop was clicked, ignore
+    if (topWindow == prevWindow) {
+        return true;
     }
 
+    // Otherwise, raise window
+    topWindow->removeWindow(prevWindow->getWindowID());
+    topWindow->appendWindow(prevWindow);
+    topWindow->activeChild = prevWindow;
+
+    // Unselect old window
+    if (selectedWindow && (selectedWindow != this)) {
+        selectedWindow->onWindowUnselect();
+    }
+
+    // Select new window
+    onWindowSelect();
     selectedWindow = this;
-    if (selectedWindow->menuBar) {
-        selectedWindow->menuBar->setBarColor(0xff00ff00);
-    }
 
     xOld = selectedWindow->getXPos();
     yOld = selectedWindow->getYPos();
 
     // Window needs immediate refresh
-    context->addClippedRect(selectedWindow);
+    context->addClippedRect(prevWindow);
     context->moveClippedToDirty();
 
     return true;
@@ -309,19 +313,24 @@ bool Window::onWindowClick() {
     return true;
 }
 
+bool Window::onWindowSelect() {
+    if (menuBar) {
+        menuBar->onBarSelect();
+    }
+
+    return true;
+}
+
+bool Window::onWindowUnselect() {
+    if (menuBar) {
+        menuBar->onBarUnselect();
+    }
+
+    return true;
+}
+
 void Window::drawWindow() {
     applyBoundClipping(false);
-
-    // if (isDecorable() && parent) {
-        // drawBorder();
-
-        // int xNew = x + BORDER_WIDTH;
-        // int yNew = y + TITLE_HEIGHT;
-        // Rect mainWindow(yNew, yNew + height - TITLE_HEIGHT - BORDER_WIDTH - 1,
-        //                 xNew, xNew + width - 2 * BORDER_WIDTH - 1);
-
-        // context->intersectClippedRect(&mainWindow);
-    // }
 
     // Remove child window clipped rectangles
     for (int i = 0; i < numWindows; i++) {
@@ -441,18 +450,18 @@ void MenuBar::onMouseClick() {
 
 }
 
+void MenuBar::onBarSelect() {
+    setBarColor(MENUBAR_SELECT);
+}
+
+void MenuBar::onBarUnselect() {
+    setBarColor(BORDER_COLOR);
+    context->addClippedRect(this);
+
+    // close drop down menus
+}
+
 void MenuBar::drawMenuBar() {
-    // context->drawOutlinedRect(x, y, width, height, BORDER_COLOR);
-    // context->drawOutlinedRect(x + 1, y + 1, width - 2, height - 2,
-    //                           BORDER_COLOR);
-    // context->drawOutlinedRect(x + 2, y + 2, width - 4, height - 4,
-    //                           BORDER_COLOR);
-
-    // context->drawHorizontalLine(x + 3, y + 28, width - 6, BORDER_COLOR);
-    // context->drawHorizontalLine(x + 3, y + 29, width - 6, BORDER_COLOR);
-    // context->drawHorizontalLine(x + 3, y + 30, width - 6, BORDER_COLOR);
-
-    // Menu bar
     context->drawRect(x, y, width, 32, getBarColor());
 }
 
