@@ -111,16 +111,8 @@ bool Window::attachMenuBar(MenuBar *menuBar) {
     return true;
 }
 
-void Window::applyBoundClipping(bool recurse) {
-    Rect rect;
-
-    if (isDecorable() && recurse && parent) {
-        // rect = Rect(y + TITLE_HEIGHT, y + height - BORDER_WIDTH - 1,
-        //             x + BORDER_WIDTH, x + width - BORDER_WIDTH - 1);
-        rect = Rect(y, y + height - 1, x, x + width - 1);
-    } else {
-        rect = Rect(y, y + height - 1, x, x + width - 1);
-    }
+void Window::applyBoundClipping() {
+    Rect rect(y, y + height - 1, x, x + width - 1);
 
     if (!parent) {
         if (context->getNumDirty()) {
@@ -130,19 +122,19 @@ void Window::applyBoundClipping(bool recurse) {
                 context->addClippedRect(&dirtyRegions[i]);
             }
 
-            context->intersectClippedRect(&rect);
+            context->intersectClippedRect(this);
         } else {
-            context->addClippedRect(&rect);
+            context->addClippedRect(this);
         }
 
         return;
     }
 
     // Reduce drawing to parent window
-    parent->applyBoundClipping(true);
+    parent->applyBoundClipping();
 
     // Reduce visibility to main drawing area
-    context->intersectClippedRect(&rect);
+    context->intersectClippedRect(this);
 
     // Get ID of current window from parent's view
     int winID = -1;
@@ -223,7 +215,8 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
     // Terminal events
 
     // Event on menu bar, drag its window
-    if (isNewMousePressed && type == GUI::WindowMenuBar) {
+    if (type == GUI::WindowMenuBar && (parent == selectedWindow) &&
+        isNewMousePressed) {
         return parent->onWindowDrag(data);
     }
 
@@ -252,17 +245,16 @@ bool Window::onWindowRaise() {
     while (topWindow->parent) {
         prevWindow = topWindow;
         topWindow = topWindow->parent;
+
+        topWindow->removeWindow(prevWindow->getWindowID());
+        topWindow->appendWindow(prevWindow);
+        topWindow->activeChild = prevWindow;
     }
 
     // If desktop was clicked, ignore
     if (topWindow == prevWindow) {
         return true;
     }
-
-    // Otherwise, raise window
-    topWindow->removeWindow(prevWindow->getWindowID());
-    topWindow->appendWindow(prevWindow);
-    topWindow->activeChild = prevWindow;
 
     // Unselect old window
     if (selectedWindow && (selectedWindow != this)) {
@@ -330,11 +322,15 @@ bool Window::onWindowUnselect() {
 }
 
 void Window::drawWindow() {
-    applyBoundClipping(false);
+    applyBoundClipping();
 
     // Remove child window clipped rectangles
     for (int i = 0; i < numWindows; i++) {
         context->reshapeRegion(windows[i]);
+    }
+
+    if (parent && parent->menuBar && (parent->menuBar != this)) {
+        context->reshapeRegion(parent->menuBar);
     }
 
     // Draw self

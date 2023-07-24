@@ -39,7 +39,7 @@ public:
     Window *removeWindow(int windowID);
     bool attachMenuBar(MenuBar *menuBar);
 
-    void applyBoundClipping(bool recurse);
+    void applyBoundClipping(void);
     void applyDirtyDrag(void);
 
     bool intersects(Rect *rect);
