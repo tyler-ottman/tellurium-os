@@ -25,6 +25,7 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
       flags(flags),
       windowID(-1),
       type(WindowDefault),
+      priority(0),
       menuBar(nullptr),
       context(FbContext::getInstance()),
       parent(nullptr),
@@ -74,10 +75,27 @@ Window *Window::appendWindow(Window *window) {
         return nullptr;
     }
 
-    int windowID = numWindows++;
+    int windowID = 0;
+    for (int i = numWindows - 1; i >= 0; i--) {
+        if (window->priority >= windows[i]->priority) {
+            windowID = i + 1;
+            break;
+        }
+    }
+
+    for (int i = windowID; i < numWindows; i++) {
+        windows[i + 1] = windows[i];
+    }
+
     windows[windowID] = window;
     window->setWindowID(windowID);
     window->parent = this;
+    numWindows++;
+
+    // int windowID = numWindows++;
+    // windows[windowID] = window;
+    // window->setWindowID(windowID);
+    // window->parent = this;
 
     return window;
 }
@@ -388,6 +406,14 @@ void Window::setXPos(int x) { this->x = x; }
 
 void Window::setYPos(int y) { this->y = y; }
 
+void Window::setPriority(int priority) {
+    if (priority < WIN_PRIORITY_MIN || priority > WIN_PRIORITY_MAX) {
+        return;
+    }
+
+    this->priority = priority;
+}
+
 bool Window::isLastMousePressed() { return lastMouseState & 0x1; }
 
 bool Window::isDecorable() { return flags & WIN_DECORATE; }
@@ -438,6 +464,7 @@ MenuBar::MenuBar(int x, int y, int width, int height)
     : Window::Window("menuBar", x, y, width, height, 0),
     barColor(BORDER_COLOR) {
     type = GUI::WindowMenuBar;
+    priority = 5;
 }
 
 MenuBar::~MenuBar() {}

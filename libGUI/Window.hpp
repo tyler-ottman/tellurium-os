@@ -16,6 +16,9 @@
 #define BORDER_WIDTH                        3
 #define MENUBAR_SELECT                      0xff545454
 
+#define WIN_PRIORITY_MIN                    0
+#define WIN_PRIORITY_MAX                    9
+
 namespace GUI {
 
 enum WindowType {
@@ -67,6 +70,7 @@ public:
     void setWindowID(int windowID);
     void setXPos(int x);
     void setYPos(int y);
+    void setPriority(int priority);
     bool isLastMousePressed(void);
     bool isDecorable(void);
     bool isMovable(void);
@@ -89,6 +93,7 @@ protected:
     int color;
     int windowID;
     int type;
+    int priority;
 
     MenuBar *menuBar;
 
