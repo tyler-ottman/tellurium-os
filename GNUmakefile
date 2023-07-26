@@ -6,6 +6,7 @@ override KERNEL_DIR := kernel
 override LIBGUI_DIR := libGUI
 override ULIBC_DIR := ulibc
 override APPS_DIR := applications
+override IMG_DIR := imgBin
 
 .PHONY: all
 all: $(IMAGE_NAME).iso
@@ -29,6 +30,7 @@ $(IMAGE_NAME).iso: $(KERNEL_DIR)
 	mkdir -p iso_root
 	cp $(KERNEL_DIR)/kernel.elf \
 		$(APPS_DIR)/userspace.tar \
+		$(IMG_DIR)/background.tar \
 		limine.cfg \
         $(LIMINE_DIR)/limine.sys \
         $(LIMINE_DIR)/limine-cd.bin \

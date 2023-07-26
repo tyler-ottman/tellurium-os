@@ -4,6 +4,7 @@
 #include "Rect.hpp"
 
 #define CLIPPED_MAX                         200
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 namespace GUI {
 
@@ -22,10 +23,14 @@ public:
 
     // Framebuffer operations
     void drawRect(int x, int y, int width, int height, uint32_t color);
+    void drawBuff(int x, int y, int width, int height, uint32_t *buff);
     void drawRectNoRegion(int x, int y, int width, int height, uint32_t color);
     void drawVerticalLine(int xPos, int yPos, int length, int color);
     void drawHorizontalLine(int xPos, int yPos, int length, int color);
     void drawOutlinedRect(int xPos, int yPos, int width, int length, int color);
+
+    // Translations
+    uint32_t translateLightColor(uint32_t color);
 
     // Clipped Rectangle Operations
     void addClippedRect(Rect *rect);
@@ -71,6 +76,9 @@ private:
     // Draw a clipped rectangle within the bounds of Rect area
     void drawClippedRect(int x, int y, int width, int height, uint32_t color,
                          Rect *area);
-};
 
+    // Draw a clipped buffer within bounds of Rect area
+    void drawClippedBuff(int x, int y, int width, int height, uint32_t *buff,
+                         Rect *area);
+};
 }

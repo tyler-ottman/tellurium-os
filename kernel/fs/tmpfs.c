@@ -65,7 +65,7 @@ static int tmpfs_read(void *buff, vnode_t *node, size_t size, size_t offset) {
     uint64_t addr = (uint64_t)node->fs_data + offset;
     __memcpy(buff, (void *)addr, size);
 
-    return VFS_SUCCESS;
+    return size;
 }
 
 static int tmpfs_write(void *buff, vnode_t *node, size_t size, size_t offset) {

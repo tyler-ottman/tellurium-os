@@ -1,5 +1,6 @@
 #include "libGUI/Button.hpp"
 #include "libGUI/FbContext.hpp"
+#include "libGUI/Image.hpp"
 #include "libGUI/Window.hpp"
 #include "ulibc/mem.hpp"
 #include "ulibc/string.h"
@@ -13,6 +14,7 @@ namespace GUI {
 
 uint8_t Window::lastMouseState = 0;
 Window *Window::selectedWindow = nullptr;
+Window *Window::hoverWindow = nullptr;
 int Window::xOld = 0;
 int Window::yOld = 0;
 
@@ -32,8 +34,9 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
       activeChild(nullptr),
       maxWindows(WINDOW_MAX),
       numWindows(0) {
-    color = 0xff000000 | pseudo_rand_8() << 16 | pseudo_rand_8() << 8 |
-            pseudo_rand_8();
+    // color = 0xff000000 | pseudo_rand_8() << 16 | pseudo_rand_8() << 8 |
+    //         pseudo_rand_8();
+    color = 0xff3b6aa0;
 
     this->windowName = new char[__strlen(w_name)];
 
@@ -47,7 +50,25 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
     if (isMovable()) {
         MenuBar *menuBar = new MenuBar(x, y, width, TITLE_HEIGHT);
 
+        Button *exitButton =
+            new Button(x + width - 31, y, 31, 31, BUTTON_HOVER);
+        ((Window *)menuBar)->appendWindow(exitButton);
+
         attachMenuBar(menuBar);
+
+        Border *border =
+            new Border(x, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1);
+        appendWindow(border);
+
+        border = new Border(x + width - 1, y + TITLE_HEIGHT, 1,
+                            height - TITLE_HEIGHT - 1);
+        appendWindow(border);
+
+        border = new Border(x, y + height - 1, width, 1);
+        appendWindow(border);
+
+        border = new Border(x, y + TITLE_HEIGHT, width, 1);
+        appendWindow(border);
     }
 }
 
@@ -83,7 +104,7 @@ Window *Window::appendWindow(Window *window) {
         }
     }
 
-    for (int i = windowID; i < numWindows; i++) {
+    for (int i = numWindows - 1; i >= windowID; i--) {
         windows[i + 1] = windows[i];
     }
 
@@ -248,6 +269,11 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
         return onWindowClick();
     }
 
+    // Window hover event
+    if (!isNewMousePressed && !isLastMousePressed()) {
+        return onWindowHover();
+    }
+
     return true;
 }
 
@@ -339,6 +365,41 @@ bool Window::onWindowUnselect() {
     return true;
 }
 
+bool Window::onWindowHover() {
+    // Check if hovering over new component
+    if (hoverWindow && hoverWindow != this) {
+        hoverWindow->onWindowUnhover();
+    }
+
+    switch (type) {
+    case GUI::WindowButton:
+        ((Button *)this)->onButtonHover();
+        break;
+    case GUI::WindowMenuBar:
+        break;
+    case GUI::WindowDefault:
+        break;
+    }
+
+    hoverWindow = this;
+
+    return true;
+}
+
+bool Window::onWindowUnhover() {
+    switch (type) {
+    case GUI::WindowButton:
+        ((Button *)this)->onButtonUnhover();
+        break;
+    case GUI::WindowMenuBar:
+        break;
+    case GUI::WindowDefault:
+        break;
+    }
+
+    return true;
+}
+
 void Window::drawWindow() {
     applyBoundClipping();
 
@@ -347,17 +408,17 @@ void Window::drawWindow() {
         context->reshapeRegion(windows[i]);
     }
 
-    if (parent && parent->menuBar && (parent->menuBar != this)) {
-        context->reshapeRegion(parent->menuBar);
-    }
-
     // Draw self
     if (type == GUI::WindowDefault) {
         context->drawRect(x, y, width, height, color);
     } else if (type == GUI::WindowButton) {
         ((Button *)this)->drawWindow();
-    } else if (type == GUI::WindowMenuBar && parent) {
+    } else if (type == GUI::WindowMenuBar) {
         ((MenuBar *)this)->drawMenuBar();
+    } else if (type == GUI::WindowBorder) {
+        ((Border *)this)->drawBorder();
+    } else if (type == GUI::WindowImage) {
+        ((Image *)this)->drawImage();
     }
 
     context->resetClippedList();
@@ -438,6 +499,11 @@ void Window::moveToTop(Window *win) {
     appendWindow(win);
 }
 
+void Window::moveThisToDirty() {
+    context->addClippedRect(this);
+    context->moveClippedToDirty();
+}
+
 void Window::drawBorder() {
     
 }
@@ -464,7 +530,7 @@ MenuBar::MenuBar(int x, int y, int width, int height)
     : Window::Window("menuBar", x, y, width, height, 0),
     barColor(BORDER_COLOR) {
     type = GUI::WindowMenuBar;
-    priority = 5;
+    setPriority(5);
 }
 
 MenuBar::~MenuBar() {}
@@ -494,6 +560,19 @@ uint32_t MenuBar::getBarColor() {
 
 void MenuBar::setBarColor(uint32_t color) {
     barColor = color;
+}
+
+Border::Border(int x, int y, int width, int height)
+    : Window::Window("border", x, y, width, height, 0) {
+    type = GUI::WindowBorder;
+    priority = 2;
+    color = 0xffbebebe;
+}
+
+Border::~Border() {}
+
+void Border::drawBorder() {
+    context->drawRect(x, y, width, height, color);
 }
 
 }  // namespace GUI

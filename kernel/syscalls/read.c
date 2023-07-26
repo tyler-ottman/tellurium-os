@@ -22,9 +22,9 @@ size_t syscall_read(int fd, void *buf, size_t count) {
     }
 
     fd_release(&proc->fd_table, fd);
-
+    
     if (bytes_read) {
-        // kprintf("%c", *((char *)buf));
+        // kprintf("%x\n", bytes_read);
     }
 
     return bytes_read;

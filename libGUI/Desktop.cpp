@@ -1,4 +1,5 @@
 #include "libGUI/Desktop.hpp"
+#include "libGUI/Image.hpp"
 
 namespace GUI {
 
@@ -11,6 +12,14 @@ Desktop::Desktop()
     mouseY = height / 2;
     oldMouseX = mouseX;
     oldMouseY = mouseY;
+
+    color = 0xff2a2a2a;
+
+    Image *background = new Image(0, 0, context->getFbContext()->fb_width,
+                                  context->getFbContext()->fb_height);
+    
+    background->loadImage("/tmp/background.bin");
+    appendWindow(background);
 }
 
 Desktop::~Desktop() {
@@ -93,3 +102,4 @@ bool Desktop::mouseInBounds(Window *window) {
             (mouseY <= (window->getYPos() + window->getHeight())));
 }
 }
+

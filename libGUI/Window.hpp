@@ -22,8 +22,10 @@
 namespace GUI {
 
 enum WindowType {
+    WindowBorder,
     WindowButton,
     WindowDefault,
+    WindowImage,
     WindowMenuBar
 };
 
@@ -60,6 +62,8 @@ public:
     bool onWindowClick(void);
     bool onWindowSelect(void);
     bool onWindowUnselect(void);
+    bool onWindowHover(void);
+    bool onWindowUnhover(void);
     
     int getWindowID(void);
     int getXPos(void);
@@ -80,6 +84,7 @@ public:
 
 protected:
     void moveToTop(Window *window);
+    void moveThisToDirty(void);
     void drawBorder(void);
     void updateRect(void);
     void updateChildPositions(Device::MouseData *data);
@@ -110,6 +115,9 @@ protected:
     // Info for window dragging and dirty regions
     static Window *selectedWindow;
 
+    // Last window that was hovered over
+    static Window *hoverWindow;
+
     // Use (X, Y) position of selectedWindow on last refresh
     // to calculate dirty rectangles
     static int xOld;
@@ -132,6 +140,14 @@ private:
     void setBarColor(uint32_t color);
 
     uint32_t barColor;
+};
+
+class Border : public Window {
+public:
+    Border(int x, int y, int width, int height);
+    ~Border();
+
+    void drawBorder(void);
 };
 
 }

@@ -87,9 +87,62 @@ void FbContext::drawClippedRect(int x, int y, int width, int height,
     }
 }
 
+void FbContext::drawClippedBuff(int x, int y, int width, int height,
+                                uint32_t *buff, Rect *area) {
+    int xMax = x + width;
+    int yMax = y + height;
+
+    FbMeta &fb_meta = instance->fb_meta;
+    uint32_t *framebuffer = (uint32_t *)fb_meta.fb_buff;
+
+    if (y < area->getTop()) {
+        y = area->getTop();
+    }
+
+    if (yMax > area->getBottom() + 1) {
+        yMax = area->getBottom() + 1;
+    }
+
+    if (x < area->getLeft()) {
+        x = area->getLeft();
+    }
+
+    if (xMax > area->getRight() + 1) {
+        xMax = area->getRight() + 1;
+    }
+
+    if (area->getLeft() < 0) {
+        x = 0;
+    }
+
+    if (area->getRight() > screen->getRight()) {
+        xMax = screen->getRight();
+    }
+
+    if (area->getTop() < 0) {
+        y = 0;
+    }
+
+    if (area->getBottom() > screen->getBottom()) {
+        yMax = screen->getBottom();
+    }
+
+    for (int i = y; i < yMax; i++) {
+        for (int j = x; j < xMax; j++) {
+            framebuffer[i * fb_meta.fb_width + j] = buff[i * width + j];
+        }
+    }
+}
+
 void FbContext::drawRect(int x, int y, int width, int height, uint32_t color) {
     for (int i = 0; i < numClipped; i++) {
         drawClippedRect(x, y, width, height, color, &clippedRects[i]);
+    }
+}
+
+void FbContext::drawBuff(int x, int y, int width, int height, uint32_t *buff) {
+    for (int i = 0; i < numClipped; i++) {
+        drawClippedBuff(x, y, width, height, buff, &clippedRects[i]);
     }
 }
 
@@ -116,6 +169,18 @@ void FbContext::drawOutlinedRect(int xPos, int yPos, int width, int height,
     drawHorizontalLine(xPos, yPos + height - 1, width, color);
     drawVerticalLine(xPos, yPos + 1, height - 2, color);
     drawVerticalLine(xPos + width - 1, yPos + 1, height - 2, color);
+}
+
+uint32_t FbContext::translateLightColor(uint32_t color) {
+    uint8_t red = (color >> 16) & 0xff;
+    uint8_t green = (color >> 8) & 0xff;
+    uint8_t blue = color & 0xff;
+
+    uint8_t deltaRed = MIN(red + (red / 8), 0xff);
+    uint8_t deltaGreen = MIN(green + (green / 8), 0xff);
+    uint8_t deltaBlue = MIN(blue + (blue / 8), 0xff);
+
+    return 0xff000000 | (deltaRed << 16) | (deltaGreen << 8) | (deltaBlue);
 }
 
 void FbContext::addClippedRect(Rect *rect) {
