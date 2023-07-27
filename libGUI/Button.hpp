@@ -1,6 +1,7 @@
 #pragma once
 
 #include "libGUI/Window.hpp"
+#include "libGUI/Image.hpp"
 
 // Button flags
 #define BUTTON_BORDER                       0x1
@@ -18,7 +19,8 @@ public:
     bool onButtonHover(void);
     bool onButtonUnhover(void);
     void drawWindow(void);
-
+    void loadImage(const char *path);
+    void loadHoverImage(const char *path);
 private:
     inline bool isFlagBorder(void) { return buttonFlags & BUTTON_BORDER; }
     inline bool isFlagToggle(void) { return buttonFlags & BUTTON_TOGGLE; }
@@ -26,6 +28,10 @@ private:
 
     bool colorToggle;
     bool onHover;
+
+    bool isImg;
+    Image *imgDefault;
+    Image *imgHover;
 
     uint8_t buttonFlags;
 };

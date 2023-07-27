@@ -5,7 +5,7 @@
 #define MAX_FIELD_LEN                   10
 
 static inline bool isWhitespace(char c) {
-    return c == 0x20 || c == 0x09 || c == 0x0d || c == 0x0a;
+    return c < 0x30 || c > 0x39;
 }
 
 static inline int getPpmNumber(uint8_t *ppmMeta) {
@@ -56,12 +56,16 @@ int Image::loadImage(const char *path) {
     uint8_t *ppmMeta = ppm;
 
     // Verify magic/whitespace
-    if (*ppmMeta++ != 'P' || *ppmMeta++ != '6' || !isWhitespace(*ppmMeta++)) {
+    if (*ppmMeta++ != 'P' || *ppmMeta++ != '6') {
         return IMG_ERR;
     }
 
+    while (isWhitespace(*ppmMeta)) {
+        ppmMeta++;
+    }
+
     // Get width
-    int width = getPpmNumber(ppmMeta);
+    this->width = getPpmNumber(ppmMeta);
     ppmMeta += getNumDigits(width);
 
     // Verify whitespace
@@ -70,7 +74,7 @@ int Image::loadImage(const char *path) {
     }
 
     // Get height
-    int height = getPpmNumber(ppmMeta);
+    this->height = getPpmNumber(ppmMeta);
     ppmMeta += getNumDigits(height);
 
     // Verify whitespace
@@ -113,6 +117,8 @@ int Image::loadImage(const char *path) {
         ppm += 3;
     }
 
+    updateRect();
+
     delete ppm;
 
     return IMG_OK;
@@ -120,6 +126,10 @@ int Image::loadImage(const char *path) {
 
 void Image::drawImage() {
     context->drawBuff(x, y, width, height, imgBuff);
+}
+
+uint32_t *Image::getBuff() {
+    return imgBuff;
 }
 
 }  // namespace GUI

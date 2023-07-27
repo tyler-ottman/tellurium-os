@@ -36,7 +36,8 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
       numWindows(0) {
     // color = 0xff000000 | pseudo_rand_8() << 16 | pseudo_rand_8() << 8 |
     //         pseudo_rand_8();
-    color = 0xff3b6aa0;
+    // color = 0xff3b6aa0;
+    color = 0xff333333;
 
     this->windowName = new char[__strlen(w_name)];
 
@@ -51,8 +52,16 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
         MenuBar *menuBar = new MenuBar(x, y, width, TITLE_HEIGHT);
 
         Button *exitButton =
-            new Button(x + width - 31, y, 31, 31, BUTTON_HOVER);
+            new Button(x + width - 20, y + 5, 31, 31, BUTTON_HOVER);
         ((Window *)menuBar)->appendWindow(exitButton);
+        exitButton->loadImage("/tmp/exitButtonUnhover.ppm");
+        exitButton->loadHoverImage("/tmp/exitButtonHover.ppm");
+
+        Button *minimizeButton =
+            new Button(x + width - 40, y + 5, 31, 31, BUTTON_HOVER);
+        ((Window *)menuBar)->appendWindow(minimizeButton);
+        minimizeButton->loadImage("/tmp/minimizeButtonUnhover.ppm");
+        minimizeButton->loadHoverImage("/tmp/minimizeButtonHover.ppm");
 
         attachMenuBar(menuBar);
 
@@ -528,7 +537,7 @@ void Window::updateChildPositions(Device::MouseData *data) {
 
 MenuBar::MenuBar(int x, int y, int width, int height)
     : Window::Window("menuBar", x, y, width, height, 0),
-    barColor(BORDER_COLOR) {
+    barColor(0xffbebebe) {
     type = GUI::WindowMenuBar;
     setPriority(5);
 }
@@ -540,11 +549,11 @@ void MenuBar::onMouseClick() {
 }
 
 void MenuBar::onBarSelect() {
-    setBarColor(MENUBAR_SELECT);
+    // setBarColor(0xffbebebe);
 }
 
 void MenuBar::onBarUnselect() {
-    setBarColor(BORDER_COLOR);
+    // setBarColor(0xffa9a9a9);
     context->addClippedRect(this);
 
     // close drop down menus

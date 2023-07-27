@@ -92,6 +92,9 @@ void FbContext::drawClippedBuff(int x, int y, int width, int height,
     int xMax = x + width;
     int yMax = y + height;
 
+    int translateX = x;
+    int translateY = y;
+
     FbMeta &fb_meta = instance->fb_meta;
     uint32_t *framebuffer = (uint32_t *)fb_meta.fb_buff;
 
@@ -114,7 +117,7 @@ void FbContext::drawClippedBuff(int x, int y, int width, int height,
     if (area->getLeft() < 0) {
         x = 0;
     }
-
+    
     if (area->getRight() > screen->getRight()) {
         xMax = screen->getRight();
     }
@@ -126,10 +129,11 @@ void FbContext::drawClippedBuff(int x, int y, int width, int height,
     if (area->getBottom() > screen->getBottom()) {
         yMax = screen->getBottom();
     }
-
+    
     for (int i = y; i < yMax; i++) {
         for (int j = x; j < xMax; j++) {
-            framebuffer[i * fb_meta.fb_width + j] = buff[i * width + j];
+            framebuffer[i * fb_meta.fb_width + j] =
+                buff[(i - translateY) * width + (j - translateX)];
         }
     }
 }
