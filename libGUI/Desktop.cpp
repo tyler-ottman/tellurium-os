@@ -18,7 +18,7 @@ Desktop::Desktop()
     Image *background = new Image(0, 0, context->getFbContext()->fb_width,
                                   context->getFbContext()->fb_height);
     
-    background->loadImage("/tmp/background.bin");
+    background->loadImage("/tmp/background.ppm");
     appendWindow(background);
 }
 

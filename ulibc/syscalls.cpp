@@ -5,6 +5,7 @@
 #define SYSCALL_MMAP                                2
 #define SYSCALL_OPEN                                3
 #define SYSCALL_READ                                4
+#define SYSCALL_LSEEK                               5
 
 template <class T1, class T2, class T3, class T4, class T5, class T6>
 size_t _syscall(size_t sys_id,  T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6) {
@@ -37,4 +38,8 @@ int syscall_open(const char *path, int flags) {
 
 int syscall_read(int fd, void *buf, size_t count) {
     return (int)_syscall(SYSCALL_READ, fd, buf, count, 0, 0, 0);
+}
+
+int syscall_lseek(int fd, size_t offset, int whence) {
+    return _syscall(SYSCALL_LSEEK, fd, offset, whence, 0, 0, 0);
 }

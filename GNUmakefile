@@ -24,13 +24,14 @@ kernel:
 	$(MAKE) -C $(LIBGUI_DIR)
 	$(MAKE) -C $(ULIBC_DIR)
 	$(MAKE) -C $(APPS_DIR)
+	$(MAKE) -C $(IMG_DIR)
 
 $(IMAGE_NAME).iso: $(KERNEL_DIR)
 	rm -rf iso_root
 	mkdir -p iso_root
 	cp $(KERNEL_DIR)/kernel.elf \
 		$(APPS_DIR)/userspace.tar \
-		$(IMG_DIR)/background.tar \
+		$(IMG_DIR)/images.tar \
 		limine.cfg \
         $(LIMINE_DIR)/limine.sys \
         $(LIMINE_DIR)/limine-cd.bin \
@@ -52,3 +53,4 @@ clean:
 	$(MAKE) -C $(APPS_DIR) clean
 	$(MAKE) -C $(LIBGUI_DIR) clean
 	$(MAKE) -C $(ULIBC_DIR) clean
+	$(MAKE) -C $(IMG_DIR) clean

@@ -7,6 +7,7 @@
 #define SYSCALL_MMAP                                2
 #define SYSCALL_OPEN                                3
 #define SYSCALL_READ                                4
+#define SYSCALL_LSEEK                               5
 
 extern void *ISR_syscall[];
 
@@ -36,6 +37,9 @@ void syscall_handler(ctx_t *ctx) {
         break;
     case SYSCALL_READ:
         ret = (size_t)syscall_read(arg1, (void *)arg2, arg3);
+        break;
+    case SYSCALL_LSEEK:
+        ret = (int)syscall_lseek((int)arg1, arg2, (int)arg3);
         break;
     default:
         kprintf("Unknown syscall: %x\n", syscall_id);

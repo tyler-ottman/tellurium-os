@@ -23,6 +23,8 @@ size_t syscall_read(int fd, void *buf, size_t count) {
 
     fd_release(&proc->fd_table, fd);
     
+    read_fd->offset += bytes_read;
+
     if (bytes_read) {
         // kprintf("%x\n", bytes_read);
     }
