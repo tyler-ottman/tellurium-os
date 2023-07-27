@@ -418,17 +418,7 @@ void Window::drawWindow() {
     }
 
     // Draw self
-    if (type == GUI::WindowDefault) {
-        context->drawRect(x, y, width, height, color);
-    } else if (type == GUI::WindowButton) {
-        ((Button *)this)->drawWindow();
-    } else if (type == GUI::WindowMenuBar) {
-        ((MenuBar *)this)->drawMenuBar();
-    } else if (type == GUI::WindowBorder) {
-        ((Border *)this)->drawBorder();
-    } else if (type == GUI::WindowImage) {
-        ((Image *)this)->drawImage();
-    }
+    drawObject();
 
     context->resetClippedList();
 
@@ -456,6 +446,10 @@ void Window::drawWindow() {
 
         child->drawWindow();
     }
+}
+
+void Window::drawObject() {
+    context->drawRect(x, y, width, height, color);
 }
 
 int Window::getWindowID() { return this->windowID; }
@@ -559,7 +553,7 @@ void MenuBar::onBarUnselect() {
     // close drop down menus
 }
 
-void MenuBar::drawMenuBar() {
+void MenuBar::drawObject() {
     context->drawRect(x, y, width, 32, getBarColor());
 }
 
@@ -580,7 +574,7 @@ Border::Border(int x, int y, int width, int height)
 
 Border::~Border() {}
 
-void Border::drawBorder() {
+void Border::drawObject() {
     context->drawRect(x, y, width, height, color);
 }
 

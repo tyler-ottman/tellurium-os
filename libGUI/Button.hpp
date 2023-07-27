@@ -18,7 +18,7 @@ public:
     bool onMouseClick(void);
     bool onButtonHover(void);
     bool onButtonUnhover(void);
-    void drawWindow(void);
+    void drawObject(void);
     void loadImage(const char *path);
     void loadHoverImage(const char *path);
 private:

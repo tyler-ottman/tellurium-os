@@ -124,7 +124,7 @@ int Image::loadImage(const char *path) {
     return IMG_OK;
 }
 
-void Image::drawImage() {
+void Image::drawObject() {
     context->drawBuff(x, y, width, height, imgBuff);
 }
 

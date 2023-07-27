@@ -48,7 +48,7 @@ bool Button::onButtonUnhover() {
     return true;
 }
 
-void Button::drawWindow() {
+void Button::drawObject() {
     color = colorToggle ? 0xff01796f : 0xffca3433;
 
     if (onHover) {

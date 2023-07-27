@@ -51,6 +51,7 @@ public:
     void updatePosition(int xNew, int yNew);
 
     void drawWindow(void);
+    virtual void drawObject(void);
     
     // Mouse event stubs
 
@@ -133,7 +134,7 @@ public:
     void onBarSelect(void);
     void onBarUnselect(void);
 
-    void drawMenuBar(void);
+    void drawObject(void);
 
     uint32_t getBarColor(void);
 private:
@@ -147,7 +148,7 @@ public:
     Border(int x, int y, int width, int height);
     ~Border();
 
-    void drawBorder(void);
+    void drawObject(void);
 };
 
 }
