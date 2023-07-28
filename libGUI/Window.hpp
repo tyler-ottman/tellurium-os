@@ -36,7 +36,7 @@ class Window: public Rect {
 public:
     Window(const char *name, int x, int y, int width, int height,
            uint16_t flags);
-    ~Window();
+    virtual ~Window();
 
     Window *createWindow(const char *w_name, int x_pos, int y_pos, int width,
                          int height, uint16_t flags);
@@ -75,6 +75,7 @@ public:
     void setWindowID(int windowID);
     void setXPos(int x);
     void setYPos(int y);
+    void setColor(uint32_t color);
     void setPriority(int priority);
     bool isLastMousePressed(void);
     bool isDecorable(void);

@@ -8,9 +8,6 @@
 #include <stdarg.h>
 #include <sys/misc.h>
 
-#define NUM_SET_TEXT_ATTRIBUTES     9
-#define NUM_RESET_TEXT_ATTRIBUTES   8
-
 #define FG_COLOR_DEFAULT            0xff0096aa
 #define BG_COLOR_DEFAULT            RESET_COLOR
 
@@ -100,9 +97,6 @@ static uint32_t rgb256[] = {
 spinlock_t kprint_lock = 0;
 terminal_t kterminal;
 
-void (*apply_set_attribute[NUM_SET_TEXT_ATTRIBUTES]) (terminal_t *);
-void (*apply_reset_attribute[NUM_RESET_TEXT_ATTRIBUTES]) (terminal_t *);
-
 void kerror(const char* msg, int err) {
     disable_interrupts();
 
@@ -158,12 +152,12 @@ static void parse_sgr(terminal_t *terminal, char *sequence) {
 
             // Set text attributes
             if (n >= SET_RESET && n <= SET_STRIKETHROUGH) {
-                (*apply_set_attribute[n])(terminal);
+                terminal->apply_set_attribute[n](terminal);
             }
             
             // Reset text attributes
             else if (n >= RESET_BOLD && n <= RESET_STRIKETHROUGH) {
-                (*apply_reset_attribute[n - RESET_BOLD])(terminal);
+                terminal->apply_reset_attribute[n - RESET_BOLD](terminal);
             }
             
             // Process 8-bit or 24-bit color foreground/background
@@ -372,16 +366,12 @@ int kprintf(const char *format, ...) {
 //     kprintf("\n\n");
 // }
 
-static terminal_t *alloc_terminal_internal(
-    terminal_t *term,
-    uint32_t w_font,
-    uint32_t h_font,
-    uint64_t w_term_px,
-    uint64_t h_term_px,
-    uint64_t fg_color_default,
-    uint64_t bg_color_default,
-    bool use_raw_fb
-) {
+static terminal_t *alloc_terminal_internal(terminal_t *term, uint32_t w_font,
+                                           uint32_t h_font, uint64_t w_term_px,
+                                           uint64_t h_term_px,
+                                           uint64_t fg_color_default,
+                                           uint64_t bg_color_default,
+                                           bool use_raw_fb) {
     if (!term) {
         term = kmalloc(sizeof(terminal_t));
     }
@@ -412,6 +402,16 @@ static terminal_t *alloc_terminal_internal(
     term->is_ansi_state = false;
     term->ansi_state = PROCESS_NORMAL;
 
+    for (int i = 0; i < NUM_SET_TEXT_ATTRIBUTES; i++) {
+        term->apply_set_attribute[i] = no_change_text_attribute;
+    }
+
+    for (int i = 0; i < NUM_RESET_TEXT_ATTRIBUTES; i++) {
+        term->apply_reset_attribute[i] = no_change_text_attribute;
+    }
+
+    term->apply_set_attribute[SET_RESET] = reset_text_attribute;
+
     return term;
 }
 
@@ -427,16 +427,6 @@ void init_kterminal_doublebuffer() {
 
 void init_kterminal() {
     init_framebuffer();
-
-    for (int i = 0; i < NUM_SET_TEXT_ATTRIBUTES; i++) {
-        apply_set_attribute[i] = no_change_text_attribute;
-    }
-
-    for (int i = 0; i < NUM_RESET_TEXT_ATTRIBUTES; i++) {
-        apply_reset_attribute[i] = no_change_text_attribute;
-    }
-
-    apply_set_attribute[SET_RESET] = reset_text_attribute;
 
     alloc_terminal_internal(&kterminal, 8, 14, fb_get_width(), fb_get_height(), FG_COLOR_DEFAULT, BG_COLOR_DEFAULT, true);
 

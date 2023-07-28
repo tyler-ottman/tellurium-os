@@ -38,6 +38,9 @@
 #define INFO            GREEN"["LIGHT_GREEN"INFO"GREEN"] "
 #define ERROR           RED "[" LIGHT_RED "ERROR" RED "] "
 
+#define NUM_SET_TEXT_ATTRIBUTES     9
+#define NUM_RESET_TEXT_ATTRIBUTES   8
+
 typedef struct terminal {
     uint32_t *buffer;
     bool is_double_buffer;
@@ -61,6 +64,9 @@ typedef struct terminal {
     uint64_t is_ansi_state;
     uint64_t ansi_state;
     char ansi_sequence[ANSI_SEQ_LEN];
+
+    void (*apply_set_attribute[NUM_SET_TEXT_ATTRIBUTES])(struct terminal *);
+    void (*apply_reset_attribute[NUM_RESET_TEXT_ATTRIBUTES])(struct terminal *);
 } terminal_t;
 
 void kerror(const char *msg, int err);

@@ -122,11 +122,6 @@ Window *Window::appendWindow(Window *window) {
     window->parent = this;
     numWindows++;
 
-    // int windowID = numWindows++;
-    // windows[windowID] = window;
-    // window->setWindowID(windowID);
-    // window->parent = this;
-
     return window;
 }
 
@@ -469,6 +464,8 @@ void Window::setWindowID(int windowID) { this->windowID = windowID; }
 void Window::setXPos(int x) { this->x = x; }
 
 void Window::setYPos(int y) { this->y = y; }
+
+void Window::setColor(uint32_t color) { this->color = color; }
 
 void Window::setPriority(int priority) {
     if (priority < WIN_PRIORITY_MIN || priority > WIN_PRIORITY_MAX) {

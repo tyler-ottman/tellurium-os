@@ -12,8 +12,9 @@ public:
     Taskbar(int x, int y, int width, int height);
     ~Taskbar();
 
+    void drawObject(void);
 private:
-    Button *buttons[TASKBAR_BUTTONS];
+    
 };
 
 }

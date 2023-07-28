@@ -1,5 +1,6 @@
 #include "libGUI/Desktop.hpp"
 #include "libGUI/Image.hpp"
+#include "libGUI/Taskbar.hpp"
 
 namespace GUI {
 
@@ -20,6 +21,10 @@ Desktop::Desktop()
     
     background->loadImage("/tmp/background.ppm");
     appendWindow(background);
+
+    Taskbar *taskbar = new Taskbar(0, height - 40, width, 40);
+    taskbar->setColor(0xffbebebe);
+    appendWindow(taskbar);
 }
 
 Desktop::~Desktop() {
