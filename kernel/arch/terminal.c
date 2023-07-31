@@ -107,7 +107,7 @@ void kerror(const char* msg, int err) {
     core_hlt();
 }
 
-static terminal_t *get_kterminal() {
+terminal_t *get_kterminal() {
     return &kterminal;
 }
 
@@ -312,11 +312,9 @@ void terminal_printf(terminal_t *terminal, const char *buf) {
         buf++;
     }
 
-    draw_cursor(terminal, terminal->cursor_color);
+    // draw_cursor(terminal, terminal->cursor_color);
 
-    if (terminal->is_double_buffer) {
-        fb_load_buffer(terminal);
-    }
+    fb_load_buffer(terminal);
 }
 
 int kprintf(const char *format, ...) {
@@ -371,10 +369,16 @@ static terminal_t *alloc_terminal_internal(terminal_t *term, uint32_t w_font,
                                            uint64_t h_term_px,
                                            uint64_t fg_color_default,
                                            uint64_t bg_color_default,
-                                           bool use_raw_fb) {
+                                           void *buffer1,
+                                           void *buffer2,
+                                           void *(__malloc)(size_t),
+                                           void (*__free)(void *)) {
     if (!term) {
-        term = kmalloc(sizeof(terminal_t));
+        term = __malloc(sizeof(terminal_t));
     }
+
+    term->__malloc = __malloc;
+    term->__free = __free;
 
     term->h_cursor = 0;
     term->v_cursor = 0;
@@ -385,14 +389,16 @@ static terminal_t *alloc_terminal_internal(terminal_t *term, uint32_t w_font,
     term->h_cursor_max = term->w_term_px / term->w_font_px;
     term->v_cursor_max = term->h_term_px / term->h_font_px;
 
-    if (use_raw_fb) {
-        term->buffer = fb_get_framebuffer();
-    } else {
-        term->buffer = kmalloc(term->w_term_px * term->h_term_px);
+    // Optional parameter to provide
+    term->buffer1 = buffer1;
+    if (!term->buffer1) {
+        term->buffer1 = term->__malloc(4 * term->w_term_px * term->h_term_px);
     }
 
+    // actual framebuffer to screen
+    term->buffer2 = buffer2;
+
     term->w_fb_px = fb_get_pitch() / (fb_get_bpp() / 8);
-    term->is_double_buffer = !use_raw_fb;
     term->fg_color_default = fg_color_default;
     term->bg_color_default = bg_color_default;
     term->fg_color = term->fg_color_default;
@@ -415,22 +421,12 @@ static terminal_t *alloc_terminal_internal(terminal_t *term, uint32_t w_font,
     return term;
 }
 
-/* Bootstrapping process, not used in user applications */
-void init_kterminal_doublebuffer() {
-    terminal_t *term = get_kterminal();
-    int buf_size = 4 * kterminal.w_fb_px * kterminal.h_term_px;
-    uint32_t *term_buf = kmalloc(buf_size);
-    __memcpy(term_buf, term->buffer, buf_size);
-    term->buffer = term_buf;
-    term->is_double_buffer = true;
-}
-
 void init_kterminal() {
     init_framebuffer();
 
-    alloc_terminal_internal(&kterminal, 8, 14, fb_get_width(), fb_get_height(), FG_COLOR_DEFAULT, BG_COLOR_DEFAULT, true);
+    // alloc_terminal_internal(&kterminal, 8, 14, fb_get_width(), fb_get_height(), FG_COLOR_DEFAULT, BG_COLOR_DEFAULT, true, kmalloc, kfree);
 
-    clear_screen(&kterminal);
+    alloc_terminal_internal(&kterminal, 8, 14, fb_get_width(), fb_get_height(), FG_COLOR_DEFAULT, BG_COLOR_DEFAULT, NULL, fb_get_framebuffer(), kmalloc, kfree);
 
     // print_color_palette();
 }

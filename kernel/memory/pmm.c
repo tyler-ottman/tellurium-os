@@ -151,7 +151,7 @@ void init_pmm(void) {
     (void)reserved_frames;
 #endif
 
-    kprintf(INFO GREEN "PMM: Initialized\n");
+    // kprintf(INFO GREEN "PMM: Initialized\n");
 }
 
 void *palloc_internal(size_t pages) {

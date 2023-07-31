@@ -24,12 +24,12 @@
 #include <fs/vfs.h>
 
 void init_system() {
-    init_kterminal();
     init_gdt();
     init_idt();
     init_pmm();
     init_slab();
-    init_kterminal_doublebuffer();
+
+    init_kterminal();
     init_acpi();
     init_hpet();
     init_ps2();

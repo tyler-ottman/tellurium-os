@@ -46,7 +46,7 @@ void fb_load_buffer(terminal_t *term) {
     uint32_t px_base = 0;
     for (size_t i = 0; i < term->h_term_px; i++) {
         for (size_t j = 0; j < term->w_term_px; j++) {
-            px_buffer[px_base + j] = term->buffer[px_base + j];
+            px_buffer[px_base + j] = term->buffer1[px_base + j];
         }
         px_base += term->w_fb_px;
     }
@@ -73,9 +73,11 @@ void backspace(terminal_t *term) {
 void clear_screen(terminal_t *term) {
     for (size_t i = 0; i < framebuffer->height; i++) {
         for (size_t j = 0; j < framebuffer->width; j++) {
-            term->buffer[framebuffer->width * i + j] = term->bg_color_default;
+            term->buffer1[framebuffer->width * i + j] = term->bg_color_default;
         }
     }
+
+    // fb_load_buffer(term);
 }
 
 void scroll_screen(terminal_t *term) {
@@ -83,7 +85,7 @@ void scroll_screen(terminal_t *term) {
     uint32_t px_base = 0; // Change later with windowing
     for (size_t i = 0; i < term->h_term_px - term->h_font_px; i++) {
         for (size_t j = 0; j < term->w_term_px; j++) {
-            term->buffer[px_base + j] = term->buffer[px_base + v_px_offset + j];
+            term->buffer1[px_base + j] = term->buffer1[px_base + v_px_offset + j];
         }
         px_base += term->w_fb_px;
     }
@@ -91,7 +93,7 @@ void scroll_screen(terminal_t *term) {
     // Clear last line
     for (size_t i = 0; i < term->h_font_px; i++) {
         for (size_t j = 0; j < term->w_term_px; j++) {
-            term->buffer[px_base + j] = term->bg_color_default;
+            term->buffer1[px_base + j] = term->bg_color_default;
         }
         px_base += term->w_fb_px;
     }
@@ -102,7 +104,7 @@ void drawchar(terminal_t *term, char c) {
     uint32_t px_base = get_px_base(term);
     for (size_t i = 0; i < term->h_font_px; i++) {
         for (size_t j = 0; j < term->w_font_px; j++) {
-            term->buffer[px_base + j] = ((cur_char[i] >> j) & 1) ? term->fg_color : term->bg_color;
+            term->buffer1[px_base + j] = ((cur_char[i] >> j) & 1) ? term->fg_color : term->bg_color;
         }
         px_base += term->w_fb_px;
     }
@@ -118,7 +120,7 @@ void draw_cursor(terminal_t *term, uint32_t color) {
     uint64_t px_base = get_px_base(term);
     for (size_t i = 0; i < term->h_font_px; i++) {
         for (size_t j = 0; j < term->w_font_px; j++) {
-            term->buffer[px_base + j] = color;
+            term->buffer1[px_base + j] = color;
         }
         px_base += term->w_fb_px;
     }

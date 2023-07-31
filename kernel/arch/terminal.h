@@ -42,8 +42,12 @@
 #define NUM_RESET_TEXT_ATTRIBUTES   8
 
 typedef struct terminal {
+    // User provided memory management
+    void *(*__malloc)(size_t size);
+    void (*__free)(void *addr);
+
+    // Terminal state
     uint32_t *buffer;
-    bool is_double_buffer;
     uint32_t h_cursor;
     uint32_t v_cursor;
     uint32_t h_cursor_max;
@@ -55,6 +59,7 @@ typedef struct terminal {
     uint64_t w_fb_px;
     uint32_t *line_last_char;
 
+    // ANSI state
     uint32_t fg_color_default;
     uint32_t bg_color_default;
     uint32_t fg_color;
@@ -64,16 +69,20 @@ typedef struct terminal {
     uint64_t is_ansi_state;
     uint64_t ansi_state;
     char ansi_sequence[ANSI_SEQ_LEN];
-
     void (*apply_set_attribute[NUM_SET_TEXT_ATTRIBUTES])(struct terminal *);
     void (*apply_reset_attribute[NUM_RESET_TEXT_ATTRIBUTES])(struct terminal *);
+
+    // User provided framebuffer info
+    uint32_t *buffer1;                  // Off-screen buffer
+    uint32_t *buffer2;                  // framebuffer
 } terminal_t;
+
+terminal_t *get_kterminal(void);
 
 void kerror(const char *msg, int err);
 int kprintf(const char *format, ...);
 int kprintj(const char *ptr);
 
-void init_kterminal_doublebuffer(void);
 void init_kterminal(void);
 
 #endif // TERMINAL_H
