@@ -1,4 +1,5 @@
 #include <acpi/acpi.h>
+#include <limine.h>
 #include <sys/misc.h>
 
 static volatile struct limine_rsdp_request kernel_rsdp_request = {

@@ -1,15 +1,8 @@
-#include <arch/cpu.h>
-#include <arch/framebuffer.h>
 #include <arch/terminal.h>
-#include <arch/lock.h>
-#include <devices/serial.h>
-#include <libc/kmalloc.h>
-#include <libc/print.h>
+#include <arch/framebuffer.h>
 #include <stdarg.h>
-#include <sys/misc.h>
 
-#define FG_COLOR_DEFAULT            0xff0096aa
-#define BG_COLOR_DEFAULT            RESET_COLOR
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 enum SET_TEXT_ATTRIBUTE {
     SET_RESET,
@@ -93,23 +86,6 @@ static uint32_t rgb256[] = {
     0x505050, 0x5a5a5a, 0x646464, 0x6e6e6e, 0x787878, 0x828282, 0x8c8c8c, 0x969696,
     0xa0a0a0, 0xaaaaaa, 0xb4b4b4, 0xbebebe, 0xc8c8c8, 0xd2d2d2, 0xdcdcdc, 0xe6e6e6,
 };
-
-spinlock_t kprint_lock = 0;
-terminal_t kterminal;
-
-void kerror(const char* msg, int err) {
-    disable_interrupts();
-
-    const char msg_default[] = "error";
-
-    kprintf(ERROR "%s: %d\n", msg ? msg : msg_default, err);
-    
-    core_hlt();
-}
-
-terminal_t *get_kterminal() {
-    return &kterminal;
-}
 
 void no_change_text_attribute(terminal_t *terminal) {
     (void)terminal;
@@ -282,10 +258,10 @@ void terminal_printf(terminal_t *terminal, const char *buf) {
         } else {
             switch (*buf) {
             case '\b':
-                if (terminal->h_cursor == 0 && terminal->v_cursor != 0) {
-                    terminal->v_cursor--;
-                } else if (terminal->h_cursor != 0) {
-                    terminal->h_cursor--;
+                if (terminal->cursor_h == 0 && terminal->cursor_v != 0) {
+                    terminal->cursor_v--;
+                } else if (terminal->cursor_h != 0) {
+                    terminal->cursor_h--;
                 }
                 break;
             case '\033':
@@ -312,101 +288,63 @@ void terminal_printf(terminal_t *terminal, const char *buf) {
         buf++;
     }
 
-    // draw_cursor(terminal, terminal->cursor_color);
+    draw_cursor(terminal, terminal->cursor_color);
+}
 
+void terminal_refresh(terminal_t *terminal) {
     fb_load_buffer(terminal);
 }
 
-int kprintf(const char *format, ...) {
-    char buf[512];
-    va_list valist;
-
-    va_start(valist, format);
-    __vsnprintf(buf, BUF_MAX, format, valist);
-    va_end(valist);
-
-    int state = core_get_if_flag();
-    
-    disable_interrupts();
-
-    spinlock_acquire(&kprint_lock);
-
-    reset_text_attribute(&kterminal);
-    terminal_printf(&kterminal, buf);
-
-    spinlock_release(&kprint_lock);
-    
-    if (state) {
-        enable_interrupts();
-    }
-
-    return 0;
-}
-
-// static void print_color_palette() {
-//     for (size_t i = 0; i < 16; i++) {
-//         kprintf("\033[38;5;%i;48;5;%im%03i", i, i, i);
-//     }
-
-//     kprintf("\n\n");
-//     for (size_t i = 0; i < 6; i ++) {
-//         for (size_t j = 0; j < 36; j++) {
-//             uint8_t color_id = 16 + 36 * i + j;
-//             kprintf("\033[38;5;%i;48;5;%im%03i", color_id, color_id, color_id);
-//         }
-//         kprintf("\n");
-//     }
-
-//     kprintf("\n");
-//     for (size_t i = 232; i < 256; i++) {
-//         kprintf("\033[38;5;%i;48;5;%im%03i", i, i, i);
-//     }
-//     kprintf("\n\n");
-// }
-
-static terminal_t *alloc_terminal_internal(terminal_t *term, uint32_t w_font,
-                                           uint32_t h_font, uint64_t w_term_px,
-                                           uint64_t h_term_px,
-                                           uint64_t fg_color_default,
-                                           uint64_t bg_color_default,
-                                           void *buffer1,
-                                           void *buffer2,
-                                           void *(__malloc)(size_t),
-                                           void (*__free)(void *)) {
+terminal_t *terminal_alloc(terminal_t *term, uint32_t h_font, uint32_t w_font,
+                           uint64_t term_h_px, uint64_t term_w_px,
+                           uint32_t fb_h_px, uint32_t fb_w_px,
+                           uint32_t fb_pitch, uint32_t fb_bpp,
+                           uint64_t fg_color_default, uint64_t bg_color_default,
+                           void *bitmap, void *buffer1, void *buffer2,
+                           void *(__malloc)(size_t), void (*__free)(void *)) {
     if (!term) {
         term = __malloc(sizeof(terminal_t));
     }
 
+    // Memory management info
     term->__malloc = __malloc;
     term->__free = __free;
 
-    term->h_cursor = 0;
-    term->v_cursor = 0;
-    term->w_font_px = w_font;
-    term->h_font_px = h_font;
-    term->w_term_px = w_term_px;
-    term->h_term_px = h_term_px;
-    term->h_cursor_max = term->w_term_px / term->w_font_px;
-    term->v_cursor_max = term->h_term_px / term->h_font_px;
+    // Font info
+    term->font_h_px = h_font;
+    term->font_w_px = w_font;
+    term->bitmap = bitmap;
 
-    // Optional parameter to provide
-    term->buffer1 = buffer1;
-    if (!term->buffer1) {
-        term->buffer1 = term->__malloc(4 * term->w_term_px * term->h_term_px);
+    // Terminal buffer info
+    term->term_h_px = MIN(term_h_px, fb_h_px);
+    term->term_w_px = MIN(term_w_px, fb_w_px);
+    term->buf1 = buffer1;
+    if (!buffer1) {
+        term->buf1 = term->__malloc(4 * term->term_w_px * term->term_h_px);
     }
 
-    // actual framebuffer to screen
-    term->buffer2 = buffer2;
+    // Cursor info
+    term->cursor_h = 0;
+    term->cursor_v = 0;
+    term->cursor_h_max = term->term_w_px / term->font_w_px;
+    term->cursor_v_max = term->term_h_px / term->font_h_px;
+    term->cursor_color = CURSOR_COLOR;
 
-    term->w_fb_px = fb_get_pitch() / (fb_get_bpp() / 8);
+    // ANSI state info
     term->fg_color_default = fg_color_default;
     term->bg_color_default = bg_color_default;
     term->fg_color = term->fg_color_default;
     term->bg_color = term->bg_color_default;
-    term->cursor_color = CURSOR_COLOR;
     term->apply_to_fg = false;
     term->is_ansi_state = false;
     term->ansi_state = PROCESS_NORMAL;
+
+    // actual framebuffer to screen
+    term->buf2 = buffer2;
+    term->fb_w_px = fb_pitch / (fb_bpp / 8);
+    term->fb_h_px = fb_h_px;
+
+    __memset(term->ansi_sequence, '\0', ANSI_SEQ_LEN);
 
     for (int i = 0; i < NUM_SET_TEXT_ATTRIBUTES; i++) {
         term->apply_set_attribute[i] = no_change_text_attribute;
@@ -419,14 +357,4 @@ static terminal_t *alloc_terminal_internal(terminal_t *term, uint32_t w_font,
     term->apply_set_attribute[SET_RESET] = reset_text_attribute;
 
     return term;
-}
-
-void init_kterminal() {
-    init_framebuffer();
-
-    // alloc_terminal_internal(&kterminal, 8, 14, fb_get_width(), fb_get_height(), FG_COLOR_DEFAULT, BG_COLOR_DEFAULT, true, kmalloc, kfree);
-
-    alloc_terminal_internal(&kterminal, 8, 14, fb_get_width(), fb_get_height(), FG_COLOR_DEFAULT, BG_COLOR_DEFAULT, NULL, fb_get_framebuffer(), kmalloc, kfree);
-
-    // print_color_palette();
 }

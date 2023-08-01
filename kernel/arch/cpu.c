@@ -2,10 +2,10 @@
 #include <arch/cpu.h>
 #include <arch/gdt.h>
 #include <arch/idt.h>
+#include <arch/kterminal.h>
 #include <arch/lock.h>
 #include <arch/scheduler.h>
 #include <arch/syscalls.h>
-#include <arch/terminal.h>
 #include <devices/lapic.h>
 #include <devices/serial.h>
 #include <libc/kmalloc.h>

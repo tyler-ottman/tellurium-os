@@ -2,7 +2,7 @@
 #define VMM_H
 
 #include <acpi/acpi.h>
-#include <arch/terminal.h>
+#include <arch/kterminal.h>
 #include <memory/pmm.h>
 #include <libc/string.h>
 

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <arch/gdt.h>
-#include <arch/terminal.h>
+#include <arch/kterminal.h>
 
 // https://wiki.osdev.org/Interrupt_Descriptor_Table
 

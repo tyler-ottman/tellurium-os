@@ -1,8 +1,8 @@
 #include <acpi/acpi.h>
 #include <arch/cpu.h>
 #include <arch/idt.h>
+#include <arch/kterminal.h>
 #include <arch/lock.h>
-#include <arch/terminal.h>
 #include <devices/ioapic.h>
 #include <libc/string.h>
 #include <sys/misc.h>

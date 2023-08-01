@@ -2,7 +2,7 @@
 #define EXCEPTION_H
 
 #include <arch/cpu.h>
-#include <arch/terminal.h>
+#include <arch/kterminal.h>
 #include <libc/string.h>
 #include <stdint.h>
 

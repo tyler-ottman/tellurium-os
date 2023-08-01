@@ -1,9 +1,10 @@
 #ifndef PMM_H
 #define PMM_H
 
-#include <stdbool.h>
-#include <arch/terminal.h>
+#include <arch/kterminal.h>
 #include <libc/string.h>
+#include <limine.h>
+#include <stdbool.h>
 
 #define KERNEL_HHDM_OFFSET  (kernel_hhdm_request.response->offset)
 #define PAGE_SIZE_BYTES     4096

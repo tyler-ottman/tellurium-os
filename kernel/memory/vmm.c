@@ -1,4 +1,5 @@
 #include <acpi/acpi.h>
+#include <limine.h>
 #include <memory/vmm.h>
 #include <sys/misc.h>
 

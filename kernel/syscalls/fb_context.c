@@ -1,4 +1,4 @@
-#include <arch/framebuffer.h>
+#include <arch/limine_fb.h>
 #include <arch/process.h>
 #include <arch/syscalls.h>
 #include <memory/vmm.h>

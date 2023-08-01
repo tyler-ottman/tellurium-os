@@ -1,6 +1,6 @@
 #include <acpi/acpi.h>
+#include <arch/kterminal.h>
 #include <arch/lock.h>
-#include <arch/terminal.h>
 #include <devices/hpet.h>
 #include <memory/vmm.h>
 #include <stdbool.h>

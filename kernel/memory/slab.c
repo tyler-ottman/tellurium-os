@@ -1,4 +1,4 @@
-#include <arch/terminal.h>
+#include <arch/kterminal.h>
 #include <memory/slab.h>
 #include <sys/misc.h>
 

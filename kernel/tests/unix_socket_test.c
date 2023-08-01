@@ -1,5 +1,5 @@
+#include <arch/kterminal.h>
 #include <arch/scheduler.h>
-#include <arch/terminal.h>
 #include <sockets/unix_socket.h>
 #include <sys/misc.h>
 #include <tests/test.h>

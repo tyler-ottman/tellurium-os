@@ -1,5 +1,5 @@
 #include <apps/elf.h>
-#include <arch/terminal.h>
+#include <arch/kterminal.h>
 #include <fs/vfs.h>
 #include <libc/kmalloc.h>
 #include <memory/vmm.h>

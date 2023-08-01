@@ -1,4 +1,3 @@
-#include <arch/terminal.h>
 #include <libc/kmalloc.h>
 #include <libc/vector.h>
 #include <stdbool.h>

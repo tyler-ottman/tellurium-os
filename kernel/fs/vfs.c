@@ -1,6 +1,6 @@
 #include <arch/cpu.h>
+#include <arch/kterminal.h>
 #include <arch/lock.h>
-#include <arch/terminal.h>
 #include <libc/kmalloc.h>
 #include <libc/string.h>
 #include <sys/misc.h>

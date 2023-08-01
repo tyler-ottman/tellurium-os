@@ -1,6 +1,6 @@
 #include <arch/cpu.h>
+#include <arch/kterminal.h>
 #include <arch/process.h>
-#include <arch/terminal.h>
 #include <fs/fd.h>
 #include <libc/kmalloc.h>
 #include <libc/ringbuffer.h>

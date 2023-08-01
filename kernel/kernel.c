@@ -3,8 +3,8 @@
 #include <arch/framebuffer.h>
 #include <arch/gdt.h>
 #include <arch/idt.h>
+#include <arch/kterminal.h>
 #include <arch/process.h>
-#include <arch/terminal.h>
 #include <devices/hpet.h>
 #include <devices/ioapic.h>
 #include <devices/lapic.h>

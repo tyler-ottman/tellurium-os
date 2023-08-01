@@ -1,6 +1,6 @@
 #include <arch/gdt.h>
+#include <arch/kterminal.h>
 #include <arch/syscalls.h>
-#include <arch/terminal.h>
 #include <devices/msr.h>
 
 #define SYSCALL_GET_FB_CONTEXT                      1

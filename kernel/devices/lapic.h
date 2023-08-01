@@ -4,7 +4,7 @@
 #include <acpi/acpi.h>
 #include <arch/cpu.h>
 #include <arch/idt.h>
-#include <arch/terminal.h>
+#include <arch/kterminal.h>
 #include <devices/msr.h>
 #include <memory/vmm.h>
 

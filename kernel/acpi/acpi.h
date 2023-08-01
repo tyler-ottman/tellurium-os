@@ -1,9 +1,9 @@
 #ifndef ACPI_H
 #define ACPI_H
 
+#include <arch/kterminal.h>
 #include <devices/serial.h>
 #include <devices/msr.h>
-#include <arch/terminal.h>
 #include <libc/string.h>
 #include <stdbool.h>
 #include <stdint.h>

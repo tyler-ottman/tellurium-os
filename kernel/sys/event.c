@@ -1,6 +1,5 @@
 #include <arch/cpu.h>
 #include <arch/process.h>
-#include <arch/terminal.h>
 #include <arch/scheduler.h>
 #include <stdbool.h>
 #include <sys/event.h>

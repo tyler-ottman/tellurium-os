@@ -1,4 +1,4 @@
-#include <arch/terminal.h>
+#include <arch/kterminal.h>
 #include <fs/tmpfs.h>
 #include <libc/kmalloc.h>
 #include <libc/string.h>
