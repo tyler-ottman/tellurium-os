@@ -4,7 +4,6 @@ override IMAGE_NAME := tellurium
 override LIMINE_DIR := ../limine
 override KERNEL_DIR := kernel
 override LIBGUI_DIR := libGUI
-override ULIBC_DIR := ulibc
 override APPS_DIR := applications
 override IMG_DIR := imgBin
 
@@ -20,9 +19,8 @@ run: $(IMAGE_NAME).iso
 
 .PHONY: $(KERNEL_DIR) $(APPS_DIR)
 kernel:
-	$(MAKE) -C $(KERNEL_DIR)
 	$(MAKE) -C $(LIBGUI_DIR)
-	$(MAKE) -C $(ULIBC_DIR)
+	$(MAKE) -C $(KERNEL_DIR)
 	$(MAKE) -C $(APPS_DIR)
 	$(MAKE) -C $(IMG_DIR)
 
@@ -52,5 +50,4 @@ clean:
 	$(MAKE) -C $(KERNEL_DIR) clean
 	$(MAKE) -C $(APPS_DIR) clean
 	$(MAKE) -C $(LIBGUI_DIR) clean
-	$(MAKE) -C $(ULIBC_DIR) clean
 	$(MAKE) -C $(IMG_DIR) clean

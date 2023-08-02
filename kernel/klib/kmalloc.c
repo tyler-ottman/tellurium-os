@@ -1,4 +1,4 @@
-#include <libc/kmalloc.h>
+#include <klib/kmalloc.h>
 
 void *kmalloc(size_t size) {
     return slab_alloc(size);

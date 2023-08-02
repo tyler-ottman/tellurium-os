@@ -1,5 +1,5 @@
-#include <arch/terminal.h>
 #include <arch/framebuffer.h>
+#include <arch/terminal.h>
 #include <stdarg.h>
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))

@@ -1,8 +1,8 @@
 #include <arch/lock.h>
+#include <flibc/string.h>
 #include <fs/devfs.h>
-#include <libc/kmalloc.h>
-#include <libc/ringbuffer.h>
-#include <libc/string.h>
+#include <klib/kmalloc.h>
+#include <klib/ringbuffer.h>
 #include <sys/misc.h>
 
 #define DEVFS_MAX_BUFFER            0x1000

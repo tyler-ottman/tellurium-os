@@ -1,9 +1,9 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-#include <stdint.h>
 #include <arch/process.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <sys/event.h>
 
 #define SCHEDULE_OK                         0

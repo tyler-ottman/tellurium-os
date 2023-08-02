@@ -1,9 +1,9 @@
 #include <arch/cpu.h>
-#include <arch/syscalls.h>
 #include <arch/process.h>
+#include <arch/syscalls.h>
+#include <flibc/fcntl.h>
 #include <fs/fd.h>
 #include <fs/vfs.h>
-#include <libc/fcntl.h>
 #include <memory/vmm.h>
 #include <sys/misc.h>
 #include <sys/stat.h>

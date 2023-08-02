@@ -1,10 +1,10 @@
 #include <arch/cpu.h>
 #include <arch/kterminal.h>
 #include <arch/lock.h>
-#include <libc/kmalloc.h>
-#include <libc/string.h>
-#include <sys/misc.h>
+#include <flibc/string.h>
 #include <fs/vfs.h>
+#include <klib/kmalloc.h>
+#include <sys/misc.h>
 
 static spinlock_t vfs_lock = 0;
 static vnode_t *v_root;

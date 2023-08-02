@@ -2,7 +2,7 @@
 #define PMM_H
 
 #include <arch/kterminal.h>
-#include <libc/string.h>
+#include <flibc/string.h>
 #include <limine.h>
 #include <stdbool.h>
 

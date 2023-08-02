@@ -1,12 +1,12 @@
 #include <arch/cpu.h>
 #include <arch/kterminal.h>
 #include <arch/process.h>
+#include <flibc/string.h>
 #include <fs/fd.h>
-#include <libc/kmalloc.h>
-#include <libc/ringbuffer.h>
-#include <libc/string.h>
-#include <stdbool.h>
+#include <klib/kmalloc.h>
+#include <klib/ringbuffer.h>
 #include <sockets/unix_socket.h>
+#include <stdbool.h>
 #include <sys/misc.h>
 
 #define UNIX_SOCK_BUFF_SIZE                         0x2000

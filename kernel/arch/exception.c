@@ -1,6 +1,6 @@
 #include <arch/exception.h>
 #include <arch/lock.h>
-#include <libc/print.h>
+#include <flibc/print.h>
 
 const char* exception_name[] =  {
     "Divide Error Exception",

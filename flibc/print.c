@@ -1,11 +1,8 @@
-#include <arch/cpu.h>
-#include <libc/ctype.h>
-#include <libc/print.h>
-#include <libc/stdlib.h>
-#include <libc/string.h>
-#include <stdbool.h>
+#include <ctype.h>
+#include <print.h>
 #include <stdint.h>
-#include <sys/misc.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define ASSERT_BUFF_LIM(cur, max) {if (cur >= max) return -1;} 
 

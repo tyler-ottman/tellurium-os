@@ -3,8 +3,8 @@
 #include <arch/kterminal_font.h>
 #include <arch/limine_fb.h>
 #include <arch/lock.h>
-#include <libc/kmalloc.h>
-#include <libc/print.h>
+#include <flibc/print.h>
+#include <klib/kmalloc.h>
 
 spinlock_t kprint_lock = 0;
 terminal_t kterminal;

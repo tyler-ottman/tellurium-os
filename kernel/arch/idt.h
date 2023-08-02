@@ -1,11 +1,9 @@
 #ifndef IDT_H
 #define IDT_H
 
-#include <stdint.h>
 #include <arch/gdt.h>
 #include <arch/kterminal.h>
-
-// https://wiki.osdev.org/Interrupt_Descriptor_Table
+#include <stdint.h>
 
 // IDT Descriptor (IDTR)
 typedef struct {

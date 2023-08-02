@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stdint.h>
 #include "Rect.hpp"
+#include <stdint.h>
 
 #define CLIPPED_MAX                         200
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))

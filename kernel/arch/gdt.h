@@ -1,9 +1,8 @@
 #ifndef GDT_H
 #define GDT_H
 
-#include <stdint.h>
 #include <arch/cpu.h>
-#include <libc/string.h>
+#include <stdint.h>
 
 #define GDT_ENTRIES             10
 #define GDT_KERNEL_CODE         0x28

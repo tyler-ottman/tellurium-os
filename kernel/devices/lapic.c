@@ -1,8 +1,8 @@
+#include <arch/cpu.h>
 #include <arch/lock.h>
+#include <arch/scheduler.h>
 #include <devices/hpet.h>
 #include <devices/lapic.h>
-#include <arch/scheduler.h>
-#include <arch/cpu.h>
 #include <sys/misc.h>
 
 extern void *ISR_Timer[];

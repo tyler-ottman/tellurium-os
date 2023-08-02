@@ -2,11 +2,11 @@
 #include "libGUI/FbContext.hpp"
 #include "libGUI/Window.hpp"
 #include "libGUI/WindowServer.hpp"
+#include "libTellur/DevPoll.hpp"
+#include "libTellur/mem.hpp"
+#include "libTellur/syscalls.hpp"
 #include <stddef.h>
 #include <stdint.h>
-#include "ulibc/DevPoll.hpp"
-#include "ulibc/mem.hpp"
-#include "ulibc/syscalls.hpp"
 
 int main() {
     GUI::WindowServer *wm = GUI::WindowServer::getInstance();

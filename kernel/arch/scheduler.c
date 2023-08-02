@@ -1,10 +1,10 @@
 #include <arch/cpu.h>
-#include <arch/lock.h>
 #include <arch/gdt.h>
+#include <arch/lock.h>
 #include <arch/scheduler.h>
 #include <devices/lapic.h>
-#include <libc/doubly_linked_list.h>
-#include <libc/kmalloc.h>
+#include <klib/doubly_linked_list.h>
+#include <klib/kmalloc.h>
 #include <stddef.h>
 
 #define QUEUE_MAX                           100

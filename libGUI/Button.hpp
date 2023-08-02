@@ -1,7 +1,7 @@
 #pragma once
 
-#include "libGUI/Window.hpp"
 #include "libGUI/Image.hpp"
+#include "libGUI/Window.hpp"
 
 // Button flags
 #define BUTTON_BORDER                       0x1

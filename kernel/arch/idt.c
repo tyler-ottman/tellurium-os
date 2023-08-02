@@ -1,5 +1,5 @@
-#include <arch/lock.h>
 #include <arch/idt.h>
+#include <arch/lock.h>
 #include <sys/misc.h>
 
 extern void *isr_table[];

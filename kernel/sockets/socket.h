@@ -2,8 +2,8 @@
 #define SOCKET_H
 
 #include <arch/lock.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/event.h>
 
 #define AF_UNIX_PATH_LEN                        108

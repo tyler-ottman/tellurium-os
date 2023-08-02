@@ -1,7 +1,7 @@
 #include <arch/cpu.h>
 #include <arch/process.h>
 #include <arch/syscalls.h>
-#include <libc/kmalloc.h>
+#include <klib/kmalloc.h>
 #include <memory/vmm.h>
 
 void *syscall_mmap(void *addr, size_t len, int prot, int flags, int fd, size_t offset) {

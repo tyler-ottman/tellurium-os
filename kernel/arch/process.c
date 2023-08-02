@@ -1,7 +1,7 @@
 #include <apps/elf.h>
 #include <arch/process.h>
 #include <arch/scheduler.h>
-#include <libc/kmalloc.h>
+#include <klib/kmalloc.h>
 #include <memory/vmm.h>
 #include <sys/misc.h>
 

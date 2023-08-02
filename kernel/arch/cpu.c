@@ -8,7 +8,7 @@
 #include <arch/syscalls.h>
 #include <devices/lapic.h>
 #include <devices/serial.h>
-#include <libc/kmalloc.h>
+#include <klib/kmalloc.h>
 #include <memory/vmm.h>
 #include <sys/misc.h>
 

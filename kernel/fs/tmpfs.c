@@ -1,8 +1,8 @@
 #include <arch/kterminal.h>
+#include <flibc/string.h>
 #include <fs/tmpfs.h>
-#include <libc/kmalloc.h>
-#include <libc/string.h>
-#include <libc/vector.h>
+#include <klib/kmalloc.h>
+#include <klib/vector.h>
 #include <memory/pmm.h>
 #include <sys/misc.h>
 

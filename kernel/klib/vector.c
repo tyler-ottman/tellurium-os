@@ -1,5 +1,5 @@
-#include <libc/kmalloc.h>
-#include <libc/vector.h>
+#include <klib/kmalloc.h>
+#include <klib/vector.h>
 #include <stdbool.h>
 
 static inline bool index_in_bounds(struct vector *vector, int n) {

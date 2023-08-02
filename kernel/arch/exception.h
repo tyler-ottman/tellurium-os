@@ -3,7 +3,7 @@
 
 #include <arch/cpu.h>
 #include <arch/kterminal.h>
-#include <libc/string.h>
+#include <flibc/string.h>
 #include <stdint.h>
 
 void exception_handler(uint8_t vector);

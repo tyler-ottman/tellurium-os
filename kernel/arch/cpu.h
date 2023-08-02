@@ -2,7 +2,7 @@
 #define CPU_H
 
 #include <devices/msr.h>
-#include <libc/vector.h>
+#include <klib/vector.h>
 #include <limine.h>
 
 #define RFLAGS_RESERVED_MASK        0x0002

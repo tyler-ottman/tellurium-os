@@ -1,6 +1,6 @@
 #include "FbContext.hpp"
-#include "ulibc/mem.hpp"
-#include "ulibc/syscalls.hpp"
+#include "libTellur/mem.hpp"
+#include "libTellur/syscalls.hpp"
 
 namespace GUI {
 

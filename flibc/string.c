@@ -1,6 +1,5 @@
-#include <arch/cpu.h>
-#include <libc/string.h>
-#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
 // https://github.com/bminor/newlib/blob/master/newlib/libc/stdlib/utoa.c
 char *__utoa(uint64_t value, char *str, int base) {

@@ -3,8 +3,8 @@
 
 #include <acpi/acpi.h>
 #include <arch/kterminal.h>
+#include <flibc/string.h>
 #include <memory/pmm.h>
-#include <libc/string.h>
 
 #define VMM_KERNEL_HIGHER_HALF  0xffffffff80000000
 

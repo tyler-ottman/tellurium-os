@@ -1,7 +1,7 @@
 #ifndef VFS_H
 #define VFS_H
 
-#include <libc/vector.h>
+#include <klib/vector.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/stat.h>

@@ -4,7 +4,7 @@
 #include <arch/kterminal.h>
 #include <arch/lock.h>
 #include <devices/ioapic.h>
-#include <libc/string.h>
+#include <flibc/string.h>
 #include <sys/misc.h>
 
 #define IOAPIC_REGSEL               0x00

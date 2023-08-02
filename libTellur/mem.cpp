@@ -1,6 +1,6 @@
+#include "flibc/string.h"
 #include "mem.hpp"
 #include "syscalls.hpp"
-#include "ulibc/string.h"
 
 #define MAX(X,Y) ((X) < (Y) ? (Y) : (X))
 

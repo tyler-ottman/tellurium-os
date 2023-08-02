@@ -1,9 +1,9 @@
 #ifndef SLAB_H
 #define SLAB_H
 
-#include <stdint.h>
 #include <arch/lock.h>
 #include <memory/pmm.h>
+#include <stdint.h>
 
 #define SLAB_CHUNK_SIZE_VARIENTS    16
 

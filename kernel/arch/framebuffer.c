@@ -1,5 +1,4 @@
 #include <arch/framebuffer.h>
-#include <libc/string.h>
 
 #define ANSI_ESC        '\033'
 

@@ -16,8 +16,8 @@
 #include <memory/slab.h>
 #include <memory/vmm.h>
 #include <sockets/unix_socket.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/misc.h>
 #include <fs/devfs.h>
 #include <fs/tmpfs.h>

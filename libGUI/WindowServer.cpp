@@ -1,6 +1,6 @@
+#include "flibc/string.h"
 #include "libGUI/WindowServer.hpp"
-#include "ulibc/mem.hpp"
-#include "ulibc/string.h"
+#include "libTellur/mem.hpp"
 
 namespace GUI {
 

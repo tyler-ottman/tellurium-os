@@ -5,7 +5,7 @@
 #include <arch/lock.h>
 #include <fs/fd.h>
 #include <fs/vfs.h>
-#include <libc/vector.h>
+#include <klib/vector.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/event.h>

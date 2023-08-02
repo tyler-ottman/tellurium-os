@@ -1,13 +1,13 @@
 #ifndef TERMINAL_H
 #define TERMINAL_H
 
-#include <stddef.h>
+#include <flibc/ctype.h>
+#include <flibc/stdlib.h>
+#include <flibc/string.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <libc/string.h>
-#include <libc/ctype.h>
-#include <libc/stdlib.h>
 
 #define BUF_MAX                             512
 #define ANSI_SEQ_LEN                        64

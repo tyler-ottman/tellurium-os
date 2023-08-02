@@ -7,7 +7,7 @@
 #include <devices/ps2.h>
 #include <devices/serial.h>
 #include <fs/devfs.h>
-#include <libc/ringbuffer.h>
+#include <klib/ringbuffer.h>
 #include <stdbool.h>
 #include <sys/misc.h>
 

@@ -1,5 +1,5 @@
-#include <libc/kmalloc.h>
-#include <libc/ringbuffer.h>
+#include <klib/kmalloc.h>
+#include <klib/ringbuffer.h>
 
 int ringbuffer_alloc(ringbuffer_t *ring, size_t size) {
     ring->lock = 0;

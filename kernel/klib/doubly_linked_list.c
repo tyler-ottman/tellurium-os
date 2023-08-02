@@ -1,5 +1,5 @@
-#include <libc/doubly_linked_list.h>
-#include <libc/kmalloc.h>
+#include <klib/doubly_linked_list.h>
+#include <klib/kmalloc.h>
 #include <stddef.h>
 
 bool dll_is_empty(doubly_linked_list_t *dll) {

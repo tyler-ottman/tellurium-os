@@ -1,5 +1,5 @@
 #include <fs/fd.h>
-#include <libc/kmalloc.h>
+#include <klib/kmalloc.h>
 
 int fd_create(fd_table_t *fd_table, fd_t **fd, int *fd_i) {
     spinlock_acquire(&fd_table->fd_table_lock);

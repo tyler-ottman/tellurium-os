@@ -1,4 +1,4 @@
-#include "stdlib.h"
+#include <stdlib.h>
 
 int __atoi(const char *str) {
     int sign = (*str == '-') ? -1 : 1;

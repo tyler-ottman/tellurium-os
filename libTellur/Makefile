@@ -1,6 +1,6 @@
-override CXX = x86_64-elf-g++
+override GXX = x86_64-elf-g++
 
-override INCLUDE = -I..
+override INCLUDE = -I../
 
 override CFLAGS += $(INCLUDE)				\
 	-ffreestanding							\
@@ -17,7 +17,7 @@ override OBJ := $(CPPFILES:.cpp=.o)
 all: $(OBJ)
 
 %.o: %.cpp
-	$(CXX) $(CFLAGS) -c $< -o $@
+	$(GXX) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -rf $(OBJ)

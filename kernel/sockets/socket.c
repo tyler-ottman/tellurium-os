@@ -1,5 +1,4 @@
-#include <libc/kmalloc.h>
-#include <sys/misc.h>
+#include <klib/kmalloc.h>
 #include <sockets/socket.h>
 #include <sockets/unix_socket.h>
 #include <sys/misc.h>

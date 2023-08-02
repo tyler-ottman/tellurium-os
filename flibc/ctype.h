@@ -1,5 +1,5 @@
-#ifndef CTYPE_H
-#define CTYPE_H
+#ifndef CTYPE_HD
+#define CTYPE_HD
 
 int __is_digit(char c);
 
