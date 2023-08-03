@@ -6,10 +6,10 @@
 #include <klib/kmalloc.h>
 
 spinlock_t kprint_lock = 0;
-terminal_t kterminal;
+terminal_t *kterminal;
 
 terminal_t *get_kterminal() {
-    return &kterminal;
+    return kterminal;
 }
 
 void kerror(const char* msg, int err) {
@@ -36,11 +36,11 @@ int kprintf(const char *format, ...) {
 
     spinlock_acquire(&kprint_lock);
 
-    kterminal.apply_set_attribute[0](&kterminal);
-    kterminal.print(&kterminal, buf);
+    kterminal->apply_set_attribute[0](kterminal);
+    kterminal->print(kterminal, buf);
 
     // Effective screen refresh
-    kterminal.refresh(&kterminal);
+    kterminal->refresh(kterminal);
 
     spinlock_release(&kprint_lock);
     
@@ -54,8 +54,8 @@ int kprintf(const char *format, ...) {
 void init_kterminal() {
     init_framebuffer();
 
-    terminal_alloc(&kterminal, 14, 8, fb_get_height(), fb_get_width(),
-                   fb_get_height(), fb_get_width(), fb_get_pitch(),
-                   fb_get_bpp(), FG_COLOR_DEFAULT, BG_COLOR_DEFAULT, NULL, NULL,
-                   fb_get_framebuffer(), kmalloc, kfree);
+    kterminal = terminal_alloc(
+        14, 8, fb_get_height(), fb_get_width(), fb_get_height(), fb_get_width(),
+        fb_get_pitch(), fb_get_bpp(), FG_COLOR_DEFAULT, BG_COLOR_DEFAULT, NULL,
+        NULL, fb_get_framebuffer(), kmalloc, kfree);
 }

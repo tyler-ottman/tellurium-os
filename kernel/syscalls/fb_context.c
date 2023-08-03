@@ -11,6 +11,7 @@ int syscall_get_fb_context(fb_context_t *context) {
     context->fb_width = fb_get_width();
     context->fb_height = fb_get_height();
     context->fb_pitch = fb_get_pitch();
+    context->fb_bpp = fb_get_bpp();
 
     // Map framebuffer to user process
     uint64_t addr = (uint64_t)(fb_get_framebuffer()) - KERNEL_HHDM_OFFSET;

@@ -13,6 +13,7 @@ typedef struct {
     uint32_t fb_width;
     uint32_t fb_height;
     uint32_t fb_pitch;
+    uint32_t fb_bpp;
 } FbMeta;
 
 class FbContext {
@@ -20,6 +21,7 @@ public:
     FbContext(FbContext& obj) = delete;
     static FbContext *getInstance(void);
     FbMeta *getFbContext(void);
+    void *getFbBuff(void) { return fb_buff; }
 
     // Framebuffer operations
     void drawRect(int x, int y, int width, int height, uint32_t color);

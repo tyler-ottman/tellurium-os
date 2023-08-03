@@ -125,6 +125,10 @@ int Image::loadImage(const char *path) {
 }
 
 void Image::drawObject() {
+    if (!imgBuff) {
+        return;
+    }
+
     context->drawBuff(x, y, width, height, imgBuff);
 }
 

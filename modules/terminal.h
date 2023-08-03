@@ -34,14 +34,14 @@
 #define LIGHT_CYAN                          RESET"\033[96m"
 #define WHITE                               RESET"\033[97m"
 
-#define INFO                                GREEN"["LIGHT_GREEN"INFO"GREEN"] "
+#define INFO                                GREEN "[" LIGHT_GREEN "INFO" GREEN "] "
 #define ERROR                               RED "[" LIGHT_RED "ERROR" RED "] "
 
 #define NUM_SET_TEXT_ATTRIBUTES             9
 #define NUM_RESET_TEXT_ATTRIBUTES           8
 
 #define CURSOR_COLOR                        0xff808080
-#define RESET_COLOR                         0x00000000
+#define RESET_COLOR                         0xff333333
 #define FG_COLOR_DEFAULT                    0xff0096aa
 #define BG_COLOR_DEFAULT                    RESET_COLOR
 
@@ -51,7 +51,8 @@ typedef struct terminal {
     void (*__free)(void *addr);
 
     // Print to off-screen buffer
-    int (*print)(struct terminal *term, const char *buf);
+    void (*clear)(struct terminal *term);
+    void (*print)(struct terminal *term, const char *buf);
     void (*refresh)(struct terminal *term);
 
     // Font info
@@ -91,12 +92,12 @@ typedef struct terminal {
 
 // void terminal_print(terminal_t *terminal, const char *buf);
 // void terminal_refresh(terminal_t *terminal);
-terminal_t *terminal_alloc(terminal_t *term, uint32_t h_font, uint32_t w_font,
-                           uint64_t term_h_px, uint64_t term_w_px,
-                           uint32_t fb_h_px, uint32_t fb_w_px,
-                           uint32_t fb_pitch, uint32_t fb_bpp,
+terminal_t *terminal_alloc(uint32_t h_font, uint32_t w_font, uint64_t term_h_px,
+                           uint64_t term_w_px, uint32_t fb_h_px,
+                           uint32_t fb_w_px, uint32_t fb_pitch, uint32_t fb_bpp,
                            uint64_t fg_color_default, uint64_t bg_color_default,
-                           void *bitmap, void *buffer1, void *buffer2,
-                           void *(__malloc)(size_t), void (*__free)(void *));
+                           uint8_t *bitmap, uint32_t *buffer1,
+                           uint32_t *buffer2, void *(__malloc)(size_t),
+                           void (*__free)(void *));
 
 #endif // TERMINAL_H

@@ -8,8 +8,9 @@ override TOP_DIR = ../..
 override FLIBC_DIR = $(TOP_DIR)/flibc
 override LIBGUI_DIR = $(TOP_DIR)/libGUI
 override LIBTELLUR_DIR = $(TOP_DIR)/libTellur
+override TERMINAL_DIR = $(TOP_DIR)/modules
 
-override INCLUDE = -I$(SRC_DIR) -I$(TOP_DIR) -I$(FLIBC_DIR)
+override INCLUDE = -I$(SRC_DIR) -I$(TOP_DIR) -I$(FLIBC_DIR) -I$(TERMINAL_DIR)
 
 override CFLAGS += $(INCLUDE)				\
 	-I $(SRC_DIR)							\
@@ -28,7 +29,7 @@ override LDFLAGS = -T $(LDFILE) 			\
 	-m elf_x86_64
 
 override CPPFILES := $(shell find . $(LIBGUI_DIR) $(LIBTELLUR_DIR) -type f -name '*.cpp')
-override CFILES := $(shell find $(FLIBC_DIR) -type f -name '*.c')
+override CFILES := $(shell find $(FLIBC_DIR) $(TERMINAL_DIR) -type f -name '*.c')
 override OBJ := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o)
 override HEADER_DEPS := $(CPPFILES:.cpp=.d) $(CFILES:.c=.d)
 

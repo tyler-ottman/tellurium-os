@@ -14,7 +14,7 @@ override CFLAGS += $(INCLUDE)				\
 override CFILES := $(shell find . -type f -name '*.c')
 override OBJ := $(CFILES:.c=.o)
 
-all: $(OBJ)
+all: clean $(OBJ)
 
 %.o: %.c
 	$(CXX) $(CFLAGS) -c $< -o $@

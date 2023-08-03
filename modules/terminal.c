@@ -296,21 +296,24 @@ void terminal_refresh(terminal_t *terminal) {
     fb_load_buffer(terminal);
 }
 
-terminal_t *terminal_alloc(terminal_t *term, uint32_t h_font, uint32_t w_font,
-                           uint64_t term_h_px, uint64_t term_w_px,
-                           uint32_t fb_h_px, uint32_t fb_w_px,
-                           uint32_t fb_pitch, uint32_t fb_bpp,
+void terminal_clear(terminal_t *terminal) {
+    clear_screen(terminal);
+}
+
+terminal_t *terminal_alloc(uint32_t h_font, uint32_t w_font, uint64_t term_h_px,
+                           uint64_t term_w_px, uint32_t fb_h_px,
+                           uint32_t fb_w_px, uint32_t fb_pitch, uint32_t fb_bpp,
                            uint64_t fg_color_default, uint64_t bg_color_default,
-                           void *bitmap, void *buffer1, void *buffer2,
-                           void *(__malloc)(size_t), void (*__free)(void *)) {
-    if (!term) {
-        term = __malloc(sizeof(terminal_t));
-    }
+                           uint8_t *bitmap, uint32_t *buffer1,
+                           uint32_t *buffer2, void *(__malloc)(size_t),
+                           void (*__free)(void *)) {
+    terminal_t *term = (terminal_t *)__malloc(sizeof(terminal_t));
 
     // Memory management info
     term->__malloc = __malloc;
     term->__free = __free;
 
+    term->clear = terminal_clear;
     term->print = terminal_print;
     term->refresh = terminal_refresh;
 
@@ -324,7 +327,8 @@ terminal_t *terminal_alloc(terminal_t *term, uint32_t h_font, uint32_t w_font,
     term->term_w_px = MIN(term_w_px, fb_w_px);
     term->buf1 = buffer1;
     if (!buffer1) {
-        term->buf1 = term->__malloc(4 * term->term_w_px * term->term_h_px);
+        term->buf1 =
+            (uint32_t *)term->__malloc(4 * term->term_w_px * term->term_h_px);
     }
 
     // Cursor info

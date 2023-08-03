@@ -8,7 +8,7 @@ override APPS_DIR := applications
 override IMG_DIR := images
 
 .PHONY: all
-all: $(IMAGE_NAME).iso
+all: clean $(IMAGE_NAME).iso
 
 .PHONY: all-hdd
 all-hdd: $(IMAGE_NAME).hdd

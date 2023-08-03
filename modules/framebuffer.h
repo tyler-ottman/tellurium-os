@@ -10,6 +10,7 @@ typedef struct fb_context {
     uint32_t fb_width;
     uint32_t fb_height;
     uint32_t fb_pitch;
+    uint32_t fb_bpp;
 } fb_context_t;
 
 void clear_screen(terminal_t *term);
