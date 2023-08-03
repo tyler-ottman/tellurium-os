@@ -5,6 +5,9 @@ override KERNEL := kernel.elf
 # Where freestanding libc function reside
 override FLIBC_DIR := ../flibc
 
+# Modules shared by user/kernel space
+override MODULES_DIR := ../modules
+
 # Convenience macro to reliably declare overridable command variables.
 define DEFAULT_VAR =
     ifeq ($(origin $1),default)
@@ -33,7 +36,7 @@ CPPFLAGS ?=
 # User controllable nasm flags.
 NASMFLAGS ?= -F dwarf -g
 
-override INCLUDE = -I. -I../ -I$(FLIBC_DIR)
+override INCLUDE = -I. -I../ -I$(FLIBC_DIR) -I$(MODULES_DIR)
 
 # Internal linker flags that should not be changed by the user.
 override LDFLAGS ?=         \
@@ -69,7 +72,7 @@ override NASMFLAGS += \
     -f elf64
  
 # Use find to glob all *.c, *.S, and *.asm files in the directory and extract the object names.
-override CFILES := $(shell find . $(FLIBC_DIR) -type f -name '*.c')
+override CFILES := $(shell find . $(FLIBC_DIR) $(MODULES_DIR) -type f -name '*.c')
 override ASFILES := $(shell find . -type f -name '*.S')
 override NASMFILES := $(shell find . -type f -name '*.asm')
 override OBJ := $(CFILES:.c=.o) $(ASFILES:.S=.o) $(NASMFILES:.asm=.o)
@@ -80,7 +83,6 @@ all: $(KERNEL)
  
 # Link rules for the final kernel executable.
 $(KERNEL): $(OBJ)
-	$(MAKE) -C $(FLIBC_DIR)
 	x86_64-elf-ld $(OBJ) $(LDFLAGS) -o $@
  
 # Include header dependencies.
@@ -101,5 +103,4 @@ $(KERNEL): $(OBJ)
 # Remove object files and the final executable.
 .PHONY: clean
 clean:
-	$(MAKE) -C $(FLIBC_DIR) clean
 	rm -rf $(KERNEL) $(OBJ) $(HEADER_DEPS) *.log

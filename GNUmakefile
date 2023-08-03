@@ -5,7 +5,7 @@ override LIMINE_DIR := ../limine
 override KERNEL_DIR := kernel
 override LIBGUI_DIR := libGUI
 override APPS_DIR := applications
-override IMG_DIR := imgBin
+override IMG_DIR := images
 
 .PHONY: all
 all: $(IMAGE_NAME).iso

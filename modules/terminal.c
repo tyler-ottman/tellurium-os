@@ -1,6 +1,7 @@
-#include <arch/framebuffer.h>
-#include <arch/terminal.h>
+#include <default_font.h>
+#include <framebuffer.h>
 #include <stdarg.h>
+#include <terminal.h>
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -87,11 +88,11 @@ static uint32_t rgb256[] = {
     0xa0a0a0, 0xaaaaaa, 0xb4b4b4, 0xbebebe, 0xc8c8c8, 0xd2d2d2, 0xdcdcdc, 0xe6e6e6,
 };
 
-void no_change_text_attribute(terminal_t *terminal) {
+static void no_change_text_attribute(terminal_t *terminal) {
     (void)terminal;
 }
 
-void reset_text_attribute(terminal_t *terminal) {
+static void reset_text_attribute(terminal_t *terminal) {
     terminal->ansi_state = PROCESS_NORMAL;
     terminal->fg_color = terminal->fg_color_default;
     terminal->bg_color = terminal->bg_color_default;
@@ -236,7 +237,7 @@ static void terminal_parse_ansi(terminal_t *terminal) {
     }
 }
 
-void terminal_printf(terminal_t *terminal, const char *buf) {
+static void terminal_print(terminal_t *terminal, const char *buf) {
     const char *start = buf;
 
     draw_cursor(terminal, terminal->bg_color);
@@ -310,10 +311,13 @@ terminal_t *terminal_alloc(terminal_t *term, uint32_t h_font, uint32_t w_font,
     term->__malloc = __malloc;
     term->__free = __free;
 
+    term->print = terminal_print;
+    term->refresh = terminal_refresh;
+
     // Font info
     term->font_h_px = h_font;
     term->font_w_px = w_font;
-    term->bitmap = bitmap;
+    term->bitmap = bitmap ? bitmap : default_font;
 
     // Terminal buffer info
     term->term_h_px = MIN(term_h_px, fb_h_px);

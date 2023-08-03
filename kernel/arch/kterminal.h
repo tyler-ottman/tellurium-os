@@ -1,7 +1,7 @@
 #ifndef KTERMINAL_H
 #define KTERMINAL_H
 
-#include <arch/terminal.h>
+#include <modules/terminal.h>
 
 terminal_t *get_kterminal(void);
 

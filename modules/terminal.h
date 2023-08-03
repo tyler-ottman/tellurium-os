@@ -2,6 +2,7 @@
 #define TERMINAL_H
 
 #include <flibc/ctype.h>
+#include <flibc/print.h>
 #include <flibc/stdlib.h>
 #include <flibc/string.h>
 #include <stdarg.h>
@@ -49,6 +50,10 @@ typedef struct terminal {
     void *(*__malloc)(size_t size);
     void (*__free)(void *addr);
 
+    // Print to off-screen buffer
+    int (*print)(struct terminal *term, const char *buf);
+    void (*refresh)(struct terminal *term);
+
     // Font info
     uint32_t font_h_px;                     // Font height
     uint32_t font_w_px;                     // Font width
@@ -84,8 +89,8 @@ typedef struct terminal {
     uint64_t fb_h_px;                   // Framebuffer height
 } terminal_t;
 
-void terminal_printf(terminal_t *terminal, const char *buf);
-void terminal_refresh(terminal_t *terminal);
+// void terminal_print(terminal_t *terminal, const char *buf);
+// void terminal_refresh(terminal_t *terminal);
 terminal_t *terminal_alloc(terminal_t *term, uint32_t h_font, uint32_t w_font,
                            uint64_t term_h_px, uint64_t term_w_px,
                            uint32_t fb_h_px, uint32_t fb_w_px,

@@ -4,7 +4,7 @@
 #define SYS_ERROR                                   0
 #define SYS_SUCCESS                                 1
 
-#include <arch/framebuffer.h>
+#include <modules/framebuffer.h>
 
 int syscall_get_fb_context(fb_context_t *context);
 void *syscall_mmap(void *addr, size_t len, int prot, int flags, int fd, size_t offset);

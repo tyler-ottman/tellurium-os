@@ -1,10 +1,9 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
-#include <arch/kterminal.h>
-#include <limine.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <terminal.h>
 
 typedef struct fb_context {
     void *fb_buff;
