@@ -240,7 +240,9 @@ static void terminal_parse_ansi(terminal_t *terminal) {
 static void terminal_print(terminal_t *terminal, const char *buf) {
     const char *start = buf;
 
-    draw_cursor(terminal, terminal->bg_color);
+    if (terminal->cursor_enabled) {
+        draw_cursor(terminal, terminal->bg_color);
+    }
 
     while (*buf) {
         if (terminal->is_ansi_state) {
@@ -289,7 +291,9 @@ static void terminal_print(terminal_t *terminal, const char *buf) {
         buf++;
     }
 
-    draw_cursor(terminal, terminal->cursor_color);
+    if (terminal->cursor_enabled) {
+        draw_cursor(terminal, terminal->cursor_color);
+    }
 }
 
 void terminal_refresh(terminal_t *terminal) {
@@ -337,6 +341,7 @@ terminal_t *terminal_alloc(uint32_t h_font, uint32_t w_font, uint64_t term_h_px,
     term->cursor_h_max = term->term_w_px / term->font_w_px;
     term->cursor_v_max = term->term_h_px / term->font_h_px;
     term->cursor_color = CURSOR_COLOR;
+    term->cursor_enabled = true;
 
     // ANSI state info
     term->fg_color_default = fg_color_default;

@@ -10,6 +10,7 @@ public:
     ~Desktop();
 
     void drawWindow(void);
+    void drawMouse(void);
     void onMouseEvent(Device::MouseData *data);
     void applyDirtyMouse(void);
     

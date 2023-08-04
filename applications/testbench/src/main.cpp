@@ -12,19 +12,9 @@
 int main() {
     GUI::WindowServer *wm = GUI::WindowServer::getInstance();
     
-
-    // GUI::Button *button = new GUI::Button(
-    //     280, 357, 80, 30, BUTTON_BORDER | BUTTON_TOGGLE | BUTTON_HOVER);
-    // win->appendWindow(button);
-
-    // button = new GUI::Button(175, 250, 80, 30,
-    //                          BUTTON_BORDER | BUTTON_TOGGLE | BUTTON_HOVER);
-    // win->appendWindow(button);
-
-    
     // Geometry Window
     GUI::Window *win0 =
-        wm->createWindow("test", 10, 10, 400, 400, WIN_MOVABLE | WIN_DECORATE);
+        wm->createWindow("Geometry", 10, 10, 400, 400, WIN_MOVABLE | WIN_DECORATE);
     GUI::Window *square1 = new GUI::Window("square", 80, 70, 200, 220, 0);
     GUI::Window *square2 = new GUI::Window("square", 150, 100, 200, 70, 0);
     GUI::Window *square3 = new GUI::Window("square", 100, 250, 150, 100, 0);
@@ -38,20 +28,22 @@ int main() {
     win0->appendWindow(square3);
     win0->appendWindow(square4);
     GUI::Window *smallWin =
-        new GUI::Window("test", 20, 70, 100, 100, WIN_MOVABLE | WIN_DECORATE);
+        new GUI::Window(NULL, 20, 70, 100, 100, WIN_MOVABLE | WIN_DECORATE);
     win0->appendWindow(smallWin);
 
     // Image window
-    GUI::Window *win1 = wm->createWindow(
-        "test", 150, 100, 402, 316 + TITLE_HEIGHT, WIN_MOVABLE | WIN_DECORATE);
+    const char *imagePath = "/tmp/basketOfFruits.ppm";
+    GUI::Window *win1 =
+        wm->createWindow(imagePath, 150, 100, 402, 316 + TITLE_HEIGHT,
+                         WIN_MOVABLE | WIN_DECORATE);
     GUI::Image *fruit =
         new GUI::Image(151, 101 + TITLE_HEIGHT, win1->getWidth() - 2,
                        win1->getHeight() - 2 - TITLE_HEIGHT);
     win1->appendWindow(fruit);
-    fruit->loadImage("/tmp/basketOfFruits.ppm");
+    fruit->loadImage(imagePath);
 
     // Terminal window
-    GUI::Window *win2 = wm->createWindow("test", 100, 150, 500, 300,
+    GUI::Window *win2 = wm->createWindow("Terminal", 100, 150, 500, 300,
                                          WIN_MOVABLE | WIN_DECORATE);
     GUI::Terminal *term =
         new GUI::Terminal(100 + 1, 150 + TITLE_HEIGHT + 1, win2->getWidth() - 2,

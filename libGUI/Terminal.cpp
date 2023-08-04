@@ -14,8 +14,14 @@ Terminal::Terminal(int x, int y, int width, int height)
     terminal->clear(terminal);
 }
 
+Terminal::~Terminal() {}
+
 void Terminal::drawObject() {
     context->drawBuff(x, y, width, height, terminal->buf1);
+}
+
+void Terminal::clear() {
+    terminal->clear(terminal);
 }
 
 int Terminal::printf(const char *format, ...) {
@@ -32,6 +38,20 @@ int Terminal::printf(const char *format, ...) {
     return 0;
 }
 
-Terminal::~Terminal() {}
+void Terminal::enableCursor() {
+    terminal->cursor_enabled = true;
+}
+
+void Terminal::disableCursor() {
+    terminal->cursor_enabled = false;
+}
+
+void Terminal::setFg(uint32_t color) {
+    terminal->fg_color_default = color;
+}
+
+void Terminal::setBg(uint32_t color) {
+    terminal->bg_color_default = color;
+}
 
 }

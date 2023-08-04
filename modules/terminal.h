@@ -71,6 +71,7 @@ typedef struct terminal {
     uint32_t cursor_h_max;
     uint32_t cursor_v_max;
     uint32_t cursor_color;
+    bool cursor_enabled;
 
     // ANSI state info
     uint32_t fg_color_default;

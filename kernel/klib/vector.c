@@ -57,8 +57,8 @@ void vector_resize(struct vector *vector, int size) {
     if (size < 0) {
         return;
     }
-    
-    void **elements = krealloc(vector, sizeof(void *) * size);
+
+    void **elements = krealloc(vector->elements, sizeof(void *) * size);
     if (elements != NULL) {
         vector->elements = elements;
         vector->max_elements = size;

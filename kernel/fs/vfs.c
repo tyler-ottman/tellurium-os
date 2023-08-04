@@ -81,7 +81,7 @@ static vnode_t *vfs_get_child(vnode_t *parent, const char *name) {
 
 static int vfs_path_to_node(vnode_t **ret, vnode_t *v_base, char *path) {
     int err;
-
+    
     if (__strlen(path) > VNODE_PATH_MAX) {
         return VFS_INVALID_PARAMETERS;
     }

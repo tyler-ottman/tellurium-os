@@ -21,12 +21,13 @@ public:
     FbContext(FbContext& obj) = delete;
     static FbContext *getInstance(void);
     FbMeta *getFbContext(void);
-    void *getFbBuff(void) { return fb_buff; }
+    void *getFbBuff(void) { return fb_meta.fb_buff; }
 
     // Framebuffer operations
     void drawRect(int x, int y, int width, int height, uint32_t color);
     void drawBuff(int x, int y, int width, int height, uint32_t *buff);
     void drawRectNoRegion(int x, int y, int width, int height, uint32_t color);
+    void drawBitmapNoRegion(int x, int y, int width, int height, uint32_t *bitmap);
     void drawVerticalLine(int xPos, int yPos, int length, int color);
     void drawHorizontalLine(int xPos, int yPos, int length, int color);
     void drawOutlinedRect(int xPos, int yPos, int width, int length, int color);
@@ -75,6 +76,9 @@ private:
     FbContext(void);
     ~FbContext();
 
+    // Restrict drawing to Rect area
+    void restrictToArea(Rect *area, int *x, int *y, int *xMax, int *yMax);
+
     // Draw a clipped rectangle within the bounds of Rect area
     void drawClippedRect(int x, int y, int width, int height, uint32_t color,
                          Rect *area);
@@ -82,5 +86,9 @@ private:
     // Draw a clipped buffer within bounds of Rect area
     void drawClippedBuff(int x, int y, int width, int height, uint32_t *buff,
                          Rect *area);
+
+    // Draw a clipped bitmap within bounds of Rect area
+    void drawClippedBitmap(int x, int y, int width, int height,
+                           uint32_t *bitmap, Rect *area);
 };
 }

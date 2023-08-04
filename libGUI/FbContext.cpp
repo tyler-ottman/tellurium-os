@@ -23,6 +23,7 @@ FbContext *FbContext::getInstance() {
 
     syscall_get_fb_context(&instance->fb_meta);
 
+    instance->fb_buff = (uint32_t *)instance->fb_meta.fb_buff;
     instance->screen = new Rect(0, instance->fb_meta.fb_height - 1, 0,
                                 instance->fb_meta.fb_width - 1);
 
@@ -40,101 +41,37 @@ FbMeta *FbContext::getFbContext() {
     return &instance->fb_meta;
 }
 
-void FbContext::drawClippedRect(int x, int y, int width, int height,
-                                uint32_t color, Rect *area) {
-    int xMax = x + width;
-    int yMax = y + height;
-
-    FbMeta &fb_meta = instance->fb_meta;
-    uint32_t *buff = (uint32_t *)fb_meta.fb_buff;
-
-    if (y < area->getTop()) {
-        y = area->getTop();
+void FbContext::restrictToArea(Rect *area, int *x, int *y, int *xMax, int *yMax) {
+    if (*y < area->getTop()) {
+        *y = area->getTop();
     }
 
-    if (yMax > area->getBottom() + 1) {
-        yMax = area->getBottom() + 1;
+    if (*yMax > area->getBottom() + 1) {
+        *yMax = area->getBottom() + 1;
     }
 
-    if (x < area->getLeft()) {
-        x = area->getLeft();
+    if (*x < area->getLeft()) {
+        *x = area->getLeft();
     }
 
-    if (xMax > area->getRight() + 1) {
-        xMax = area->getRight() + 1;
+    if (*xMax > area->getRight() + 1) {
+        *xMax = area->getRight() + 1;
     }
 
     if (area->getLeft() < 0) {
-        x = 0;
+        *x = 0;
     }
 
     if (area->getRight() > screen->getRight()) {
-        xMax = screen->getRight();
+        *xMax = screen->getRight();
     }
 
     if (area->getTop() < 0) {
-        y = 0;
+        *y = 0;
     }
 
     if (area->getBottom() > screen->getBottom()) {
-        yMax = screen->getBottom();
-    }
-    
-    for (int i = y; i < yMax; i++) {
-        for (int j = x; j < xMax; j++) {
-            buff[i * fb_meta.fb_width + j] = color;
-        }
-    }
-}
-
-void FbContext::drawClippedBuff(int x, int y, int width, int height,
-                                uint32_t *buff, Rect *area) {
-    int xMax = x + width;
-    int yMax = y + height;
-
-    int translateX = x;
-    int translateY = y;
-
-    FbMeta &fb_meta = instance->fb_meta;
-    uint32_t *framebuffer = (uint32_t *)fb_meta.fb_buff;
-
-    if (y < area->getTop()) {
-        y = area->getTop();
-    }
-
-    if (yMax > area->getBottom() + 1) {
-        yMax = area->getBottom() + 1;
-    }
-
-    if (x < area->getLeft()) {
-        x = area->getLeft();
-    }
-
-    if (xMax > area->getRight() + 1) {
-        xMax = area->getRight() + 1;
-    }
-
-    if (area->getLeft() < 0) {
-        x = 0;
-    }
-    
-    if (area->getRight() > screen->getRight()) {
-        xMax = screen->getRight();
-    }
-
-    if (area->getTop() < 0) {
-        y = 0;
-    }
-
-    if (area->getBottom() > screen->getBottom()) {
-        yMax = screen->getBottom();
-    }
-    
-    for (int i = y; i < yMax; i++) {
-        for (int j = x; j < xMax; j++) {
-            framebuffer[i * fb_meta.fb_width + j] =
-                buff[(i - translateY) * width + (j - translateX)];
-        }
+        *yMax = screen->getBottom();
     }
 }
 
@@ -153,6 +90,10 @@ void FbContext::drawBuff(int x, int y, int width, int height, uint32_t *buff) {
 void FbContext::drawRectNoRegion(int x, int y, int width, int height,
                                  uint32_t color) {
     drawClippedRect(x, y, width, height, color, screen);
+}
+
+void FbContext::drawBitmapNoRegion(int x, int y, int width, int height, uint32_t *bitmap) {
+    drawClippedBitmap(x, y, width, height, bitmap, screen);
 }
 
 void FbContext::drawVerticalLine(int xPos, int yPos, int length, int color) {
@@ -301,6 +242,58 @@ void FbContext::removeDirtyRect(int index) {
 
 void FbContext::resetDirtyList() {
     numDirty = 0;
+}
+
+void FbContext::drawClippedRect(int x, int y, int width, int height,
+                                uint32_t color, Rect *area) {
+    int xMax = x + width;
+    int yMax = y + height;
+
+    restrictToArea(area, &x, &y, &xMax, &yMax);
+
+    for (int i = y; i < yMax; i++) {
+        for (int j = x; j < xMax; j++) {
+            fb_buff[i * fb_meta.fb_width + j] = color;
+        }
+    }
+}
+
+void FbContext::drawClippedBuff(int x, int y, int width, int height,
+                                uint32_t *buff, Rect *area) {
+    int xMax = x + width;
+    int yMax = y + height;
+
+    int translateX = x;
+    int translateY = y;
+
+    restrictToArea(area, &x, &y, &xMax, &yMax);
+    for (int i = y; i < yMax; i++) {
+        for (int j = x; j < xMax; j++) {
+            fb_buff[i * fb_meta.fb_width + j] =
+                buff[(i - translateY) * width + (j - translateX)];
+        }
+    }
+}
+
+void FbContext::drawClippedBitmap(int x, int y, int width, int height,
+                                  uint32_t *bitmap, Rect *area) {
+    int xMax = x + width;
+    int yMax = y + height;
+    
+    int translateX = x;
+    int translateY = y;
+
+    restrictToArea(area, &x, &y, &xMax, &yMax);
+
+    for (int i = y; i < yMax; i++) {
+        for (int j = x; j < xMax; j++) {
+            if (bitmap[(i - translateY) * width + (j - translateX)] &
+                0xff000000) {
+                fb_buff[i * fb_meta.fb_width + j] =
+                    bitmap[(i - translateY) * width + (j - translateX)];
+            }
+        }
+    }
 }
 
 }

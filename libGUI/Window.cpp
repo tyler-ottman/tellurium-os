@@ -2,13 +2,9 @@
 #include "libGUI/Button.hpp"
 #include "libGUI/FbContext.hpp"
 #include "libGUI/Image.hpp"
+#include "libGUI/Terminal.hpp"
 #include "libGUI/Window.hpp"
 #include "libTellur/mem.hpp"
-
-uint8_t pseudo_rand_8() {
-    static uint16_t seed = 0;
-    return (uint8_t)(seed = (12657 * seed + 12345) % 256);
-}
 
 namespace GUI {
 
@@ -34,12 +30,14 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
       activeChild(nullptr),
       maxWindows(WINDOW_MAX),
       numWindows(0) {
-    // color = 0xff000000 | pseudo_rand_8() << 16 | pseudo_rand_8() << 8 |
-    //         pseudo_rand_8();
-    // color = 0xff3b6aa0;
     color = 0xff333333;
 
-    this->windowName = new char[__strlen(w_name)];
+    if (w_name) {
+        int len = __strlen(w_name);
+        windowName = new char[len + 1];
+        __memcpy(windowName, w_name, len);
+        windowName[len] = '\0';
+    }
 
     for (int i = 0; i < maxWindows; i++) {
         windows[i] = nullptr;
@@ -51,15 +49,27 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
     if (isMovable()) {
         MenuBar *menuBar = new MenuBar(x, y, width, TITLE_HEIGHT);
 
+        if (windowName) {
+            int titleLen = __strlen(windowName) * 8;  // 8 is default font width
+            Terminal *title =
+                new Terminal(x + width / 2 - titleLen / 2, y + 10, titleLen, 30);
+            title->disableCursor();
+            title->setBg(0xffbebebe);
+            title->setFg(0);
+            title->clear();
+            title->printf("%s", windowName);
+            menuBar->appendWindow(title);
+        }
+
         Button *exitButton =
             new Button(x + width - 20, y + 5, 31, 31, BUTTON_HOVER);
-        ((Window *)menuBar)->appendWindow(exitButton);
+        menuBar->appendWindow(exitButton);
         exitButton->loadImage("/tmp/exitButtonUnhover.ppm");
         exitButton->loadHoverImage("/tmp/exitButtonHover.ppm");
 
         Button *minimizeButton =
             new Button(x + width - 40, y + 5, 31, 31, BUTTON_HOVER);
-        ((Window *)menuBar)->appendWindow(minimizeButton);
+        menuBar->appendWindow(minimizeButton);
         minimizeButton->loadImage("/tmp/minimizeButtonUnhover.ppm");
         minimizeButton->loadHoverImage("/tmp/minimizeButtonHover.ppm");
 

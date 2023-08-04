@@ -61,6 +61,7 @@ void slab_spawn(struct cache *cache) {
     struct slab *slab = palloc(1);
     ASSERT(slab != NULL, ERR_NO_MEM, NULL);
     __memset(slab, 0, header_size);
+    // __memset(slab, 0, PAGE_SIZE_BYTES);
 
     int header_size_chunks = header_size / chunk_size;
     if (header_size % chunk_size != 0) header_size_chunks++;
@@ -86,6 +87,7 @@ void slab_spawn(struct cache *cache) {
     }
     cur_chunk[slab->total_chunks * offset] = NULL;
 }
+uint64_t counter = 0;
 
 void *slab_inner_alloc_chunk(struct slab *slab_list_base) {
     struct slab *slab = slab_list_base;
@@ -94,8 +96,10 @@ void *slab_inner_alloc_chunk(struct slab *slab_list_base) {
         if ((slab->used_chunks != slab->total_chunks)) {
             slab->used_chunks++;
             void **old_free_chunk = slab->free_chunk;
-            slab->free_chunk = *old_free_chunk;
             
+            slab->free_chunk = *old_free_chunk;
+            __memset(old_free_chunk, 0, slab->cache->chunk_size);
+
             // Add slab to full list
             struct cache *cache = slab->cache;
             if (slab->used_chunks == slab->total_chunks) { // partial -> full
@@ -216,8 +220,8 @@ void *slab_realloc(void *addr, size_t size) {
             return NULL;
         }
 
-        __memcpy(chunk, slab, slab->cache->chunk_size);
-        slab_free_chunk(slab);
+        __memcpy(chunk, addr, slab->cache->chunk_size);
+        slab_free_chunk(addr);
     }
 
     return chunk;

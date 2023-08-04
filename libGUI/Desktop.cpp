@@ -1,20 +1,46 @@
 #include "libGUI/Desktop.hpp"
 #include "libGUI/Image.hpp"
 #include "libGUI/Taskbar.hpp"
+#include "libGUI/Terminal.hpp"
 
 namespace GUI {
 
+#define MOUSE_W                             11
+#define MOUSE_H                             18
+
+#define BL                                  0xff000000
+#define CL                                  0x0
+#define WH                                  0xffffffff
+
+uint32_t mouseBitmap[MOUSE_W * MOUSE_H] = {  
+    BL, CL, CL, CL, CL, CL, CL, CL, CL, CL, CL,
+    BL, BL, CL, CL, CL, CL, CL, CL, CL, CL, CL,
+    BL, WH, BL, CL, CL, CL, CL, CL, CL, CL, CL,
+    BL, WH, WH, BL, CL, CL, CL, CL, CL, CL, CL,
+    BL, WH, WH, WH, BL, CL, CL ,CL, CL, CL, CL,
+    BL, WH, WH, WH, WH, BL, CL, CL, CL, CL, CL,
+    BL, WH, WH, WH, WH, WH, BL, CL, CL, CL, CL,
+    BL, WH, WH, WH, WH, WH, WH, BL, CL, CL, CL,
+    BL, WH, WH, WH, WH, WH, WH, WH, BL, CL, CL,
+    BL, WH, WH, WH, WH, WH, WH, WH, WH, BL, CL,
+    BL, WH, WH, WH, WH, WH, WH, WH, WH, WH, BL,
+    BL, WH, WH, WH, WH, WH, WH, BL, BL, BL, BL,
+    BL, WH, WH, WH, BL, WH, WH, BL, CL, CL, CL,
+    BL, WH, WH, BL, BL, WH, WH, BL, CL, CL, CL,
+    BL, WH, BL, CL, CL, BL, WH, WH, BL, CL, CL,
+    BL, BL, CL, CL, CL, BL, WH, WH, BL, CL, CL,
+    BL, CL, CL, CL, CL, CL, BL, WH, BL, CL, CL,
+    CL, CL, CL, CL, CL, CL, CL, BL, BL, CL, CL 
+};
+
 Desktop::Desktop()
-    : Window("desktop", 0, 0,
-             FbContext::getInstance()->getFbContext()->fb_width,
-             FbContext::getInstance()->getFbContext()->fb_height,
-             WIN_DECORATE), forceRefresh(true) {
+    : Window(NULL, 0, 0, FbContext::getInstance()->getFbContext()->fb_width,
+             FbContext::getInstance()->getFbContext()->fb_height, WIN_DECORATE),
+      forceRefresh(true) {
     mouseX = width / 2;
     mouseY = height / 2;
     oldMouseX = mouseX;
     oldMouseY = mouseY;
-
-    color = 0xff2a2a2a;
 
     Image *background = new Image(0, 0, context->getFbContext()->fb_width,
                                   context->getFbContext()->fb_height);
@@ -25,6 +51,22 @@ Desktop::Desktop()
     Taskbar *taskbar = new Taskbar(0, height - 40, width, 40);
     taskbar->setColor(0xffbebebe);
     appendWindow(taskbar);
+
+    // Sample home button
+    Button *homeButton = new Button(taskbar->getXPos(), taskbar->getYPos(), 40,
+                                    40, BUTTON_HOVER);
+    homeButton->loadImage("/tmp/homeButtonUnhover.ppm");
+    homeButton->loadHoverImage("/tmp/homeButtonHover.ppm");
+    taskbar->appendWindow(homeButton);
+
+    // Sample clock
+    Terminal *clock = new Terminal(taskbar->getWidth() - 50, taskbar->getYPos() + 14, 50, 20);
+    clock->setBg(0xffbebebe);
+    clock->setFg(0);
+    clock->disableCursor();
+    clock->clear();
+    clock->printf("12:49");
+    taskbar->appendWindow(clock);
 }
 
 Desktop::~Desktop() {
@@ -44,7 +86,11 @@ void Desktop::drawWindow() {
     Window::drawWindow();
 
     // Draw mouse
-    context->drawRectNoRegion(mouseX, mouseY, 10, 10, 0xffffffff);
+    drawMouse();    
+}
+
+void Desktop::drawMouse() {
+    context->drawBitmapNoRegion(mouseX, mouseY, MOUSE_W, MOUSE_H, mouseBitmap);
 }
 
 void Desktop::onMouseEvent(Device::MouseData *data) {
@@ -59,7 +105,7 @@ void Desktop::onMouseEvent(Device::MouseData *data) {
 
         Window::drawWindow();
 
-        context->drawRectNoRegion(mouseX, mouseY, 10, 10, 0xffffffff);
+        drawMouse();
         context->resetDirtyList();
     }
 
@@ -72,11 +118,12 @@ void Desktop::applyDirtyMouse(void) {
     // If mouse position changed since last refresh
     if (!(oldMouseX == mouseX && oldMouseY == mouseY)) {
         // Original mouse position
-        Rect oldMouse(oldMouseY, oldMouseY + 10 - 1, oldMouseX, oldMouseX + 10 - 1);
+        Rect oldMouse(oldMouseY, oldMouseY + MOUSE_H, oldMouseX,
+                      oldMouseX + MOUSE_W);
         context->addClippedRect(&oldMouse);
 
         // New mouse position
-        Rect newMouse(mouseY, mouseY + 10 - 1, mouseX, mouseX + 10 - 1);
+        Rect newMouse(mouseY, mouseY + MOUSE_H, mouseX, mouseX + MOUSE_W);
         context->addClippedRect(&newMouse);
 
         oldMouseX = mouseX;

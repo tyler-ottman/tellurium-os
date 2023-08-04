@@ -34,7 +34,7 @@ class MenuBar;
 class Window: public Rect {
 
 public:
-    Window(const char *name, int x, int y, int width, int height,
+    Window(const char *w_name, int x, int y, int width, int height,
            uint16_t flags);
     virtual ~Window();
 
