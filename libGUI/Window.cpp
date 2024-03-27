@@ -259,8 +259,9 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
     }
 
     // Window raise event (non-terminal event)
-    if (isNewMousePressed && !isLastMousePressed() && (isMovable() ||
-        type == GUI::WindowMenuBar)) {
+    bool isNextClick = isNewMousePressed && !isLastMousePressed();
+    if (isNextClick) {
+        // && (isMovable() || type == GUI::WindowMenuBar)) {
         Window *windowRaise = type == WindowMenuBar ? parent : this;
         windowRaise->onWindowRaise();
     }
