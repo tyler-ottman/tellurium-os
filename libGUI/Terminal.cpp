@@ -17,7 +17,8 @@ Terminal::Terminal(int x, int y, int width, int height)
 Terminal::~Terminal() {}
 
 void Terminal::drawObject() {
-    context->drawBuff(x, y, width, height, terminal->buf1);
+    context->drawBuff(winRect->getX(), winRect->getY(), winRect->getWidth(),
+                      winRect->getHeight(), terminal->buf1);
 }
 
 void Terminal::clear() {

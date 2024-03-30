@@ -65,8 +65,8 @@ int Image::loadImage(const char *path) {
     }
 
     // Get width
-    this->width = getPpmNumber(ppmMeta);
-    ppmMeta += getNumDigits(width);
+    winRect->setWidth(getPpmNumber(ppmMeta));
+    ppmMeta += getNumDigits(winRect->getWidth());
 
     // Verify whitespace
     if (!isWhitespace(*ppmMeta++)) {
@@ -74,8 +74,8 @@ int Image::loadImage(const char *path) {
     }
 
     // Get height
-    this->height = getPpmNumber(ppmMeta);
-    ppmMeta += getNumDigits(height);
+    winRect->setHeight(getPpmNumber(ppmMeta));
+    ppmMeta += getNumDigits(winRect->getHeight());
 
     // Verify whitespace
     if (!isWhitespace(*ppmMeta++)) {
@@ -94,7 +94,7 @@ int Image::loadImage(const char *path) {
     int headerLen = (int)(ppmMeta - ppm);
 
     // Read pixels
-    int fileSize = headerLen + 3 * width * height;
+    int fileSize = headerLen + 3 * winRect->getWidth() * winRect->getHeight();
     delete[] ppm;
     ppm = new uint8_t[fileSize];
     if (!ppm) {
@@ -107,12 +107,12 @@ int Image::loadImage(const char *path) {
     ppm += headerLen;
 
     // Copy PPM pixels to 32-bit image buffer
-    imgBuff = new uint32_t[width * height];
+    imgBuff = new uint32_t[winRect->getWidth() * winRect->getHeight()];
     if (!imgBuff) {
         return IMG_ERR;
     }
 
-    for (int i = 0; i < width * height; i++) {
+    for (int i = 0; i < winRect->getWidth() * winRect->getHeight(); i++) {
         imgBuff[i] = 0xff000000 | (ppm[0] << 16) | (ppm[1] << 8) | (ppm[2]);
         ppm += 3;
     }
@@ -129,7 +129,8 @@ void Image::drawObject() {
         return;
     }
 
-    context->drawBuff(x, y, width, height, imgBuff);
+    context->drawBuff(winRect->getX(), winRect->getY(), winRect->getWidth(),
+                      winRect->getHeight(), imgBuff);
 }
 
 uint32_t *Image::getBuff() {

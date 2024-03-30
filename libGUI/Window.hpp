@@ -31,7 +31,7 @@ enum WindowType {
 
 class MenuBar;
 
-class Window: public Rect {
+class Window {
 
 public:
     Window(const char *w_name, int x, int y, int width, int height,
@@ -92,10 +92,9 @@ protected:
     void updateChildPositions(Device::MouseData *data);
 
     char *windowName;
-    int x;
-    int y;
-    int width;
-    int height;
+    
+    /// @brief The dimensions of the windows expressed as a Rect
+    Rect *winRect;
     uint16_t flags;
     int color;
     int windowID;

@@ -37,8 +37,8 @@ Desktop::Desktop()
     : Window(NULL, 0, 0, FbContext::getInstance()->getFbContext()->fb_width,
              FbContext::getInstance()->getFbContext()->fb_height, WIN_DECORATE),
       forceRefresh(true) {
-    mouseX = width / 2;
-    mouseY = height / 2;
+    mouseX = winRect->getWidth() / 2;
+    mouseY = winRect->getHeight() / 2;
     oldMouseX = mouseX;
     oldMouseY = mouseY;
 
@@ -48,7 +48,7 @@ Desktop::Desktop()
     background->loadImage("/tmp/background.ppm");
     appendWindow(background);
 
-    Taskbar *taskbar = new Taskbar(0, height - 40, width, 40);
+    Taskbar *taskbar = new Taskbar(0, winRect->getHeight() - 40, winRect->getWidth(), 40);
     taskbar->setColor(0xffbebebe);
     appendWindow(taskbar);
 
