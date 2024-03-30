@@ -2,27 +2,22 @@
 
 namespace GUI {
 
-Rect::Rect(int top, int bottom, int left, int right)
-    : top(top), bottom(bottom), left(left), right(right) {}
-
-Rect::Rect() {
-
-}
-
-Rect::~Rect() {
-
-}
+Rect::Rect(int x, int y, int width, int height)
+    : x(x), y(y), width(width), height(height) {}
 
 Rect::Rect(Rect &rect) {
-    this->top = rect.getTop();
-    this->bottom = rect.getBottom();
-    this->left = rect.getLeft();
-    this->right = rect.getRight();
+    x = rect.getLeft();
+    y = rect.getTop();
+    width = rect.getWidth();
+    height = rect.getHeight();
 }
 
-bool Rect::intersect(Rect *res, Rect *rect) {
-    if (!(left <= rect->getRight() && right >= rect->getLeft() &&
-          top <= rect->getBottom() && bottom >= rect->getTop())) {
+Rect::Rect() {}
+
+Rect::~Rect() {}
+
+bool Rect::getOverlapRect(Rect *res, Rect *rect) {
+    if (!(intersects(rect))) {
         return false;
     }
 
@@ -50,29 +45,15 @@ bool Rect::intersect(Rect *res, Rect *rect) {
     return true;
 }
 
-bool Rect::intersects(Rect *rect) {
-    return (left <= rect->getRight() && right >= rect->getLeft() &&
-            top <= rect->getBottom() && bottom >= rect->getTop());
-}
-
-bool Rect::contains(Rect *rect) {
-    return (top <= rect->getTop() && bottom >= rect->getBottom() &&
-            left <= rect->getLeft() && right >= rect->getRight());
-}
-
-int Rect::split(Rect *splitRects, Rect *cutRect) {
+int Rect::getSplitRects(Rect *splitRects, Rect *cutRect) {
     int numRegions = 0;
     Rect thisCopy = *this;
 
-    // if (cutRect->contains(&thisCopy)) {
-    //     splitRects[numRegions++] = *cutRect;
-    //     return numRegions;
-    // }
-
     if (cutRect->getLeft() >= thisCopy.getLeft() &&
         cutRect->getLeft() <= thisCopy.getRight()) {
-        Rect clippedRegion(thisCopy.getTop(), thisCopy.getBottom(),
-                           thisCopy.getLeft(), cutRect->getLeft() - 1);
+        int newWidth = cutRect->getLeft() - thisCopy.getLeft();
+        Rect clippedRegion(thisCopy.getX(), thisCopy.getY(), newWidth,
+                           thisCopy.getHeight());
 
         thisCopy.setLeft(cutRect->getLeft());
 
@@ -81,8 +62,9 @@ int Rect::split(Rect *splitRects, Rect *cutRect) {
 
     if (cutRect->getTop() >= thisCopy.getTop() &&
         cutRect->getTop() <= thisCopy.getBottom()) {
-        Rect clippedRegion(thisCopy.getTop(), cutRect->getTop() - 1,
-                           thisCopy.getLeft(), thisCopy.getRight());
+        int newHeight = cutRect->getTop() - thisCopy.getTop();
+        Rect clippedRegion(thisCopy.getX(), thisCopy.getY(),
+                           thisCopy.getWidth(), newHeight);
 
         thisCopy.setTop(cutRect->getTop());
 
@@ -91,8 +73,10 @@ int Rect::split(Rect *splitRects, Rect *cutRect) {
 
     if (cutRect->getRight() >= thisCopy.getLeft() &&
         cutRect->getRight() <= thisCopy.getRight()) {
-        Rect clippedRegion(thisCopy.getTop(), thisCopy.getBottom(),
-                           cutRect->getRight() + 1, thisCopy.getRight());
+        int newX = cutRect->getRight() + 1;
+        int newWidth = thisCopy.getRight() - newX + 1;
+        Rect clippedRegion(newX, thisCopy.getY(), newWidth,
+                           thisCopy.getHeight());
 
         thisCopy.setRight(cutRect->getRight());
 
@@ -101,8 +85,10 @@ int Rect::split(Rect *splitRects, Rect *cutRect) {
 
     if (cutRect->getBottom() >= thisCopy.getTop() &&
         cutRect->getBottom() <= thisCopy.getBottom()) {
-        Rect clippedRegion(cutRect->getBottom() + 1, thisCopy.getBottom(),
-                           thisCopy.getLeft(), thisCopy.getRight());
+        int newY = cutRect->getBottom() + 1;
+        int newHeight = thisCopy.getBottom() - newY + 1;
+        Rect clippedRegion(thisCopy.getX(), newY, thisCopy.getWidth(),
+                           newHeight);
 
         thisCopy.setBottom(cutRect->getBottom());
 
@@ -112,36 +98,85 @@ int Rect::split(Rect *splitRects, Rect *cutRect) {
     return numRegions;
 }
 
-int Rect::getLeft() {
-    return left;
+bool Rect::intersects(Rect *rect) {
+    return getLeft() <= rect->getRight() && getRight() >= rect->getLeft() &&
+           getTop() <= rect->getBottom() && getBottom() >= rect->getTop();
 }
 
-int Rect::getRight() {
-    return right;
+bool Rect::contains(Rect *rect) {
+    return getTop() <= rect->getTop() && getBottom() >= rect->getBottom() &&
+           getLeft() <= rect->getLeft() && getRight() >= rect->getRight();
 }
 
-int Rect::getTop() {
-    return top;
-}
+int Rect::getX() { return x; }
 
-int Rect::getBottom() {
-    return bottom;
-}
+int Rect::getY() { return y; }
+
+int Rect::getWidth() { return width; }
+
+int Rect::getHeight() { return height; }
+
+int Rect::getLeft() { return x; }
+
+int Rect::getRight() { return x + width - 1; }
+
+int Rect::getTop() { return y; }
+
+int Rect::getBottom() { return y + height - 1; }
+
+void Rect::setX(int xPos) { x = xPos; }
+
+void Rect::setY(int yPos) { y = yPos; }
+
+void Rect::setWidth(int width) { this->width = width; }
+
+void Rect::setHeight(int height) { this->height = height; }
 
 void Rect::setLeft(int left) {
-    this->left = left;
+    // if (left > getRight()) {
+    //     return;
+    // }
+
+    // DeltaX = left - x
+    // New width = old width - DeltaX
+    width -= left - x;
+
+    x = left;
 }
 
 void Rect::setRight(int right) {
-    this->right = right;
+    // if (right < getLeft()) {
+    //     return;
+    // }
+
+    // New width = right - x + 1
+    width = right - x + 1;
 }
 
 void Rect::setTop(int top) {
-    this->top = top;
+    // if (top > getBottom()) {
+    //     return;
+    // }
+    
+    // DeltaY = top - y
+    // New height = old height + DeltaY
+    height -= top - y;
+
+    y = top;
 }
 
 void Rect::setBottom(int bottom) {
-    this->bottom = bottom;
+    // if (bottom < getTop()) {
+    //     return;
+    // }
+
+    // New height = bottom - y + 1
+    height = bottom - y + 1;
+}
+
+void Rect::setPosition(int xPos, int yPos) {
+    x = xPos;
+    y = yPos;
 }
 
 }
