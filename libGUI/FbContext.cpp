@@ -24,8 +24,8 @@ FbContext *FbContext::getInstance() {
     syscall_get_fb_context(&instance->fb_meta);
 
     instance->fb_buff = (uint32_t *)instance->fb_meta.fb_buff;
-    instance->screen = new Rect(0, instance->fb_meta.fb_height - 1, 0,
-                                instance->fb_meta.fb_width - 1);
+    instance->screen =
+        new Rect(0, 0, instance->fb_meta.fb_width, instance->fb_meta.fb_height);
 
     instance->numDirty = 0;
     instance->dirtyRects = new Rect[CLIPPED_MAX];
@@ -143,7 +143,7 @@ void FbContext::reshapeRegion(Rect *rect) {
         }
 
         Rect splitRects[4];
-        int count = clipped->split(splitRects, rect);
+        int count = clipped->getSplitRects(splitRects, rect);
 
         // Update and split selected clipped region
         removeClippedRect(i);
@@ -179,7 +179,7 @@ void FbContext::intersectClippedRect(Rect *rect) {
         Rect *currentRect = &clippedRects[i];
         Rect intersectRect;
 
-        bool ret = currentRect->intersect(&intersectRect, rect);
+        bool ret = currentRect->getOverlapRect(&intersectRect, rect);
         if (ret) {
             clippedRects[appendedRects++] = intersectRect;
         }

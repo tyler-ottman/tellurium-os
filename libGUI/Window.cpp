@@ -165,7 +165,7 @@ bool Window::attachMenuBar(MenuBar *menuBar) {
 }
 
 void Window::applyBoundClipping() {
-    Rect rect(y, y + height - 1, x, x + width - 1);
+    Rect (x, y, width, height);
 
     if (!parent) {
         if (context->getNumDirty()) {

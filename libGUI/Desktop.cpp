@@ -118,12 +118,11 @@ void Desktop::applyDirtyMouse(void) {
     // If mouse position changed since last refresh
     if (!(oldMouseX == mouseX && oldMouseY == mouseY)) {
         // Original mouse position
-        Rect oldMouse(oldMouseY, oldMouseY + MOUSE_H, oldMouseX,
-                      oldMouseX + MOUSE_W);
+        Rect oldMouse(oldMouseX, oldMouseY, MOUSE_W, MOUSE_H);
         context->addClippedRect(&oldMouse);
 
         // New mouse position
-        Rect newMouse(mouseY, mouseY + MOUSE_H, mouseX, mouseX + MOUSE_W);
+        Rect newMouse(mouseX, mouseY, MOUSE_W, MOUSE_H);
         context->addClippedRect(&newMouse);
 
         oldMouseX = mouseX;
