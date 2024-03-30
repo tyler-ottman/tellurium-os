@@ -16,11 +16,7 @@ int Window::yOld = 0;
 
 Window::Window(const char *w_name, int x, int y, int width, int height,
                uint16_t flags)
-    : x(x),
-      y(y),
-      width(width),
-      height(height),
-      flags(flags),
+    : flags(flags),
       windowID(-1),
       type(WindowDefault),
       priority(0),
@@ -38,6 +34,8 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
         __memcpy(windowName, w_name, len);
         windowName[len] = '\0';
     }
+
+    winRect = new Rect(x, y, width, height);
 
     for (int i = 0; i < maxWindows; i++) {
         windows[i] = nullptr;
@@ -165,8 +163,6 @@ bool Window::attachMenuBar(MenuBar *menuBar) {
 }
 
 void Window::applyBoundClipping() {
-    Rect (x, y, width, height);
-
     if (!parent) {
         if (context->getNumDirty()) {
             Rect *dirtyRegions = context->getDirtyRegions();
@@ -175,9 +171,9 @@ void Window::applyBoundClipping() {
                 context->addClippedRect(&dirtyRegions[i]);
             }
 
-            context->intersectClippedRect(this);
+            context->intersectClippedRect(winRect);
         } else {
-            context->addClippedRect(this);
+            context->addClippedRect(winRect);
         }
 
         return;
@@ -187,7 +183,7 @@ void Window::applyBoundClipping() {
     parent->applyBoundClipping();
 
     // Reduce visibility to main drawing area
-    context->intersectClippedRect(this);
+    context->intersectClippedRect(winRect);
 
     // Get ID of current window from parent's view
     int winID = -1;
@@ -201,8 +197,8 @@ void Window::applyBoundClipping() {
     // Occlude areas of window where siblings overlap on top
     for (int i = winID + 1; i < parent->numWindows; i++) {
         Window *aboveWin = parent->windows[i];
-        if (intersects(aboveWin)) {
-            context->reshapeRegion(aboveWin);
+        if (intersects(aboveWin->winRect)) {
+            context->reshapeRegion(aboveWin->winRect);
         }
     }
 }
@@ -221,11 +217,11 @@ void Window::applyDirtyDrag() {
 
         // Original window position
         selectedWindow->updatePosition(xOld, yOld);
-        context->addClippedRect(selectedWindow);
+        context->addClippedRect(selectedWindow->winRect);
 
         // New window position
         selectedWindow->updatePosition(tempX, tempY);
-        context->addClippedRect(selectedWindow);
+        context->addClippedRect(selectedWindow->winRect);
 
         xOld = selectedWindow->getXPos();
         yOld = selectedWindow->getYPos();
@@ -234,11 +230,13 @@ void Window::applyDirtyDrag() {
     }
 }
 
-bool Window::intersects(Rect *rect) { return Rect::intersects(rect); }
+bool Window::intersects(Rect *rect) { return winRect->intersects(rect); }
 
 void Window::updatePosition(int xNew, int yNew) {
-    x = xNew;
-    y = yNew;
+    // x = xNew;
+    // y = yNew;
+    winRect->setX(xNew);
+    winRect->setY(yNew);
 
     updateRect();
 }
@@ -328,7 +326,7 @@ bool Window::onWindowRaise() {
     yOld = selectedWindow->getYPos();
 
     // Window needs immediate refresh
-    context->addClippedRect(prevWindow);
+    context->addClippedRect(prevWindow->winRect);
     context->moveClippedToDirty();
 
     return true;
@@ -420,7 +418,7 @@ void Window::drawWindow() {
 
     // Remove child window clipped rectangles
     for (int i = 0; i < numWindows; i++) {
-        context->reshapeRegion(windows[i]);
+        context->reshapeRegion(windows[i]->winRect);
     }
 
     // Draw self
@@ -455,26 +453,27 @@ void Window::drawWindow() {
 }
 
 void Window::drawObject() {
-    context->drawRect(x, y, width, height, color);
+    context->drawRect(winRect->getX(), winRect->getY(), winRect->getWidth(),
+                      winRect->getHeight(), color);
 }
 
 int Window::getWindowID() { return this->windowID; }
 
-int Window::getXPos() { return x; }
+int Window::getXPos() { return winRect->getX(); }
 
-int Window::getYPos() { return y; }
+int Window::getYPos() { return winRect->getY(); }
 
-int Window::getWidth() { return width; }
+int Window::getWidth() { return winRect->getWidth(); }
 
-int Window::getHeight() { return height; }
+int Window::getHeight() { return winRect->getHeight(); }
 
 int Window::getColor() { return color; }
 
 void Window::setWindowID(int windowID) { this->windowID = windowID; }
 
-void Window::setXPos(int x) { this->x = x; }
+void Window::setXPos(int x) { winRect->setX(x); }
 
-void Window::setYPos(int y) { this->y = y; }
+void Window::setYPos(int y) { winRect->setY(y); }
 
 void Window::setColor(uint32_t color) { this->color = color; }
 
@@ -495,13 +494,15 @@ bool Window::isMovable() { return flags & WIN_MOVABLE; }
 bool Window::isRefreshNeeded() { return flags & WIN_REFRESH_NEEDED; }
 
 bool Window::isOnMenuBar(int mouseX, int mouseY) {
-    return (mouseY >= y && mouseY < (y + TITLE_HEIGHT) && mouseX >= x &&
-            mouseX < (x + TITLE_WIDTH));
+    return (mouseY >= winRect->getY() &&
+            mouseY < (winRect->getY() + TITLE_HEIGHT) &&
+            mouseX >= winRect->getX() &&
+            mouseX < (winRect->getX() + winRect->getWidth()));
 }
 
 bool Window::isMouseInBounds(int mouseX, int mouseY) {
-    return ((mouseX >= x) && (mouseX <= (x + width)) && (mouseY >= y) &&
-            (mouseY <= (y + height)));
+    return ((mouseX >= winRect->getX()) && (mouseX <= (winRect->getX() + winRect->getWidth())) && (mouseY >= winRect->getY()) &&
+            (mouseY <= (winRect->getY() + winRect->getHeight())));
 }
 
 void Window::moveToTop(Window *win) {
@@ -511,7 +512,7 @@ void Window::moveToTop(Window *win) {
 }
 
 void Window::moveThisToDirty() {
-    context->addClippedRect(this);
+    context->addClippedRect(winRect);
     context->moveClippedToDirty();
 }
 
@@ -520,10 +521,7 @@ void Window::drawBorder() {
 }
 
 void Window::updateRect() {
-    Rect::setTop(y);
-    Rect::setBottom(y + height - 1);
-    Rect::setLeft(x);
-    Rect::setRight(x + width - 1);
+    
 }
 
 void Window::updateChildPositions(Device::MouseData *data) {
@@ -531,8 +529,8 @@ void Window::updateChildPositions(Device::MouseData *data) {
         windows[i]->updateChildPositions(data);
     }
 
-    x += data->delta_x;
-    y -= data->delta_y;
+    winRect->setX(winRect->getX() + data->delta_x);
+    winRect->setY(winRect->getY() - data->delta_y);
 
     updateRect();
 }
@@ -556,13 +554,14 @@ void MenuBar::onBarSelect() {
 
 void MenuBar::onBarUnselect() {
     // setBarColor(0xffa9a9a9);
-    context->addClippedRect(this);
+    context->addClippedRect(winRect);
 
     // close drop down menus
 }
 
 void MenuBar::drawObject() {
-    context->drawRect(x, y, width, 32, getBarColor());
+    context->drawRect(winRect->getX(), winRect->getY(), winRect->getWidth(), 32,
+                      getBarColor());
 }
 
 uint32_t MenuBar::getBarColor() {
@@ -583,7 +582,8 @@ Border::Border(int x, int y, int width, int height)
 Border::~Border() {}
 
 void Border::drawObject() {
-    context->drawRect(x, y, width, height, color);
+    context->drawRect(winRect->getX(), winRect->getY(), winRect->getWidth(),
+                      winRect->getHeight(), color);
 }
 
 }  // namespace GUI
