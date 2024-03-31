@@ -66,17 +66,58 @@ public:
     bool onWindowHover(void);
     bool onWindowUnhover(void);
     
+    /// @brief Get ID of window
+    /// @return windowID
     int getWindowID(void);
-    int getXPos(void);
-    int getYPos(void);
+
+    /// @brief Get window's x position
+    /// @return Window's x position
+    int getX(void);
+
+    /// @brief Get window's y position
+    /// @return Window's y position
+    int getY(void);
+
+    /// @brief Get window's width
+    /// @return Window's width
     int getWidth(void);
+
+    /// @brief Get window's height
+    /// @return Window's height
     int getHeight(void);
+
+    /// @brief Get window's color
+    /// @return Window's color
     int getColor(void);
+
+    /// @brief Set window's ID
+    /// @param windowID The window ID
     void setWindowID(int windowID);
-    void setXPos(int x);
-    void setYPos(int y);
+
+    /// @brief Set window's x position
+    /// @param x The x position to set
+    void setX(int x);
+
+    /// @brief Set window's y position
+    /// @param y The y position to set
+    void setY(int y);
+
+    /// @brief Set window's width
+    /// @param width The width to set
+    void setWidth(int width);
+
+    /// @brief Set window's height
+    /// @param height The height to set
+    void setHeight(int height);
+
+    /// @brief Set window's color
+    /// @param color The color to set
     void setColor(uint32_t color);
+
+    /// @brief Set window's priority
+    /// @param priority The priortiy to set
     void setPriority(int priority);
+
     bool isLastMousePressed(void);
     bool isDecorable(void);
     bool isMovable(void);

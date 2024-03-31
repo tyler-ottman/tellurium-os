@@ -210,10 +210,9 @@ void Window::applyDirtyDrag() {
 
     context->resetClippedList();
 
-    if (!(xOld == selectedWindow->getXPos() &&
-          yOld == selectedWindow->getYPos())) {
-        int tempX = selectedWindow->getXPos();
-        int tempY = selectedWindow->getYPos();
+    if (!(xOld == selectedWindow->getX() && yOld == selectedWindow->getY())) {
+        int tempX = selectedWindow->getX();
+        int tempY = selectedWindow->getY();
 
         // Original window position
         selectedWindow->updatePosition(xOld, yOld);
@@ -223,8 +222,8 @@ void Window::applyDirtyDrag() {
         selectedWindow->updatePosition(tempX, tempY);
         context->addClippedRect(selectedWindow->winRect);
 
-        xOld = selectedWindow->getXPos();
-        yOld = selectedWindow->getYPos();
+        xOld = selectedWindow->getX();
+        yOld = selectedWindow->getY();
 
         context->moveClippedToDirty();
     }
@@ -233,10 +232,8 @@ void Window::applyDirtyDrag() {
 bool Window::intersects(Rect *rect) { return winRect->intersects(rect); }
 
 void Window::updatePosition(int xNew, int yNew) {
-    // x = xNew;
-    // y = yNew;
-    winRect->setX(xNew);
-    winRect->setY(yNew);
+    setX(xNew);
+    setY(yNew);
 
     updateRect();
 }
@@ -322,8 +319,8 @@ bool Window::onWindowRaise() {
     onWindowSelect();
     selectedWindow = this;
 
-    xOld = selectedWindow->getXPos();
-    yOld = selectedWindow->getYPos();
+    xOld = selectedWindow->getX();
+    yOld = selectedWindow->getY();
 
     // Window needs immediate refresh
     context->addClippedRect(prevWindow->winRect);
@@ -453,15 +450,14 @@ void Window::drawWindow() {
 }
 
 void Window::drawObject() {
-    context->drawRect(winRect->getX(), winRect->getY(), winRect->getWidth(),
-                      winRect->getHeight(), color);
+    context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
 }
 
 int Window::getWindowID() { return this->windowID; }
 
-int Window::getXPos() { return winRect->getX(); }
+int Window::getX() { return winRect->getX(); }
 
-int Window::getYPos() { return winRect->getY(); }
+int Window::getY() { return winRect->getY(); }
 
 int Window::getWidth() { return winRect->getWidth(); }
 
@@ -471,9 +467,13 @@ int Window::getColor() { return color; }
 
 void Window::setWindowID(int windowID) { this->windowID = windowID; }
 
-void Window::setXPos(int x) { winRect->setX(x); }
+void Window::setX(int x) { winRect->setX(x); }
 
-void Window::setYPos(int y) { winRect->setY(y); }
+void Window::setY(int y) { winRect->setY(y); }
+
+void Window::setWidth(int width) { winRect->setWidth(width); }
+
+void Window::setHeight(int height) { winRect->setHeight(height); }
 
 void Window::setColor(uint32_t color) { this->color = color; }
 
@@ -494,15 +494,13 @@ bool Window::isMovable() { return flags & WIN_MOVABLE; }
 bool Window::isRefreshNeeded() { return flags & WIN_REFRESH_NEEDED; }
 
 bool Window::isOnMenuBar(int mouseX, int mouseY) {
-    return (mouseY >= winRect->getY() &&
-            mouseY < (winRect->getY() + TITLE_HEIGHT) &&
-            mouseX >= winRect->getX() &&
-            mouseX < (winRect->getX() + winRect->getWidth()));
+    return (mouseY >= getY() && mouseY < (getY() + TITLE_HEIGHT) &&
+            mouseX >= getX() && mouseX < (getX() + getWidth()));
 }
 
 bool Window::isMouseInBounds(int mouseX, int mouseY) {
-    return ((mouseX >= winRect->getX()) && (mouseX <= (winRect->getX() + winRect->getWidth())) && (mouseY >= winRect->getY()) &&
-            (mouseY <= (winRect->getY() + winRect->getHeight())));
+    return ((mouseX >= getX()) && (mouseX <= (getX() + getWidth())) &&
+            (mouseY >= getY()) && (mouseY <= (getY() + getHeight())));
 }
 
 void Window::moveToTop(Window *win) {
@@ -529,8 +527,8 @@ void Window::updateChildPositions(Device::MouseData *data) {
         windows[i]->updateChildPositions(data);
     }
 
-    winRect->setX(winRect->getX() + data->delta_x);
-    winRect->setY(winRect->getY() - data->delta_y);
+    setX(getX() + data->delta_x);
+    setY(getY() - data->delta_y);
 
     updateRect();
 }
@@ -560,8 +558,7 @@ void MenuBar::onBarUnselect() {
 }
 
 void MenuBar::drawObject() {
-    context->drawRect(winRect->getX(), winRect->getY(), winRect->getWidth(), 32,
-                      getBarColor());
+    context->drawRect(getX(), getY(), getWidth(), 32, getBarColor());
 }
 
 uint32_t MenuBar::getBarColor() {
@@ -582,8 +579,7 @@ Border::Border(int x, int y, int width, int height)
 Border::~Border() {}
 
 void Border::drawObject() {
-    context->drawRect(winRect->getX(), winRect->getY(), winRect->getWidth(),
-                      winRect->getHeight(), color);
+    context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
 }
 
 }  // namespace GUI
