@@ -118,8 +118,6 @@ int Image::loadImage(const char *path) {
         ppm += 3;
     }
 
-    updateRect();
-
     delete ppm;
 
     return IMG_OK;

@@ -1,7 +1,9 @@
 #include "flibc/string.h"
+#include "libGUI/Border.hpp"
 #include "libGUI/Button.hpp"
 #include "libGUI/FbContext.hpp"
 #include "libGUI/Image.hpp"
+#include "libGUI/MenuBar.hpp"
 #include "libGUI/Terminal.hpp"
 #include "libGUI/Window.hpp"
 #include "libTellur/mem.hpp"
@@ -23,7 +25,6 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
       parent(nullptr),
       numWindows(0),
       maxWindows(WINDOW_MAX),
-      menuBar(nullptr),
       context(FbContext::getInstance()),
       activeChild(nullptr) {
     color = 0xff333333;
@@ -40,8 +41,6 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
     for (int i = 0; i < maxWindows; i++) {
         windows[i] = nullptr;
     }
-
-    updateRect();
 
     // Menu bar can only be attached to movable windows
     if (hasDecoration()) {
@@ -71,7 +70,8 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
         minimizeButton->loadImage("/tmp/minimizeButtonUnhover.ppm");
         minimizeButton->loadHoverImage("/tmp/minimizeButtonHover.ppm");
 
-        attachMenuBar(menuBar);
+        // attachMenuBar(menuBar);
+        appendWindow(menuBar);
 
         Border *border =
             new Border(x, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1);
@@ -155,18 +155,6 @@ Window *Window::removeWindow(Window *window) {
     return removeWindow(window->getWindowID());
 }
 
-bool Window::attachMenuBar(MenuBar *menuBar) {
-    // Menu bar already exists
-    if (this->menuBar) {
-        return false;
-    }
-
-    appendWindow(menuBar);
-    this->menuBar = menuBar;
-
-    return true;
-}
-
 void Window::applyBoundClipping() {
     if (!parent) {
         if (context->getNumDirty()) {
@@ -220,11 +208,11 @@ void Window::applyDirtyDrag() {
         int tempY = selectedWindow->getY();
 
         // Original window position
-        selectedWindow->updatePosition(xOld, yOld);
+        selectedWindow->setPosition(xOld, yOld);
         context->addClippedRect(selectedWindow->winRect);
 
         // New window position
-        selectedWindow->updatePosition(tempX, tempY);
+        selectedWindow->setPosition(tempX, tempY);
         context->addClippedRect(selectedWindow->winRect);
 
         xOld = selectedWindow->getX();
@@ -234,13 +222,47 @@ void Window::applyDirtyDrag() {
     }
 }
 
-bool Window::intersects(Rect *rect) { return winRect->intersects(rect); }
+void Window::drawWindow() {
+    applyBoundClipping();
 
-void Window::updatePosition(int xNew, int yNew) {
-    setX(xNew);
-    setY(yNew);
+    // Remove child window clipped rectangles
+    for (int i = 0; i < numWindows; i++) {
+        context->reshapeRegion(windows[i]->winRect);
+    }
 
-    updateRect();
+    // Draw self
+    drawObject();
+
+    context->resetClippedList();
+
+    // Redraw children if they intersect with dirty region
+    Rect *dirtyRegions = context->getDirtyRegions();
+    for (int i = 0; i < numWindows; i++) {
+        context->resetClippedList();
+
+        Window *child = windows[i];
+
+        if (context->getNumDirty()) {
+            bool isIntersect = false;
+            for (int j = 0; j < context->getNumDirty(); j++) {
+                Rect *dirtyRegion = &dirtyRegions[j];
+                if (child->intersects(dirtyRegion)) {
+                    isIntersect = true;
+                    break;
+                }
+            }
+
+            if (!isIntersect) {
+                continue;
+            }
+        }
+
+        child->drawWindow();
+    }
+}
+
+void Window::drawObject() {
+    context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
 }
 
 bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
@@ -276,6 +298,11 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
 
     // Window released from dragging
     if (this == selectedWindow && isLastMousePressed() && !isNewMousePressed) {
+        // Window needs immediate refresh
+        if (this == selectedWindow) {
+            selectedWindow->applyDirtyDrag();
+        }
+
         return onWindowRelease();
     }
 
@@ -286,6 +313,13 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
 
     // Window hover event
     if (!isNewMousePressed && !isLastMousePressed()) {
+        // Check if hovering over new component
+        if (hoverWindow && hoverWindow != this) {
+            hoverWindow->onWindowUnhover();
+        }
+
+        hoverWindow = this;
+
         return onWindowHover();
     }
 
@@ -335,128 +369,36 @@ bool Window::onWindowRaise() {
 }
 
 bool Window::onWindowDrag(Device::MouseData *data) {
-    updateChildPositions(data);
+    setChildPositions(data);
 
     return true;
 }
 
 bool Window::onWindowRelease() {
-    // Window needs immediate refresh
-    if (this == selectedWindow) {
-        selectedWindow->applyDirtyDrag();
-    }
-
     return true;
 }
 
 bool Window::onWindowClick() {
-    switch (type) {
-        case GUI::WindowButton:
-            ((Button *)this)->onMouseClick();
-            break;
-        case GUI::WindowMenuBar:
-            ((MenuBar *)this)->onMouseClick();
-            break;
-        case GUI::WindowDefault:
-            break;
-    }
-
     return true;
 }
 
 bool Window::onWindowSelect() {
-    if (menuBar) {
-        menuBar->onBarSelect();
-    }
-
     return true;
 }
 
 bool Window::onWindowUnselect() {
-    if (menuBar) {
-        menuBar->onBarUnselect();
-    }
-
     return true;
 }
 
 bool Window::onWindowHover() {
-    // Check if hovering over new component
-    if (hoverWindow && hoverWindow != this) {
-        hoverWindow->onWindowUnhover();
-    }
-
-    switch (type) {
-    case GUI::WindowButton:
-        ((Button *)this)->onButtonHover();
-        break;
-    case GUI::WindowMenuBar:
-        break;
-    case GUI::WindowDefault:
-        break;
-    }
-
-    hoverWindow = this;
-
     return true;
 }
 
 bool Window::onWindowUnhover() {
-    switch (type) {
-    case GUI::WindowButton:
-        ((Button *)this)->onButtonUnhover();
-        break;
-    case GUI::WindowMenuBar:
-        break;
-    case GUI::WindowDefault:
-        break;
-    }
-
     return true;
 }
 
-void Window::drawWindow() {
-    applyBoundClipping();
-
-    // Remove child window clipped rectangles
-    for (int i = 0; i < numWindows; i++) {
-        context->reshapeRegion(windows[i]->winRect);
-    }
-
-    // Draw self
-    drawObject();
-
-    context->resetClippedList();
-
-    // Redraw children if they intersect with dirty region
-    Rect *dirtyRegions = context->getDirtyRegions();
-    for (int i = 0; i < numWindows; i++) {
-        context->resetClippedList();
-
-        Window *child = windows[i];
-
-        if (context->getNumDirty()) {
-            bool isIntersect = false;
-            for (int j = 0; j < context->getNumDirty(); j++) {
-                Rect *dirtyRegion = &dirtyRegions[j];
-                if (child->intersects(dirtyRegion)) {
-                    isIntersect = true;
-                    break;
-                }
-            }
-
-            if (!isIntersect) {
-                continue;
-            }
-        }
-
-        child->drawWindow();
-    }
-}
-
-void Window::drawObject() {
-    context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
-}
+bool Window::intersects(Rect *rect) { return winRect->intersects(rect); }
 
 int Window::getWindowID() { return this->windowID; }
 
@@ -475,6 +417,11 @@ void Window::setWindowID(int windowID) { this->windowID = windowID; }
 void Window::setX(int x) { winRect->setX(x); }
 
 void Window::setY(int y) { winRect->setY(y); }
+
+void Window::setPosition(int xNew, int yNew) {
+    setX(xNew);
+    setY(yNew);
+}
 
 void Window::setWidth(int width) { winRect->setWidth(width); }
 
@@ -496,11 +443,6 @@ bool Window::hasDecoration() { return flags & WindowFlags::WDECORATION; }
 
 bool Window::hasMovable() { return flags & WindowFlags::WMOVABLE; }
 
-bool Window::isOnMenuBar(int mouseX, int mouseY) {
-    return (mouseY >= getY() && mouseY < (getY() + TITLE_HEIGHT) &&
-            mouseX >= getX() && mouseX < (getX() + getWidth()));
-}
-
 bool Window::isMouseInBounds(int mouseX, int mouseY) {
     return ((mouseX >= getX()) && (mouseX <= (getX() + getWidth())) &&
             (mouseY >= getY()) && (mouseY <= (getY() + getHeight())));
@@ -517,72 +459,13 @@ void Window::moveThisToDirty() {
     context->moveClippedToDirty();
 }
 
-void Window::drawBorder() {
-    
-}
-
-void Window::updateRect() {
-    
-}
-
-void Window::updateChildPositions(Device::MouseData *data) {
+void Window::setChildPositions(Device::MouseData *data) {
     for (int i = 0; i < numWindows; i++) {
-        windows[i]->updateChildPositions(data);
+        windows[i]->setChildPositions(data);
     }
 
     setX(getX() + data->delta_x);
     setY(getY() - data->delta_y);
-
-    updateRect();
-}
-
-MenuBar::MenuBar(int x, int y, int width, int height, WindowFlags flags)
-    : Window::Window("menuBar", x, y, width, height, flags),
-    barColor(0xffbebebe) {
-    type = GUI::WindowMenuBar;
-    setPriority(5);
-}
-
-MenuBar::~MenuBar() {}
-
-void MenuBar::onMouseClick() {
-
-}
-
-void MenuBar::onBarSelect() {
-    // setBarColor(0xffbebebe);
-}
-
-void MenuBar::onBarUnselect() {
-    // setBarColor(0xffa9a9a9);
-    context->addClippedRect(winRect);
-
-    // close drop down menus
-}
-
-void MenuBar::drawObject() {
-    context->drawRect(getX(), getY(), getWidth(), 32, getBarColor());
-}
-
-uint32_t MenuBar::getBarColor() {
-    return barColor;
-}
-
-void MenuBar::setBarColor(uint32_t color) {
-    barColor = color;
-}
-
-Border::Border(int x, int y, int width, int height, WindowFlags flags)
-    : Window::Window("border", x, y, width, height, flags) {
-    type = GUI::WindowBorder;
-    priority = 2;
-    color = 0xffbebebe;
-}
-
-Border::~Border() {}
-
-void Border::drawObject() {
-    context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
 }
 
 }  // namespace GUI

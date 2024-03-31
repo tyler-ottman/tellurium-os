@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WINDOW_H
+#define WINDOW_H
 
 #include "libTellur/DevPoll.hpp"
 #include <stdbool.h>
@@ -32,8 +33,6 @@ enum WindowFlags {
     WHOVER = 0x2,
     WMOVABLE = 0x4,
 };
-
-class MenuBar;
 
 class Window {
 
@@ -77,30 +76,56 @@ public:
     /// @return If window is invalid, return nullptr, the delete window
     Window *removeWindow(Window *window);
 
-    bool attachMenuBar(MenuBar *menuBar);
-
     void applyBoundClipping(void);
     void applyDirtyDrag(void);
-
-    bool intersects(Rect *rect);
-    void updatePosition(int xNew, int yNew);
-
     void drawWindow(void);
     virtual void drawObject(void);
-    
-    // Mouse event stubs
 
-    // Mouse events
+    //// @brief Process mouse event
+    /// @param data Incoming mouse data
+    /// @param mouseX X-position of mouse
+    /// @param mouseY Y-position of mouse
+    /// @return Event process status
     bool onMouseEvent(Device::MouseData *data, int mouseX, int mouseY);
-    bool onWindowRaise(void);
-    bool onWindowDrag(Device::MouseData *data);
-    bool onWindowRelease(void);
-    bool onWindowClick(void);
-    bool onWindowSelect(void);
-    bool onWindowUnselect(void);
-    bool onWindowHover(void);
-    bool onWindowUnhover(void);
     
+    /// @brief Process window raise event
+    /// @return Event process status
+    virtual bool onWindowRaise(void);
+
+    /// @brief Process window drag event
+    /// @param data Incoming mouse data
+    /// @return Event process status
+    virtual bool onWindowDrag(Device::MouseData *data);
+
+    /// @brief Process window release event
+    /// @return Event process status
+    virtual bool onWindowRelease(void);
+
+    /// @brief Process window click event
+    /// @return Event process status
+    virtual bool onWindowClick(void);
+
+    /// @brief Process window select event
+    /// @return Event process status
+    virtual bool onWindowSelect(void);
+
+    /// @brief Process window unselect event
+    /// @return Event process status
+    virtual bool onWindowUnselect(void);
+
+    /// @brief Process window hover event
+    /// @return Event process status
+    virtual bool onWindowHover(void);
+
+    /// @brief Process window unhover event
+    /// @return Event process status
+    virtual bool onWindowUnhover(void);
+    
+    /// @brief Determine if rectangle intersects with Window
+    /// @param rect The rectangle to test
+    /// @return If they intersect return true, false otherwise
+    bool intersects(Rect *rect);
+
     /// @brief Get ID of window
     /// @return windowID
     int getWindowID(void);
@@ -137,6 +162,11 @@ public:
     /// @param y The y position to set
     void setY(int y);
 
+    /// @brief Set window's (x, y) position
+    /// @param xNew The x position to set
+    /// @param yNew The y position to set
+    void setPosition(int xNew, int yNew);
+
     /// @brief Set window's width
     /// @param width The width to set
     void setWidth(int width);
@@ -153,6 +183,8 @@ public:
     /// @param priority The priortiy to set
     void setPriority(int priority);
 
+    /// @brief Check last status of mouse
+    /// @return True, if last mouse event was a clicker, otherwise false
     bool isLastMousePressed(void);
 
     /// @brief Check if window is decorable
@@ -163,15 +195,23 @@ public:
     /// @return If window is movable
     bool hasMovable(void);
 
-    bool isOnMenuBar(int mouseX, int mouseY);
+    /// @brief Check if mouse coordinates are in bounds of window
+    /// @param mouseX Mouse's x position
+    /// @param mouseY Mouse's y position
+    /// @return If mouse is in bounds of window, return true, false otherwise
     bool isMouseInBounds(int mouseX, int mouseY);
 
 protected:
+    /// @brief Move window to top of window stack
+    /// @param window The window to move
     void moveToTop(Window *window);
+
+    /// @brief Add window to dirty list
     void moveThisToDirty(void);
-    void drawBorder(void);
-    void updateRect(void);
-    void updateChildPositions(Device::MouseData *data);
+
+    /// @brief Recursively update position of parent windows
+    /// @param data The delta (x, y) position
+    void setChildPositions(Device::MouseData *data);
 
     char *windowName; // unused
     int windowID; // Used as index in window stack list
@@ -184,7 +224,6 @@ protected:
     Window *windows[WINDOW_MAX]; // Attached children windows
     int numWindows; // Number of windows currently attached
     const int maxWindows; // Max amount of windows you can attach
-    MenuBar *menuBar; // Window bar (TODO: remove)
     FbContext *context; // Screen buffer info (TODO: remove)
     Window *activeChild; // Activetly selected window
     
@@ -195,30 +234,6 @@ protected:
     static int yOld; // Old y position of selectedWindow
 };
 
-class MenuBar : public Window {
-public:
-    MenuBar(int x, int y, int width, int height, WindowFlags flags = WindowFlags::WNONE);
-    ~MenuBar();
+} // GUI
 
-    void onMouseClick(void);
-    void onBarSelect(void);
-    void onBarUnselect(void);
-
-    void drawObject(void);
-
-    uint32_t getBarColor(void);
-private:
-    void setBarColor(uint32_t color);
-
-    uint32_t barColor;
-};
-
-class Border : public Window {
-public:
-    Border(int x, int y, int width, int height, WindowFlags flags = WindowFlags::WNONE);
-    ~Border();
-
-    void drawObject(void);
-};
-
-}
+#endif // WINDOW_H
