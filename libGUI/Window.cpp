@@ -14,7 +14,7 @@ Window *Window::hoverWindow = nullptr;
 int Window::xOld = 0;
 int Window::yOld = 0;
 
-Window::Window(const char *w_name, int x, int y, int width, int height,
+Window::Window(const char *windowName, int x, int y, int width, int height,
                WindowFlags flags)
     : flags(flags),
       windowID(-1),
@@ -28,11 +28,11 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
       numWindows(0) {
     color = 0xff333333;
 
-    if (w_name) {
-        int len = __strlen(w_name);
-        windowName = new char[len + 1];
-        __memcpy(windowName, w_name, len);
-        windowName[len] = '\0';
+    if (windowName) {
+        int len = __strlen(windowName);
+        this->windowName = new char[len + 1];
+        __memcpy(this->windowName, windowName, len);
+        this->windowName[len] = '\0';
     }
 
     winRect = new Rect(x, y, width, height);
@@ -47,15 +47,15 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
     if (hasDecoration()) {
         MenuBar *menuBar = new MenuBar(x, y, width, TITLE_HEIGHT);
 
-        if (windowName) {
-            int titleLen = __strlen(windowName) * 8;  // 8 is default font width
+        if (this->windowName) {
+            int titleLen = __strlen(this->windowName) * 8;  // 8 is default font width
             Terminal *title =
                 new Terminal(x + width / 2 - titleLen / 2, y + 10, titleLen, 30);
             title->disableCursor();
             title->setBg(0xffbebebe);
             title->setFg(0);
             title->clear();
-            title->printf("%s", windowName);
+            title->printf("%s", this->windowName);
             menuBar->appendWindow(title);
         }
 
@@ -91,44 +91,41 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
 
 Window::~Window() {}
 
-Window *Window::createWindow(const char *w_name, int x_pos, int y_pos,
+Window *Window::appendWindow(Window *window) {
+    if (numWindows == WINDOW_MAX || !window) {
+        return nullptr;
+    }
+
+    int insertIndex = 0;
+    for (int i = numWindows - 1; i >= 0; i--) {
+        if (window->priority >= windows[i]->priority) {
+            insertIndex = i + 1;
+            break;
+        }
+    }
+
+    for (int i = numWindows - 1; i >= insertIndex; i--) {
+        windows[i + 1] = windows[i];
+    }
+    windows[insertIndex] = window;
+    
+    window->setWindowID(insertIndex);
+    window->parent = this;
+    numWindows++;
+    return window;
+}
+
+Window *Window::appendWindow(const char *windowName, int xPos, int yPos,
                              int width, int height, WindowFlags flags) {
-    Window *window = new Window(w_name, x_pos, y_pos, width, height, flags);
+    Window *window = new Window(windowName, xPos, yPos, width, height, flags);
     if (!window) {
-        return window;
+        return nullptr;
     }
 
     if (!appendWindow(window)) {
         delete window;
         return nullptr;
     }
-
-    window->parent = this;
-
-    return window;
-}
-
-Window *Window::appendWindow(Window *window) {
-    if (numWindows == WINDOW_MAX) {
-        return nullptr;
-    }
-
-    int windowID = 0;
-    for (int i = numWindows - 1; i >= 0; i--) {
-        if (window->priority >= windows[i]->priority) {
-            windowID = i + 1;
-            break;
-        }
-    }
-
-    for (int i = numWindows - 1; i >= windowID; i--) {
-        windows[i + 1] = windows[i];
-    }
-
-    windows[windowID] = window;
-    window->setWindowID(windowID);
-    window->parent = this;
-    numWindows++;
 
     return window;
 }
@@ -146,8 +143,16 @@ Window *Window::removeWindow(int windowID) {
     }
 
     windows[--numWindows] = nullptr;
-
+    window->parent = nullptr;
     return window;
+}
+
+Window *Window::removeWindow(Window *window) {
+    if (!window) {
+        return nullptr;
+    }
+
+    return removeWindow(window->getWindowID());
 }
 
 bool Window::attachMenuBar(MenuBar *menuBar) {

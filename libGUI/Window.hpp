@@ -38,14 +38,45 @@ class MenuBar;
 class Window {
 
 public:
-    Window(const char *w_name, int x, int y, int width, int height,
+    /// @brief Constructor to create a new window
+    /// @param windowName Name of the window
+    /// @param x Horizontal pixel coordinate position of window
+    /// @param y Vertical pixel coordinate position of window
+    /// @param width Width of window in pixels
+    /// @param height Height of window in pixels
+    /// @param flags Window flags
+    Window(const char *windowName, int xPos, int yPos, int width, int height,
            WindowFlags flags = WindowFlags::WNONE);
+
+    /// @brief Execute destructor of base and derives classes of Window
     virtual ~Window();
 
-    Window *createWindow(const char *w_name, int x_pos, int y_pos, int width,
-                         int height, WindowFlags flags);
+    /// @brief Append a child window to current window
+    /// @param windowName Name of the window
+    /// @param xPos Horizontal pixel coordinate position
+    /// @param yPos Vertical pixel coordiante position
+    /// @param width Width of window in pixels
+    /// @param height Height of window in pixels
+    /// @param flags Windows flags
+    /// @return Upon success, return a pointer to the new window, nullptr otherwise
+    Window *appendWindow(const char *windowName, int xPos, int yPos, int width,
+                         int height, WindowFlags flags = WindowFlags::WNONE);
+
+    /// @brief Append a child window to current window
+    /// @param window A pointer to the window to be added
+    /// @return Upon success, return a pointer to the new window, nullptr otherwise
     Window *appendWindow(Window *window);
+
+    /// @brief Remove the child window given a window ID
+    /// @param windowID The window ID of the child to be removed
+    /// @return Upon successful removal, return a pointer to the removed window, nullptr otherwise
     Window *removeWindow(int windowID);
+
+    /// @brief Remove the specified window from the windows list
+    /// @param window The window to be removed
+    /// @return If window is invalid, return nullptr, the delete window
+    Window *removeWindow(Window *window);
+    
     bool attachMenuBar(MenuBar *menuBar);
 
     void applyBoundClipping(void);
