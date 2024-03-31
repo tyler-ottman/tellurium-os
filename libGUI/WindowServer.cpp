@@ -29,10 +29,7 @@ void WindowServer::mouseHandle(Device::MouseData *data) {
     }
 }
 
-Window *WindowServer::createWindow(const char *name, int x, int y, int width,
-                                   int height, WindowFlags flags) {
-    return desktop->createWindow(name, x, y, width, height, flags);
-}
+Window *WindowServer::getRoot() { return desktop; }
 
 WindowServer::WindowServer() : nEvents(0) {
     desktop = new Desktop();
