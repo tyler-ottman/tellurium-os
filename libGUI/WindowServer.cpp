@@ -30,7 +30,7 @@ void WindowServer::mouseHandle(Device::MouseData *data) {
 }
 
 Window *WindowServer::createWindow(const char *name, int x, int y, int width,
-                                   int height, uint16_t flags) {
+                                   int height, WindowFlags flags) {
     return desktop->createWindow(name, x, y, width, height, flags);
 }
 

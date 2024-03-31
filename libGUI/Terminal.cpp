@@ -3,8 +3,8 @@
 
 namespace GUI {
 
-Terminal::Terminal(int x, int y, int width, int height)
-    : Window::Window("terminal", x, y, width, height, 0) {
+Terminal::Terminal(int x, int y, int width, int height, WindowFlags flags)
+    : Window::Window("terminal", x, y, width, height, flags) {
     FbMeta *meta = context->getFbContext();
     terminal = terminal_alloc(
         14, 8, height, width, meta->fb_height, meta->fb_width, meta->fb_pitch,

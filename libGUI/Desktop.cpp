@@ -35,7 +35,7 @@ uint32_t mouseBitmap[MOUSE_W * MOUSE_H] = {
 
 Desktop::Desktop()
     : Window(NULL, 0, 0, FbContext::getInstance()->getFbContext()->fb_width,
-             FbContext::getInstance()->getFbContext()->fb_height, WIN_DECORATE),
+             FbContext::getInstance()->getFbContext()->fb_height),
       forceRefresh(true) {
     mouseX = getWidth() / 2;
     mouseY = getHeight() / 2;
@@ -53,8 +53,8 @@ Desktop::Desktop()
     appendWindow(taskbar);
 
     // Sample home button
-    Button *homeButton =
-        new Button(taskbar->getX(), taskbar->getY(), 40, 40, BUTTON_HOVER);
+    Button *homeButton = new Button(taskbar->getX(), taskbar->getY(), 40, 40,
+                                    WindowFlags::WNONE, ButtonFlags::BHOVER);
     homeButton->loadImage("/tmp/homeButtonUnhover.ppm");
     homeButton->loadHoverImage("/tmp/homeButtonHover.ppm");
     taskbar->appendWindow(homeButton);

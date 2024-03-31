@@ -2,14 +2,15 @@
 
 namespace GUI {
 
-Button::Button(int x, int y, int width, int height, int buttonFlags)
-    : Window::Window("", x, y, width, height, 0),
+Button::Button(int x, int y, int width, int height, WindowFlags flags,
+               ButtonFlags bFlags)
+    : Window::Window("", x, y, width, height, flags),
       colorToggle(false),
       onHover(false),
       isImg(false),
       imgDefault(nullptr),
       imgHover(nullptr),
-      buttonFlags(buttonFlags) {
+      buttonFlags(bFlags) {
     type = WindowButton;
 }
 
