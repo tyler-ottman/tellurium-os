@@ -11,10 +11,11 @@
 
 int main() {
     GUI::WindowServer *wm = GUI::WindowServer::getInstance();
-    
+    GUI::Window *root = GUI::WindowServer::getInstance()->getRoot();
+
     // Geometry Window
-    GUI::Window *win0 = wm->createWindow("Geometry", 10, 10, 400, 400,
-                                         GUI::WindowFlags::WDECORATION);
+    GUI::Window *geoWin = new GUI::Window("Geometry", 10, 10, 400, 400,
+                                          GUI::WindowFlags::WDECORATION);
     GUI::Window *square1 = new GUI::Window("square", 80, 70, 200, 220);
     GUI::Window *square2 = new GUI::Window("square", 150, 100, 200, 70);
     GUI::Window *square3 = new GUI::Window("square", 100, 250, 150, 100);
@@ -23,39 +24,38 @@ int main() {
     square2->setColor(0xffd1ffbd);
     square3->setColor(0xfffaa0a0);
     square4->setColor(0xffffd580);
-    win0->appendWindow(square1);
-    win0->appendWindow(square2);
-    win0->appendWindow(square3);
-    win0->appendWindow(square4);
-    GUI::Window *smallWin =
-        new GUI::Window(NULL, 20, 70, 100, 100, GUI::WindowFlags::WDECORATION);
-    win0->appendWindow(smallWin);
+    geoWin->appendWindow(square1);
+    geoWin->appendWindow(square2);
+    geoWin->appendWindow(square3);
+    geoWin->appendWindow(square4);
+    geoWin->appendWindow(new GUI::Window(NULL, 20, 70, 100, 100,
+                         GUI::WindowFlags::WDECORATION));
 
     // Image window
     const char *imagePath = "/tmp/basketOfFruits.ppm";
-    GUI::Window *win1 =
-        wm->createWindow(imagePath, 150, 100, 402, 316 + TITLE_HEIGHT,
-                         GUI::WindowFlags::WDECORATION);
-    GUI::Image *fruit =
-        new GUI::Image(151, 101 + TITLE_HEIGHT, win1->getWidth() - 2,
-                       win1->getHeight() - 2 - TITLE_HEIGHT);
-    win1->appendWindow(fruit);
-    fruit->loadImage(imagePath);
+    GUI::Window *fruitWin = new GUI::Window(imagePath, 150, 100, 402,
+        316 + TITLE_HEIGHT, GUI::WindowFlags::WDECORATION);
+    GUI::Image *fruitImg = new GUI::Image(151, 101 + TITLE_HEIGHT,
+        fruitWin->getWidth() - 2, fruitWin->getHeight() - 2 - TITLE_HEIGHT);
+    fruitWin->appendWindow(fruitImg);
+    fruitImg->loadImage(imagePath);
 
     // Terminal window
-    GUI::Window *win2 = wm->createWindow("Terminal", 100, 150, 500, 300,
-                                         GUI::WindowFlags::WDECORATION);
-    GUI::Terminal *term =
-        new GUI::Terminal(100 + 1, 150 + TITLE_HEIGHT + 1, win2->getWidth() - 2,
-                          win2->getHeight() - 2 - TITLE_HEIGHT);
-    win2->appendWindow(term);
+    GUI::Window *termWin = new GUI::Window("Terminal", 100, 150, 500, 300,
+        GUI::WindowFlags::WDECORATION);
+    GUI::Terminal *term = new GUI::Terminal(100 + 1, 150 + TITLE_HEIGHT + 1,
+        termWin->getWidth() - 2, termWin->getHeight() - 2 - TITLE_HEIGHT);
+    termWin->appendWindow(term);
     term->printf("TelluriumOS - Hello World!\n");
     for (size_t i = 0; i < 16; i++) {
-        if (i % 8 == 0) {
-            term->printf("\n");
-        }
+        if (i % 8 == 0) term->printf("\n");
         term->printf("\033[38;5;%i;48;5;%im%03i", i, i, i);
     }
+
+    // Attach test windows to root
+    root->appendWindow(geoWin);
+    root->appendWindow(fruitWin);
+    root->appendWindow(termWin);
 
     Device::KeyboardData key = {.data = 0};
 
