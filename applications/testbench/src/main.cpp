@@ -13,12 +13,12 @@ int main() {
     GUI::WindowServer *wm = GUI::WindowServer::getInstance();
     
     // Geometry Window
-    GUI::Window *win0 =
-        wm->createWindow("Geometry", 10, 10, 400, 400, WIN_MOVABLE | WIN_DECORATE);
-    GUI::Window *square1 = new GUI::Window("square", 80, 70, 200, 220, 0);
-    GUI::Window *square2 = new GUI::Window("square", 150, 100, 200, 70, 0);
-    GUI::Window *square3 = new GUI::Window("square", 100, 250, 150, 100, 0);
-    GUI::Window *square4 = new GUI::Window("square", 220, 130, 100, 140, 0);
+    GUI::Window *win0 = wm->createWindow("Geometry", 10, 10, 400, 400,
+                                         GUI::WindowFlags::WDECORATION);
+    GUI::Window *square1 = new GUI::Window("square", 80, 70, 200, 220);
+    GUI::Window *square2 = new GUI::Window("square", 150, 100, 200, 70);
+    GUI::Window *square3 = new GUI::Window("square", 100, 250, 150, 100);
+    GUI::Window *square4 = new GUI::Window("square", 220, 130, 100, 140);
     square1->setColor(0xff89cff0);
     square2->setColor(0xffd1ffbd);
     square3->setColor(0xfffaa0a0);
@@ -28,14 +28,14 @@ int main() {
     win0->appendWindow(square3);
     win0->appendWindow(square4);
     GUI::Window *smallWin =
-        new GUI::Window(NULL, 20, 70, 100, 100, WIN_MOVABLE | WIN_DECORATE);
+        new GUI::Window(NULL, 20, 70, 100, 100, GUI::WindowFlags::WDECORATION);
     win0->appendWindow(smallWin);
 
     // Image window
     const char *imagePath = "/tmp/basketOfFruits.ppm";
     GUI::Window *win1 =
         wm->createWindow(imagePath, 150, 100, 402, 316 + TITLE_HEIGHT,
-                         WIN_MOVABLE | WIN_DECORATE);
+                         GUI::WindowFlags::WDECORATION);
     GUI::Image *fruit =
         new GUI::Image(151, 101 + TITLE_HEIGHT, win1->getWidth() - 2,
                        win1->getHeight() - 2 - TITLE_HEIGHT);
@@ -44,7 +44,7 @@ int main() {
 
     // Terminal window
     GUI::Window *win2 = wm->createWindow("Terminal", 100, 150, 500, 300,
-                                         WIN_MOVABLE | WIN_DECORATE);
+                                         GUI::WindowFlags::WDECORATION);
     GUI::Terminal *term =
         new GUI::Terminal(100 + 1, 150 + TITLE_HEIGHT + 1, win2->getWidth() - 2,
                           win2->getHeight() - 2 - TITLE_HEIGHT);

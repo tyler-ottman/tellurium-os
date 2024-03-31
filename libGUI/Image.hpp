@@ -9,7 +9,8 @@ namespace GUI {
 
 class Image : public Window {
 public:
-    Image(int x, int y, int width, int height);
+    Image(int x, int y, int width, int height,
+          WindowFlags flags = WindowFlags::WNONE);
     ~Image();
 
     int loadImage(const char *path);

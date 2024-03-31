@@ -8,10 +8,6 @@
 #define TITLE_HEIGHT                        31
 #define TITLE_WIDTH                         (width)
 
-#define WIN_DECORATE                        0x0001
-#define WIN_MOVABLE                         0x0002
-#define WIN_REFRESH_NEEDED                  0x0003
-
 #define BORDER_COLOR                        0xff333333
 #define BORDER_WIDTH                        3
 #define MENUBAR_SELECT                      0xff545454
@@ -29,17 +25,25 @@ enum WindowType {
     WindowMenuBar
 };
 
+/// @brief Common window flags
+enum WindowFlags {
+    WNONE = 0x0,
+    WDECORATION = 0x1,
+    WHOVER = 0x2,
+    WMOVABLE = 0x4,
+};
+
 class MenuBar;
 
 class Window {
 
 public:
     Window(const char *w_name, int x, int y, int width, int height,
-           uint16_t flags);
+           WindowFlags flags = WindowFlags::WNONE);
     virtual ~Window();
 
     Window *createWindow(const char *w_name, int x_pos, int y_pos, int width,
-                         int height, uint16_t flags);
+                         int height, WindowFlags flags);
     Window *appendWindow(Window *window);
     Window *removeWindow(int windowID);
     bool attachMenuBar(MenuBar *menuBar);
@@ -119,9 +123,15 @@ public:
     void setPriority(int priority);
 
     bool isLastMousePressed(void);
-    bool isDecorable(void);
-    bool isMovable(void);
-    bool isRefreshNeeded(void);
+
+    /// @brief Check if window is decorable
+    /// @return If window is docorable
+    bool hasDecoration(void);
+    
+    /// @brief Check if window is movable (TODO)
+    /// @return If window is movable
+    bool hasMovable(void);
+
     bool isOnMenuBar(int mouseX, int mouseY);
     bool isMouseInBounds(int mouseX, int mouseY);
 
@@ -136,7 +146,9 @@ protected:
     
     /// @brief The dimensions of the windows expressed as a Rect
     Rect *winRect;
-    uint16_t flags;
+
+    /// @brief The window's flags
+    WindowFlags flags;
     int color;
     int windowID;
     int type;
@@ -168,7 +180,7 @@ protected:
 
 class MenuBar : public Window {
 public:
-    MenuBar(int x, int y, int width, int height);
+    MenuBar(int x, int y, int width, int height, WindowFlags flags = WindowFlags::WNONE);
     ~MenuBar();
 
     void onMouseClick(void);
@@ -186,7 +198,7 @@ private:
 
 class Border : public Window {
 public:
-    Border(int x, int y, int width, int height);
+    Border(int x, int y, int width, int height, WindowFlags flags = WindowFlags::WNONE);
     ~Border();
 
     void drawObject(void);

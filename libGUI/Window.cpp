@@ -15,7 +15,7 @@ int Window::xOld = 0;
 int Window::yOld = 0;
 
 Window::Window(const char *w_name, int x, int y, int width, int height,
-               uint16_t flags)
+               WindowFlags flags)
     : flags(flags),
       windowID(-1),
       type(WindowDefault),
@@ -44,7 +44,7 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
     updateRect();
 
     // Menu bar can only be attached to movable windows
-    if (isMovable()) {
+    if (hasDecoration()) {
         MenuBar *menuBar = new MenuBar(x, y, width, TITLE_HEIGHT);
 
         if (windowName) {
@@ -59,14 +59,14 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
             menuBar->appendWindow(title);
         }
 
-        Button *exitButton =
-            new Button(x + width - 20, y + 5, 31, 31, BUTTON_HOVER);
+        Button *exitButton = new Button(x + width - 20, y + 5, 31, 31,
+            WindowFlags::WNONE, ButtonFlags::BHOVER);
         menuBar->appendWindow(exitButton);
         exitButton->loadImage("/tmp/exitButtonUnhover.ppm");
         exitButton->loadHoverImage("/tmp/exitButtonHover.ppm");
 
-        Button *minimizeButton =
-            new Button(x + width - 40, y + 5, 31, 31, BUTTON_HOVER);
+        Button *minimizeButton = new Button(x + width - 40, y + 5, 31, 31,
+            WindowFlags::WNONE, ButtonFlags::BHOVER);
         menuBar->appendWindow(minimizeButton);
         minimizeButton->loadImage("/tmp/minimizeButtonUnhover.ppm");
         minimizeButton->loadHoverImage("/tmp/minimizeButtonHover.ppm");
@@ -92,7 +92,7 @@ Window::Window(const char *w_name, int x, int y, int width, int height,
 Window::~Window() {}
 
 Window *Window::createWindow(const char *w_name, int x_pos, int y_pos,
-                             int width, int height, uint16_t flags) {
+                             int width, int height, WindowFlags flags) {
     Window *window = new Window(w_name, x_pos, y_pos, width, height, flags);
     if (!window) {
         return window;
@@ -487,11 +487,9 @@ void Window::setPriority(int priority) {
 
 bool Window::isLastMousePressed() { return lastMouseState & 0x1; }
 
-bool Window::isDecorable() { return flags & WIN_DECORATE; }
+bool Window::hasDecoration() { return flags & WindowFlags::WDECORATION; }
 
-bool Window::isMovable() { return flags & WIN_MOVABLE; }
-
-bool Window::isRefreshNeeded() { return flags & WIN_REFRESH_NEEDED; }
+bool Window::hasMovable() { return flags & WindowFlags::WMOVABLE; }
 
 bool Window::isOnMenuBar(int mouseX, int mouseY) {
     return (mouseY >= getY() && mouseY < (getY() + TITLE_HEIGHT) &&
@@ -533,8 +531,8 @@ void Window::updateChildPositions(Device::MouseData *data) {
     updateRect();
 }
 
-MenuBar::MenuBar(int x, int y, int width, int height)
-    : Window::Window("menuBar", x, y, width, height, 0),
+MenuBar::MenuBar(int x, int y, int width, int height, WindowFlags flags)
+    : Window::Window("menuBar", x, y, width, height, flags),
     barColor(0xffbebebe) {
     type = GUI::WindowMenuBar;
     setPriority(5);
@@ -569,8 +567,8 @@ void MenuBar::setBarColor(uint32_t color) {
     barColor = color;
 }
 
-Border::Border(int x, int y, int width, int height)
-    : Window::Window("border", x, y, width, height, 0) {
+Border::Border(int x, int y, int width, int height, WindowFlags flags)
+    : Window::Window("border", x, y, width, height, flags) {
     type = GUI::WindowBorder;
     priority = 2;
     color = 0xffbebebe;

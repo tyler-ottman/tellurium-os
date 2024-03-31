@@ -7,7 +7,8 @@ namespace GUI {
 
 class Terminal : public Window {
 public:
-    Terminal(int x, int y, int width, int height);
+    Terminal(int x, int y, int width, int height,
+             WindowFlags flags = WindowFlags::WNONE);
     ~Terminal();
 
     // Buffer opeations

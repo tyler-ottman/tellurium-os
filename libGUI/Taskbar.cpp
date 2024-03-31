@@ -2,8 +2,8 @@
 
 namespace GUI {
 
-Taskbar::Taskbar(int x, int y, int width, int height)
-    : Window::Window("taskbar", x, y, width, height, WIN_DECORATE) {
+Taskbar::Taskbar(int x, int y, int width, int height, WindowFlags flags)
+    : Window::Window("taskbar", x, y, width, height, flags) {
     setPriority(9);
 
     Border *border = new Border(x, y, width, 1);

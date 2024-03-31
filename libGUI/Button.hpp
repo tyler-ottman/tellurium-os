@@ -3,16 +3,21 @@
 #include "libGUI/Image.hpp"
 #include "libGUI/Window.hpp"
 
-// Button flags
-#define BUTTON_BORDER                       0x1
-#define BUTTON_TOGGLE                       0x2
-#define BUTTON_HOVER                        0x4
+/// @brief Common button flags
+enum ButtonFlags {
+    BNONE = 0x0,
+    BBORDER = 0x1,
+    BTOGGLE = 0x2,
+    BHOVER = 0x4
+};
 
 namespace GUI {
 
 class Button: public Window {
 public:
-    Button(int x, int y, int width, int height, int buttonFlags);
+    Button(int x, int y, int width, int height,
+            WindowFlags flags = WindowFlags::WNONE,
+            ButtonFlags bFlags = ButtonFlags::BNONE);
     ~Button();
 
     bool onMouseClick(void);
@@ -22,9 +27,9 @@ public:
     void loadImage(const char *path);
     void loadHoverImage(const char *path);
 private:
-    inline bool isFlagBorder(void) { return buttonFlags & BUTTON_BORDER; }
-    inline bool isFlagToggle(void) { return buttonFlags & BUTTON_TOGGLE; }
-    inline bool isFlagHover(void) { return buttonFlags & BUTTON_HOVER; }
+    inline bool isFlagBorder(void) { return buttonFlags & ButtonFlags::BBORDER; }
+    inline bool isFlagToggle(void) { return buttonFlags & ButtonFlags::BTOGGLE; }
+    inline bool isFlagHover(void) { return buttonFlags & ButtonFlags::BHOVER; }
 
     bool colorToggle;
     bool onHover;
@@ -33,7 +38,7 @@ private:
     Image *imgDefault;
     Image *imgHover;
 
-    uint8_t buttonFlags;
+    ButtonFlags buttonFlags;
 };
 
 }

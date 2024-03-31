@@ -20,7 +20,7 @@ public:
     void mouseHandle(Device::MouseData *data);
 
     Window *createWindow(const char *name, int x, int y, int width, int height,
-                         uint16_t flags);
+                         WindowFlags flags);
 
    private:
     WindowServer();
