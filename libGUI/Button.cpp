@@ -18,7 +18,7 @@ Button::~Button() {
 
 }
 
-bool Button::onMouseClick() {
+bool Button::onWindowClick() {
     if (isFlagToggle()) {
         colorToggle ^= 1;
 
@@ -29,7 +29,7 @@ bool Button::onMouseClick() {
     return true;
 }
 
-bool Button::onButtonHover() {
+bool Button::onWindowHover() {
     if (!isFlagHover()) {
         return false;
     }
@@ -41,7 +41,7 @@ bool Button::onButtonHover() {
     return true;
 }
 
-bool Button::onButtonUnhover() {
+bool Button::onWindowUnhover() {
     onHover = false;
 
     moveThisToDirty();
@@ -91,7 +91,6 @@ void Button::loadImage(const char *path) {
 
     setWidth(image->getWidth());
     setHeight(image->getHeight());
-    updateRect();
 }
 
 void Button::loadHoverImage(const char *path) {
@@ -105,6 +104,6 @@ void Button::loadHoverImage(const char *path) {
 
     setWidth(image->getWidth());
     setHeight(image->getHeight());
-    updateRect();
 }
+
 }

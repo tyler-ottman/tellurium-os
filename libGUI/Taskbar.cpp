@@ -1,3 +1,4 @@
+#include "Border.hpp"
 #include "Taskbar.hpp"
 
 namespace GUI {

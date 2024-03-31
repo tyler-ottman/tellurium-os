@@ -20,9 +20,9 @@ public:
             ButtonFlags bFlags = ButtonFlags::BNONE);
     ~Button();
 
-    bool onMouseClick(void);
-    bool onButtonHover(void);
-    bool onButtonUnhover(void);
+    bool onWindowClick(void) override;
+    bool onWindowHover(void) override;
+    bool onWindowUnhover(void) override;
     void drawObject(void);
     void loadImage(const char *path);
     void loadHoverImage(const char *path);
