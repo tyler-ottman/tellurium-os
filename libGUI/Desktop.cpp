@@ -37,8 +37,8 @@ Desktop::Desktop()
     : Window(NULL, 0, 0, FbContext::getInstance()->getFbContext()->fb_width,
              FbContext::getInstance()->getFbContext()->fb_height, WIN_DECORATE),
       forceRefresh(true) {
-    mouseX = winRect->getWidth() / 2;
-    mouseY = winRect->getHeight() / 2;
+    mouseX = getWidth() / 2;
+    mouseY = getHeight() / 2;
     oldMouseX = mouseX;
     oldMouseY = mouseY;
 
@@ -48,19 +48,19 @@ Desktop::Desktop()
     background->loadImage("/tmp/background.ppm");
     appendWindow(background);
 
-    Taskbar *taskbar = new Taskbar(0, winRect->getHeight() - 40, winRect->getWidth(), 40);
+    Taskbar *taskbar = new Taskbar(0, getHeight() - 40, getWidth(), 40);
     taskbar->setColor(0xffbebebe);
     appendWindow(taskbar);
 
     // Sample home button
-    Button *homeButton = new Button(taskbar->getXPos(), taskbar->getYPos(), 40,
-                                    40, BUTTON_HOVER);
+    Button *homeButton =
+        new Button(taskbar->getX(), taskbar->getY(), 40, 40, BUTTON_HOVER);
     homeButton->loadImage("/tmp/homeButtonUnhover.ppm");
     homeButton->loadHoverImage("/tmp/homeButtonHover.ppm");
     taskbar->appendWindow(homeButton);
 
     // Sample clock
-    Terminal *clock = new Terminal(taskbar->getWidth() - 50, taskbar->getYPos() + 14, 50, 20);
+    Terminal *clock = new Terminal(taskbar->getWidth() - 50, taskbar->getY() + 14, 50, 20);
     clock->setBg(0xffbebebe);
     clock->setFg(0);
     clock->disableCursor();
@@ -147,10 +147,10 @@ void Desktop::updateMousePos(Device::MouseData *data) {
 }
 
 bool Desktop::mouseInBounds(Window *window) {
-    return ((mouseX >= window->getXPos()) &&
-            (mouseX <= (window->getXPos() + window->getWidth())) &&
-            (mouseY >= window->getYPos()) &&
-            (mouseY <= (window->getYPos() + window->getHeight())));
+    return ((mouseX >= window->getX()) &&
+            (mouseX <= (window->getX() + window->getWidth())) &&
+            (mouseY >= window->getY()) &&
+            (mouseY <= (window->getY() + window->getHeight())));
 }
 }
 

@@ -57,32 +57,27 @@ void Button::drawObject() {
 
     // Draw window border if flag set
     if (isFlagBorder()) {
-        context->drawRect(winRect->getX() + 2, winRect->getY() + 2,
-                          winRect->getWidth() - 4, winRect->getHeight() - 4,
-                          color);
-        context->drawOutlinedRect(winRect->getX(), winRect->getY(),
-                                  winRect->getWidth(), winRect->getHeight(),
+        context->drawRect(getX() + 2, getY() + 2, getWidth() - 4,
+                          getHeight() - 4, color);
+        context->drawOutlinedRect(getX(), getY(), getWidth(), getHeight(),
                                   0xffff66cc);
-        context->drawOutlinedRect(winRect->getX() + 1, winRect->getY() + 1,
-                                  winRect->getWidth() - 2,
-                                  winRect->getHeight() - 2, 0xffff66cc);
+        context->drawOutlinedRect(getX() + 1, getY() + 1, getWidth() - 2,
+                                  getHeight() - 2, 0xffff66cc);
     }
 
     if (isImg) {
         Image *image = onHover ? imgHover : imgDefault;
-        context->drawBuff(winRect->getX(), winRect->getY(), winRect->getWidth(),
-                          winRect->getHeight(), image->getBuff());
+        context->drawBuff(getX(), getY(), getWidth(), getHeight(),
+                          image->getBuff());
     } else {
-        context->drawRect(winRect->getX(), winRect->getY(), winRect->getWidth(),
-                          winRect->getHeight(), color);
+        context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
     }
 }
 
 void Button::loadImage(const char *path) {
-    GUI::Image *image = new GUI::Image(winRect->getX(), winRect->getY(), winRect->getWidth(), winRect->getHeight());
+    GUI::Image *image = new GUI::Image(getX(), getY(), getWidth(), getHeight());
     int err = image->loadImage(path);
     if (err) {
-        __asm__("cli");
         return;
     }
 
@@ -93,15 +88,13 @@ void Button::loadImage(const char *path) {
 
     isImg = true;
 
-    winRect->setWidth(image->getWidth());
-    winRect->setHeight(image->getHeight());
+    setWidth(image->getWidth());
+    setHeight(image->getHeight());
     updateRect();
 }
 
 void Button::loadHoverImage(const char *path) {
-    GUI::Image *image = new GUI::Image(winRect->getX(), winRect->getY(),
-                                       winRect->getWidth(),
-                       winRect->getHeight());
+    GUI::Image *image = new GUI::Image(getX(), getY(), getWidth(), getHeight());
     int err = image->loadImage(path);
     if (err) {
         return;
@@ -109,9 +102,8 @@ void Button::loadHoverImage(const char *path) {
 
     imgHover = image;
 
-    winRect->setWidth(image->getWidth());
-    winRect->setHeight(image->getHeight());
+    setWidth(image->getWidth());
+    setHeight(image->getHeight());
     updateRect();
 }
-
 }
