@@ -16,16 +16,16 @@ int Window::yOld = 0;
 
 Window::Window(const char *windowName, int x, int y, int width, int height,
                WindowFlags flags)
-    : flags(flags),
-      windowID(-1),
+    : windowID(-1),
+      flags(flags),
       type(WindowDefault),
       priority(0),
+      parent(nullptr),
+      numWindows(0),
+      maxWindows(WINDOW_MAX),
       menuBar(nullptr),
       context(FbContext::getInstance()),
-      parent(nullptr),
-      activeChild(nullptr),
-      maxWindows(WINDOW_MAX),
-      numWindows(0) {
+      activeChild(nullptr) {
     color = 0xff333333;
 
     if (windowName) {

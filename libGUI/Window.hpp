@@ -76,7 +76,7 @@ public:
     /// @param window The window to be removed
     /// @return If window is invalid, return nullptr, the delete window
     Window *removeWindow(Window *window);
-    
+
     bool attachMenuBar(MenuBar *menuBar);
 
     void applyBoundClipping(void);
@@ -173,40 +173,26 @@ protected:
     void updateRect(void);
     void updateChildPositions(Device::MouseData *data);
 
-    char *windowName;
+    char *windowName; // unused
+    int windowID; // Used as index in window stack list
+    WindowFlags flags; // Common window options
+    Rect *winRect; // Window dimension as Rect
+    uint32_t color; // Default background color of window
+    int type; // Type of window, if derived (TODO: remove)
+    int priority; // Window priority, used in window list
+    Window *parent; // Parent window that self is attached to
+    Window *windows[WINDOW_MAX]; // Attached children windows
+    int numWindows; // Number of windows currently attached
+    const int maxWindows; // Max amount of windows you can attach
+    MenuBar *menuBar; // Window bar (TODO: remove)
+    FbContext *context; // Screen buffer info (TODO: remove)
+    Window *activeChild; // Activetly selected window
     
-    /// @brief The dimensions of the windows expressed as a Rect
-    Rect *winRect;
-
-    /// @brief The window's flags
-    WindowFlags flags;
-    int color;
-    int windowID;
-    int type;
-    int priority;
-
-    MenuBar *menuBar;
-
-    FbContext *context;
-    Window *parent;
-    Window *activeChild;
-
-    Window *windows[WINDOW_MAX];
-    const int maxWindows;
-    int numWindows;
-
-    static uint8_t lastMouseState;
-
-    // Info for window dragging and dirty regions
-    static Window *selectedWindow;
-
-    // Last window that was hovered over
-    static Window *hoverWindow;
-
-    // Use (X, Y) position of selectedWindow on last refresh
-    // to calculate dirty rectangles
-    static int xOld;
-    static int yOld;
+    static uint8_t lastMouseState; // State of mouse from last event
+    static Window *selectedWindow; // Current selected window
+    static Window *hoverWindow; // Window that mouse is hovering over
+    static int xOld; // Old x position of selectedWindow for dirty calculations
+    static int yOld; // Old y position of selectedWindow
 };
 
 class MenuBar : public Window {
