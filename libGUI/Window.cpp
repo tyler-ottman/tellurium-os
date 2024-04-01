@@ -21,7 +21,7 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
     : windowID(-1),
       flags(flags),
       type(WindowDefault),
-      priority(0),
+      priority(2),
       parent(nullptr),
       numWindows(0),
       maxWindows(WINDOW_MAX),
@@ -70,7 +70,6 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
         minimizeButton->loadImage("/tmp/minimizeButtonUnhover.ppm");
         minimizeButton->loadHoverImage("/tmp/minimizeButtonHover.ppm");
 
-        // attachMenuBar(menuBar);
         appendWindow(menuBar);
 
         Border *border =
@@ -106,6 +105,7 @@ Window *Window::appendWindow(Window *window) {
 
     for (int i = numWindows - 1; i >= insertIndex; i--) {
         windows[i + 1] = windows[i];
+        windows[i + 1]->setWindowID(i + 1);
     }
     windows[insertIndex] = window;
     
@@ -130,19 +130,20 @@ Window *Window::appendWindow(const char *windowName, int xPos, int yPos,
     return window;
 }
 
-Window *Window::removeWindow(int windowID) {
-    if (windowID < 0 || windowID >= numWindows) {
+Window *Window::removeWindow(int deleteIndex) {
+    if (deleteIndex < 0 || deleteIndex >= numWindows) {
         return nullptr;
     }
 
-    Window *window = windows[windowID];
+    Window *window = windows[deleteIndex];
 
-    for (int i = windowID; i < numWindows - 1; i++) {
+    for (int i = deleteIndex; i < numWindows - 1; i++) {
         windows[i] = windows[i + 1];
         windows[i]->setWindowID(i);
     }
 
-    windows[--numWindows] = nullptr;
+    // windows[--numWindows] = nullptr;
+    numWindows--;
     window->parent = nullptr;
     return window;
 }
@@ -283,8 +284,18 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
     // Window raise event (non-terminal event)
     bool isNextClick = isNewMousePressed && !isLastMousePressed();
     if (isNextClick) {
-        // && (isMovable() || type == GUI::WindowMenuBar)) {
-        Window *windowRaise = type == WindowMenuBar ? parent : this;
+        // Unselect old window
+        if (selectedWindow && (selectedWindow != this)) {
+            selectedWindow->onWindowUnselect();
+        }       
+        
+        Window *windowRaise = type  == WindowMenuBar ? parent : this;
+        // Window *windowRaise = this;
+        windowRaise->onWindowSelect();
+        selectedWindow = windowRaise;
+
+        xOld = selectedWindow->getX();
+        yOld = selectedWindow->getY();
         windowRaise->onWindowRaise();
     }
 
@@ -327,43 +338,12 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
 }
 
 bool Window::onWindowRaise() {
-    if (!parent) {
-        return false;
+    Window *refreshWindow = nullptr;
+    moveToTop(&refreshWindow, true);
+    if (refreshWindow) { // Window needs immediate refresh
+        context->addClippedRect(refreshWindow->winRect);
+        context->moveClippedToDirty();
     }
-
-    Window *topWindow = this;
-    Window *prevWindow = topWindow;
-
-    // Get top level window to stack on top
-    while (topWindow->parent) {
-        prevWindow = topWindow;
-        topWindow = topWindow->parent;
-
-        topWindow->removeWindow(prevWindow->getWindowID());
-        topWindow->appendWindow(prevWindow);
-        topWindow->activeChild = prevWindow;
-    }
-
-    // If desktop was clicked, ignore
-    if (topWindow == prevWindow) {
-        return true;
-    }
-
-    // Unselect old window
-    if (selectedWindow && (selectedWindow != this)) {
-        selectedWindow->onWindowUnselect();
-    }
-
-    // Select new window
-    onWindowSelect();
-    selectedWindow = this;
-
-    xOld = selectedWindow->getX();
-    yOld = selectedWindow->getY();
-
-    // Window needs immediate refresh
-    context->addClippedRect(prevWindow->winRect);
-    context->moveClippedToDirty();
 
     return true;
 }
@@ -448,10 +428,26 @@ bool Window::isMouseInBounds(int mouseX, int mouseY) {
             (mouseY >= getY()) && (mouseY <= (getY() + getHeight())));
 }
 
-void Window::moveToTop(Window *win) {
-    removeWindow(win->getWindowID());
+void Window::moveToTop(Window **refresh, bool recurse) {
+    Window *topWin = parent;
+    if (!topWin) { // Root window, terminate
+        return;
+    }
 
-    appendWindow(win);
+    int oldWinID = windowID;
+    if (hasDecoration()) {
+        topWin->removeWindow(windowID);
+        topWin->appendWindow(this);
+
+        // Window was moved in stack list
+        if (oldWinID != windowID) {
+            *refresh = this;
+        }
+    }
+    
+    if (recurse) {
+        parent->moveToTop(refresh, recurse);
+    }
 }
 
 void Window::moveThisToDirty() {

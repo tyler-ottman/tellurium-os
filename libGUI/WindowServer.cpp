@@ -16,23 +16,12 @@ WindowServer *WindowServer::getInstance() {
     return instance;
 }
 
-void WindowServer::refreshScreen() {
-    desktop->drawWindow();
-}
-
 void WindowServer::mouseHandle(Device::MouseData *data) {
-    desktop->onMouseEvent(data);
 
-    if (nEvents++ == 10) {
-        refreshScreen();
-        nEvents = 0;
-    }
 }
 
-Window *WindowServer::getRoot() { return desktop; }
+WindowServer::WindowServer() {
 
-WindowServer::WindowServer() : nEvents(0) {
-    desktop = new Desktop();
 }
 
 WindowServer::~WindowServer() {

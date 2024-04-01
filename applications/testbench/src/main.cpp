@@ -1,18 +1,14 @@
 #include "libGUI/Button.hpp"
+#include "libGUI/CWindow.hpp"
 #include "libGUI/FbContext.hpp"
 #include "libGUI/Terminal.hpp"
 #include "libGUI/Window.hpp"
-#include "libGUI/WindowServer.hpp"
-#include "libTellur/DevPoll.hpp"
 #include "libTellur/mem.hpp"
 #include "libTellur/syscalls.hpp"
 #include <stddef.h>
 #include <stdint.h>
 
 int main() {
-    GUI::WindowServer *wm = GUI::WindowServer::getInstance();
-    GUI::Window *root = GUI::WindowServer::getInstance()->getRoot();
-
     // Geometry Window
     GUI::Window *geoWin = new GUI::Window("Geometry", 10, 10, 400, 400,
                                           GUI::WindowFlags::WDECORATION);
@@ -52,30 +48,16 @@ int main() {
         term->printf("\033[38;5;%i;48;5;%im%03i", i, i, i);
     }
 
-    // Attach test windows to root
-    root->appendWindow(geoWin);
-    root->appendWindow(fruitWin);
-    root->appendWindow(termWin);
+    // Attach test windows to root window
+    GUI::CWindow *wapp = GUI::CWindow::getInstance();
 
-    Device::KeyboardData key = {.data = 0};
+    wapp->appendWindow(geoWin);
+    wapp->appendWindow(fruitWin);
+    wapp->appendWindow(termWin);
 
-    Device::MouseData mouse = {
-        .flags = 0,
-        .delta_x = 0,
-        .delta_y = 0
-    };
-
-    wm->refreshScreen();
+    wapp->refresh();
 
     while (1) {
-        // if (Device::keyboardPoll(&key, 1)) {
-        //     // wm->refreshScreen();
-        // }
-
-        if (Device::mousePoll(&mouse)) {
-            wm->mouseHandle(&mouse);
-        }
+        wapp->pollEvents();
     }
-
-    for (;;) {}
 }

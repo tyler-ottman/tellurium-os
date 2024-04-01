@@ -1,4 +1,4 @@
-#include "libGUI/Desktop.hpp"
+#include "libGUI/CWindow.hpp"
 #include "libGUI/Image.hpp"
 #include "libGUI/Taskbar.hpp"
 #include "libGUI/Terminal.hpp"
@@ -33,10 +33,100 @@ uint32_t mouseBitmap[MOUSE_W * MOUSE_H] = {
     CL, CL, CL, CL, CL, CL, CL, BL, BL, CL, CL 
 };
 
-Desktop::Desktop()
+CWindow *CWindow::instance = nullptr;
+
+CWindow *CWindow::getInstance() {
+    if (instance) {
+        return instance;
+    }
+
+    instance = new CWindow();
+    
+    return instance;
+}
+
+void CWindow::refresh() {
+    if (forceRefresh) {
+        Window::drawWindow();
+        forceRefresh = false;
+    }
+
+    // If window was dragged since last refresh, update it
+    applyDirtyDrag();
+    applyDirtyMouse();
+
+    drawWindow();
+
+    // Draw mouse
+    drawMouse();    
+}
+
+void CWindow::drawMouse() {
+    context->drawBitmapNoRegion(mouseX, mouseY, MOUSE_W, MOUSE_H, mouseBitmap);
+}
+
+void CWindow::processMouseEvent(Device::MouseData *data) {
+    context->resetClippedList();
+    context->resetDirtyList();
+
+    onMouseEvent(data, mouseX, mouseY);
+
+    // Regions that need immediate refresh
+    if (context->getNumDirty()) {
+        applyDirtyMouse();
+
+        drawWindow();
+
+        drawMouse();
+        context->resetDirtyList();
+    }
+
+    updateMousePos(data);
+
+    lastMouseState = data->flags;
+
+    if (nEvents++ == 5) {
+        refresh();
+        nEvents = 0;
+    }
+}
+
+Device::KeyboardData key = {.data = 0};
+Device::MouseData mouse = {.flags = 0, .delta_x = 0, .delta_y = 0};
+
+void CWindow::pollEvents() {
+    // if (Device::keyboardPoll(&key, 1)) {
+    //     // wm->refreshScreen();
+    // }
+
+    if (Device::mousePoll(&mouse)) {
+        processMouseEvent(&mouse);
+    }
+    
+}
+
+void CWindow::applyDirtyMouse(void) {
+    // If mouse position changed since last refresh
+    if (!(oldMouseX == mouseX && oldMouseY == mouseY)) {
+        // Original mouse position
+        Rect oldMouse(oldMouseX, oldMouseY, MOUSE_W, MOUSE_H);
+        context->addClippedRect(&oldMouse);
+
+        // New mouse position
+        Rect newMouse(mouseX, mouseY, MOUSE_W, MOUSE_H);
+        context->addClippedRect(&newMouse);
+
+        oldMouseX = mouseX;
+        oldMouseY = mouseY;
+
+        context->moveClippedToDirty();
+    }
+}
+
+CWindow::CWindow()
     : Window(NULL, 0, 0, FbContext::getInstance()->getFbContext()->fb_width,
              FbContext::getInstance()->getFbContext()->fb_height),
-      forceRefresh(true) {
+      forceRefresh(true), nEvents(0) {
     mouseX = getWidth() / 2;
     mouseY = getHeight() / 2;
     oldMouseX = mouseX;
@@ -69,70 +159,9 @@ Desktop::Desktop()
     taskbar->appendWindow(clock);
 }
 
-Desktop::~Desktop() {
+CWindow::~CWindow() {}
 
-}
-
-void Desktop::drawWindow() {
-    if (forceRefresh) {
-        Window::drawWindow();
-        forceRefresh = false;
-    }
-
-    // If window was dragged since last refresh, update it
-    applyDirtyDrag();
-    applyDirtyMouse();
-
-    Window::drawWindow();
-
-    // Draw mouse
-    drawMouse();    
-}
-
-void Desktop::drawMouse() {
-    context->drawBitmapNoRegion(mouseX, mouseY, MOUSE_W, MOUSE_H, mouseBitmap);
-}
-
-void Desktop::onMouseEvent(Device::MouseData *data) {
-    context->resetClippedList();
-    context->resetDirtyList();
-
-    Window::onMouseEvent(data, mouseX, mouseY);
-
-    // Regions that need immediate refresh
-    if (context->getNumDirty()) {
-        applyDirtyMouse();
-
-        Window::drawWindow();
-
-        drawMouse();
-        context->resetDirtyList();
-    }
-
-    updateMousePos(data);
-
-    lastMouseState = data->flags;
-}
-
-void Desktop::applyDirtyMouse(void) {
-    // If mouse position changed since last refresh
-    if (!(oldMouseX == mouseX && oldMouseY == mouseY)) {
-        // Original mouse position
-        Rect oldMouse(oldMouseX, oldMouseY, MOUSE_W, MOUSE_H);
-        context->addClippedRect(&oldMouse);
-
-        // New mouse position
-        Rect newMouse(mouseX, mouseY, MOUSE_W, MOUSE_H);
-        context->addClippedRect(&newMouse);
-
-        oldMouseX = mouseX;
-        oldMouseY = mouseY;
-
-        context->moveClippedToDirty();
-    }
-}
-
-void Desktop::updateMousePos(Device::MouseData *data) {
+void CWindow::updateMousePos(Device::MouseData *data) {
     int xNew = mouseX + data->delta_x;
     int yNew = mouseY - data->delta_y;
 
@@ -146,7 +175,7 @@ void Desktop::updateMousePos(Device::MouseData *data) {
     }
 }
 
-bool Desktop::mouseInBounds(Window *window) {
+bool CWindow::mouseInBounds(Window *window) {
     return ((mouseX >= window->getX()) &&
             (mouseX <= (window->getX() + window->getWidth())) &&
             (mouseY >= window->getY()) &&

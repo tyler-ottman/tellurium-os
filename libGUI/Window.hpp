@@ -34,6 +34,18 @@ enum WindowFlags {
     WMOVABLE = 0x4,
 };
 
+/// @brief Common window events
+enum EventType {
+    Default
+};
+
+struct WindowEvent {
+    WindowEvent(EventType type, void *data) : type(type), data(data) {}
+    WindowEvent() : type(EventType::Default), data(nullptr) {}
+    EventType type;
+    void *data;
+};
+
 class Window {
 
 public:
@@ -67,9 +79,9 @@ public:
     Window *appendWindow(Window *window);
 
     /// @brief Remove the child window given a window ID
-    /// @param windowID The window ID of the child to be removed
+    /// @param deleteIndex The window ID (index) of the child to be removed
     /// @return Upon successful removal, return a pointer to the removed window, nullptr otherwise
-    Window *removeWindow(int windowID);
+    Window *removeWindow(int deleteIndex);
 
     /// @brief Remove the specified window from the windows list
     /// @param window The window to be removed
@@ -81,12 +93,14 @@ public:
     void drawWindow(void);
     virtual void drawObject(void);
 
+    // void process
+
     //// @brief Process mouse event
     /// @param data Incoming mouse data
     /// @param mouseX X-position of mouse
     /// @param mouseY Y-position of mouse
     /// @return Event process status
-    bool onMouseEvent(Device::MouseData *data, int mouseX, int mouseY);
+    virtual bool onMouseEvent(Device::MouseData *data, int mouseX, int mouseY);
     
     /// @brief Process window raise event
     /// @return Event process status
@@ -203,8 +217,10 @@ public:
 
 protected:
     /// @brief Move window to top of window stack
-    /// @param window The window to move
-    void moveToTop(Window *window);
+    /// @param refresh The highest level window that was stack, implicates refresh
+    /// @param recurse Recursively raise parent windows until root
+    /// @return The highest level window that was raised
+    void moveToTop(Window **refresh, bool recurse);
 
     /// @brief Add window to dirty list
     void moveThisToDirty(void);
