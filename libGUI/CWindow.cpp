@@ -46,11 +46,6 @@ CWindow *CWindow::getInstance() {
 }
 
 void CWindow::refresh() {
-    if (forceRefresh) {
-        Window::drawWindow();
-        forceRefresh = false;
-    }
-
     // If window was dragged since last refresh, update it
     applyDirtyDrag();
     applyDirtyMouse();
@@ -59,6 +54,11 @@ void CWindow::refresh() {
 
     // Draw mouse
     drawMouse();    
+}
+
+void CWindow::forceRefresh() {
+    drawWindow();
+    drawMouse(); 
 }
 
 void CWindow::drawMouse() {
@@ -120,8 +120,7 @@ void CWindow::applyDirtyMouse(void) {
 
 CWindow::CWindow()
     : Window(NULL, 0, 0, FbContext::getInstance()->getFbContext()->fb_width,
-             FbContext::getInstance()->getFbContext()->fb_height),
-      forceRefresh(true), nEvents(0) {
+             FbContext::getInstance()->getFbContext()->fb_height), nEvents(0) {
     mouseX = getWidth() / 2;
     mouseY = getHeight() / 2;
     oldMouseX = mouseX;

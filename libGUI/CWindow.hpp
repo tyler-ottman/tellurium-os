@@ -19,6 +19,9 @@ public:
     /// @brief Refresh the CWindow
     void refresh(void);
 
+    /// @brief Force refresh the CWindow
+    void forceRefresh(void);
+
 private:
     CWindow(void);
     ~CWindow();
@@ -42,7 +45,6 @@ private:
     int oldMouseX;
     int oldMouseY;
 
-    bool forceRefresh;
     int nEvents;
 
     Device::DeviceManager *devManager;

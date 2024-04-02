@@ -55,7 +55,7 @@ int main() {
     wapp->appendWindow(fruitWin);
     wapp->appendWindow(termWin);
 
-    wapp->refresh();
+    wapp->forceRefresh();
 
     while (1) {
         wapp->pollEvents();
