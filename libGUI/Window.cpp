@@ -266,9 +266,9 @@ void Window::drawObject() {
     context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
 }
 
-bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
-                                 int mouseY) {
-    bool isNewMousePressed = data->flags & 0x1;
+bool Window::onEvent(Device::TellurEvent *event, int mouseX, int mouseY) {
+    Device::MouseData *mouseData = (Device::MouseData *)event->data; // temp fix
+    bool isNewMousePressed = mouseData->flags & 0x1;
 
     for (int i = numWindows - 1; i >= 0; i--) {
         Window *child = windows[i];
@@ -278,7 +278,7 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
         }
 
         // Pass event to child window
-        return child->onMouseEvent(data, mouseX, mouseY);
+        return child->onEvent(event, mouseX, mouseY);
     }
 
     // Window raise event (non-terminal event)
@@ -304,7 +304,7 @@ bool Window::onMouseEvent(Device::MouseData *data, int mouseX,
     // Event on menu bar, drag its window
     if (type == GUI::WindowMenuBar && (parent == selectedWindow) &&
         isNewMousePressed) {
-        return parent->onWindowDrag(data);
+        return parent->onWindowDrag(mouseData);
     }
 
     // Window released from dragging

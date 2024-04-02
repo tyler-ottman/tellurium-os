@@ -34,18 +34,6 @@ enum WindowFlags {
     WMOVABLE = 0x4,
 };
 
-/// @brief Common window events
-enum EventType {
-    Default
-};
-
-struct WindowEvent {
-    WindowEvent(EventType type, void *data) : type(type), data(data) {}
-    WindowEvent() : type(EventType::Default), data(nullptr) {}
-    EventType type;
-    void *data;
-};
-
 class Window {
 
 public:
@@ -80,7 +68,8 @@ public:
 
     /// @brief Remove the child window given a window ID
     /// @param deleteIndex The window ID (index) of the child to be removed
-    /// @return Upon successful removal, return a pointer to the removed window, nullptr otherwise
+    /// @return Upon successful removal, return a pointer to the removed window,
+    /// nullptr otherwise
     Window *removeWindow(int deleteIndex);
 
     /// @brief Remove the specified window from the windows list
@@ -93,14 +82,12 @@ public:
     void drawWindow(void);
     virtual void drawObject(void);
 
-    // void process
-
-    //// @brief Process mouse event
+    //// @brief Process event
     /// @param data Incoming mouse data
     /// @param mouseX X-position of mouse
     /// @param mouseY Y-position of mouse
     /// @return Event process status
-    virtual bool onMouseEvent(Device::MouseData *data, int mouseX, int mouseY);
+    virtual bool onEvent(Device::TellurEvent *data, int mouseX, int mouseY);
     
     /// @brief Process window raise event
     /// @return Event process status

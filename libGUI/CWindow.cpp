@@ -65,11 +65,11 @@ void CWindow::drawMouse() {
     context->drawBitmapNoRegion(mouseX, mouseY, MOUSE_W, MOUSE_H, mouseBitmap);
 }
 
-void CWindow::processMouseEvent(Device::MouseData *data) {
+void CWindow::processEvent(Device::TellurEvent *event) {
     context->resetClippedList();
     context->resetDirtyList();
 
-    onMouseEvent(data, mouseX, mouseY);
+    onEvent(event, mouseX, mouseY);
 
     // Regions that need immediate refresh
     if (context->getNumDirty()) {
@@ -81,9 +81,11 @@ void CWindow::processMouseEvent(Device::MouseData *data) {
         context->resetDirtyList();
     }
 
-    updateMousePos(data);
-
-    lastMouseState = data->flags;
+    if (event->isMouseEvent()) {
+        Device::MouseData *mouseData = (Device::MouseData *)event->data;
+        updateMousePos(mouseData);
+        lastMouseState = mouseData->flags;
+    }
 
     if (nEvents++ == 5) {
         refresh();
@@ -91,18 +93,11 @@ void CWindow::processMouseEvent(Device::MouseData *data) {
     }
 }
 
-Device::KeyboardData key = {.data = 0};
-Device::MouseData mouse = {.flags = 0, .delta_x = 0, .delta_y = 0};
-
 void CWindow::pollEvents() {
-    // if (Device::keyboardPoll(&key, 1)) {
-    //     // wm->refreshScreen();
-    // }
-
-    if (Device::mousePoll(&mouse)) {
-        processMouseEvent(&mouse);
+    Device::TellurEvent *event = devManager->pollDevices();
+    if (event) {
+        processEvent(event);
     }
-    
 }
 
 void CWindow::applyDirtyMouse(void) {
@@ -157,6 +152,10 @@ CWindow::CWindow()
     clock->clear();
     clock->printf("12:49");
     taskbar->appendWindow(clock);
+
+    devManager = new Device::DeviceManager;
+    devManager->addDevice(new Device::DeviceMousePs2("/dev/ms0"));
+    // devManager->addDevice(new Device::DeviceKeyboardPs2("/dev/kb0"));    
 }
 
 CWindow::~CWindow() {}
@@ -181,5 +180,9 @@ bool CWindow::mouseInBounds(Window *window) {
             (mouseY >= window->getY()) &&
             (mouseY <= (window->getY() + window->getHeight())));
 }
+
 }
 
+namespace Device {
+
+}

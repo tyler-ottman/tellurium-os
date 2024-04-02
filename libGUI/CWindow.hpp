@@ -1,25 +1,38 @@
 #ifndef CWINDOW_H
 #define CWINDOW_H
 
+#include "libTellur/DevPoll.hpp"
 #include "libGUI/Window.hpp"
 
 namespace GUI {
 
+/// @brief Client Window/Application implementation
 class CWindow: public Window {
 public:
+    /// @brief Get an instance of the CWindow
+    /// @return The instance
     static CWindow *getInstance();
 
-    void refresh(void);
-    void drawMouse(void);
-    void processMouseEvent(Device::MouseData *data);
+    /// @brief Poll for received mouse/keyboard events
     void pollEvents(void);
+
+    /// @brief Refresh the CWindow
+    void refresh(void);
+
+private:
+    CWindow(void);
+    ~CWindow();
+
+    /// @brief Process event 
+    /// @param event The event to be processed
+    void processEvent(Device::TellurEvent *event);
+
+    void drawMouse(void);
+    
     void applyDirtyMouse(void);
     
     int getMouseX(void) { return mouseX; }
     int getMouseY(void) { return mouseY; }
-private:
-    CWindow(void);
-    ~CWindow();
 
     void updateMousePos(Device::MouseData *data);
     bool mouseInBounds(Window *window);
@@ -30,11 +43,16 @@ private:
     int oldMouseY;
 
     bool forceRefresh;
-    // Event counter to facilitate refresh rate
     int nEvents;
+
+    Device::DeviceManager *devManager;
 
     static CWindow *instance;
 };
+
+}
+
+namespace Device {
 
 }
 
