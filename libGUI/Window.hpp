@@ -1,6 +1,7 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include "libGUI/Utility.hpp"
 #include "libTellur/DevPoll.hpp"
 #include <stdbool.h>
 #include <stdint.h>
@@ -67,9 +68,10 @@ public:
     Window *appendWindow(Window *window);
 
     /// @brief Remove the child window given a window ID
-    /// @param windowID The window ID of the child to be removed
-    /// @return Upon successful removal, return a pointer to the removed window, nullptr otherwise
-    Window *removeWindow(int windowID);
+    /// @param deleteIndex The window ID (index) of the child to be removed
+    /// @return Upon successful removal, return a pointer to the removed window,
+    /// nullptr otherwise
+    Window *removeWindow(int deleteIndex);
 
     /// @brief Remove the specified window from the windows list
     /// @param window The window to be removed
@@ -81,12 +83,11 @@ public:
     void drawWindow(void);
     virtual void drawObject(void);
 
-    //// @brief Process mouse event
+    //// @brief Process event
     /// @param data Incoming mouse data
-    /// @param mouseX X-position of mouse
-    /// @param mouseY Y-position of mouse
+    /// @param mouse Position of mouse
     /// @return Event process status
-    bool onMouseEvent(Device::MouseData *data, int mouseX, int mouseY);
+    virtual bool onEvent(Device::TellurEvent *data, vec2 *mouse);
     
     /// @brief Process window raise event
     /// @return Event process status
@@ -196,15 +197,16 @@ public:
     bool hasMovable(void);
 
     /// @brief Check if mouse coordinates are in bounds of window
-    /// @param mouseX Mouse's x position
-    /// @param mouseY Mouse's y position
+    /// @param mouse
     /// @return If mouse is in bounds of window, return true, false otherwise
-    bool isMouseInBounds(int mouseX, int mouseY);
+    bool isMouseInBounds(vec2 *mouse);
 
 protected:
     /// @brief Move window to top of window stack
-    /// @param window The window to move
-    void moveToTop(Window *window);
+    /// @param refresh The highest level window that was stack, implicates refresh
+    /// @param recurse Recursively raise parent windows until root
+    /// @return The highest level window that was raised
+    void moveToTop(Window **refresh, bool recurse);
 
     /// @brief Add window to dirty list
     void moveThisToDirty(void);

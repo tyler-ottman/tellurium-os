@@ -9,13 +9,9 @@ namespace GUI {
 
 class Taskbar : public Window {
 public:
- Taskbar(int x, int y, int width, int height,
-         WindowFlags flags = WindowFlags::WNONE);
- ~Taskbar();
-
- void drawObject(void);
-private:
-    
+    Taskbar(int x, int y, int width, int height,
+            WindowFlags flags = WindowFlags::WNONE);
+    ~Taskbar();
 };
 
 }

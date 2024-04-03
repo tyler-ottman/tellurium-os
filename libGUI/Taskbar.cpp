@@ -14,8 +14,4 @@ Taskbar::Taskbar(int x, int y, int width, int height, WindowFlags flags)
 
 Taskbar::~Taskbar() {}
 
-void Taskbar::drawObject(void) {
-    Window::drawObject();
-}
-
 }

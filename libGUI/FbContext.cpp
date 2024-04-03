@@ -92,7 +92,8 @@ void FbContext::drawRectNoRegion(int x, int y, int width, int height,
     drawClippedRect(x, y, width, height, color, screen);
 }
 
-void FbContext::drawBitmapNoRegion(int x, int y, int width, int height, uint32_t *bitmap) {
+void FbContext::drawBitmapNoRegion(int x, int y, int width, int height,
+                                   uint32_t *bitmap) {
     drawClippedBitmap(x, y, width, height, bitmap, screen);
 }
 
