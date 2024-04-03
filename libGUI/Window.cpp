@@ -10,11 +10,12 @@
 
 namespace GUI {
 
-uint8_t Window::lastMouseState = 0;
 Window *Window::selectedWindow = nullptr;
+// Window *Window::oldSelectedWindow = nullptr;
 Window *Window::hoverWindow = nullptr;
-int Window::xOld = 0;
-int Window::yOld = 0;
+// int Window::xOld = 0;
+// int Window::yOld = 0;
+Rect *Window::oldSelected = nullptr;
 
 Window::Window(const char *windowName, int x, int y, int width, int height,
                WindowFlags flags)
@@ -28,6 +29,10 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
       context(FbContext::getInstance()),
       activeChild(nullptr) {
     color = 0xff333333;
+
+    if (!oldSelected) {
+        oldSelected = new Rect();
+    }
 
     if (windowName) {
         int len = __strlen(windowName);
@@ -204,20 +209,12 @@ void Window::applyDirtyDrag() {
 
     context->resetClippedList();
 
-    if (!(xOld == selectedWindow->getX() && yOld == selectedWindow->getY())) {
-        int tempX = selectedWindow->getX();
-        int tempY = selectedWindow->getY();
-
-        // Original window position
-        selectedWindow->setPosition(xOld, yOld);
+    if (!(oldSelected->getX() == getX() &&
+          oldSelected->getY() == getY())) {
+        context->addClippedRect(oldSelected);
         context->addClippedRect(selectedWindow->winRect);
 
-        // New window position
-        selectedWindow->setPosition(tempX, tempY);
-        context->addClippedRect(selectedWindow->winRect);
-
-        xOld = selectedWindow->getX();
-        yOld = selectedWindow->getY();
+        *oldSelected = *selectedWindow->winRect;
 
         context->moveClippedToDirty();
     }
@@ -293,8 +290,9 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
         windowRaise->onWindowSelect();
         selectedWindow = windowRaise;
 
-        xOld = selectedWindow->getX();
-        yOld = selectedWindow->getY();
+        // Store position of selected window before drag
+        *oldSelected = *selectedWindow->winRect;
+
         windowRaise->onWindowRaise();
 
         return onWindowClick();
@@ -412,8 +410,6 @@ void Window::setPriority(int priority) {
 
     this->priority = priority;
 }
-
-bool Window::isLastMousePressed() { return lastMouseState & 0x1; }
 
 bool Window::hasDecoration() { return flags & WindowFlags::WDECORATION; }
 

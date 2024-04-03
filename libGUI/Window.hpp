@@ -184,10 +184,6 @@ public:
     /// @param priority The priortiy to set
     void setPriority(int priority);
 
-    /// @brief Check last status of mouse
-    /// @return True, if last mouse event was a clicker, otherwise false
-    bool isLastMousePressed(void);
-
     /// @brief Check if window is decorable
     /// @return If window is docorable
     bool hasDecoration(void);
@@ -229,11 +225,12 @@ protected:
     FbContext *context; // Screen buffer info (TODO: remove)
     Window *activeChild; // Activetly selected window
     
-    static uint8_t lastMouseState; // State of mouse from last event
     static Window *selectedWindow; // Current selected window
+    // static Window *oldSelectedWindow; // Old selected window
     static Window *hoverWindow; // Window that mouse is hovering over
-    static int xOld; // Old x position of selectedWindow for dirty calculations
-    static int yOld; // Old y position of selectedWindow
+    // static int xOld; // Old x position of selectedWindow for dirty calculations
+    // static int yOld; // Old y position of selectedWindow
+    static Rect *oldSelected; // Old position of selected window
 };
 
 } // GUI

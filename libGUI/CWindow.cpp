@@ -84,7 +84,7 @@ void CWindow::processEvent(Device::TellurEvent *event) {
     if (event->isMouseEvent()) {
         Device::MouseData *mouseData = (Device::MouseData *)event->data;
         updateMousePos(mouseData);
-        lastMouseState = mouseData->flags;
+        // lastMouseState = mouseData->flags;
     }
 
     if (nEvents++ == 5) {
