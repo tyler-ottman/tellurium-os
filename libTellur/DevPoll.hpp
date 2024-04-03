@@ -10,6 +10,9 @@
 namespace Device {
 
 struct MouseData {
+    bool lButton(void) { return flags & 0x1; }
+    bool rButton(void) { return flags & 0x2; }
+    bool mButton(void) { return flags & 0x4; }
     uint8_t flags;
     int delta_x;
     int delta_y;
@@ -24,26 +27,20 @@ int keyboardPoll(KeyboardData *buff, size_t count);
 
 /// @brief Common window events
 enum TellurEventType {
-    Unknown,
+    MouseMove,
+    MouseMoveClick,
+    MouseLeftClick,
+    MouseLeftRelease,
+    MouseDefault,
     KeyboardDefault,
-    MouseDefault
+    Default
 };
 
 struct TellurEvent {
     TellurEvent(TellurEventType type, void *data) : type(type), data(data) {}
-    TellurEvent() : type(TellurEventType::Unknown), data(nullptr) {}
-    bool isMouseEvent(void) {
-        switch(type) {
-        case MouseDefault: return true;
-        default: return false;
-        }
-    }
-    bool isKeyboardEvent(void) {
-        switch(type) {
-        case KeyboardDefault: return true;
-        default: return false;
-        }
-    }
+    TellurEvent() : type(TellurEventType::Default), data(nullptr) {}
+    bool isMouseEvent(void) { return type <= MouseDefault; }
+    bool isKeyboardEvent(void) { return type > MouseDefault; }
     TellurEventType type;
     void *data;
 };
@@ -56,14 +53,15 @@ public:
 
     /// @brief Poll device for event
     /// @return If there's an event, return it. Otherwise, return nullptr
-    TellurEvent *devicePoll(void);
+    virtual TellurEvent *devicePoll(void);
 
     /// @brief Get the type of event received from device
     /// @return The event type
     virtual TellurEventType getEventType(void) = 0;
 
-private:
+protected:
     TellurEvent *event; /// @brief Where a new event is stored
+    TellurEvent *prevEvent; /// @brief Previous device event
     size_t eventDataLen; /// @brief The length of the device data returned
     char *devPath; /// @brief The device path in the VFS
     int devFd; /// @brief The device's file descriptor

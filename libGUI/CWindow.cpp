@@ -62,14 +62,14 @@ void CWindow::forceRefresh() {
 }
 
 void CWindow::drawMouse() {
-    context->drawBitmapNoRegion(mouseX, mouseY, MOUSE_W, MOUSE_H, mouseBitmap);
+    context->drawBitmapNoRegion(mouse->x, mouse->y, MOUSE_W, MOUSE_H, mouseBitmap);
 }
 
 void CWindow::processEvent(Device::TellurEvent *event) {
     context->resetClippedList();
     context->resetDirtyList();
 
-    onEvent(event, mouseX, mouseY);
+    onEvent(event, mouse);
 
     // Regions that need immediate refresh
     if (context->getNumDirty()) {
@@ -102,17 +102,17 @@ void CWindow::pollEvents() {
 
 void CWindow::applyDirtyMouse(void) {
     // If mouse position changed since last refresh
-    if (!(oldMouseX == mouseX && oldMouseY == mouseY)) {
+    if (!(oldMouse->x == mouse->x && oldMouse->y == mouse->y)) {
         // Original mouse position
-        Rect oldMouse(oldMouseX, oldMouseY, MOUSE_W, MOUSE_H);
-        context->addClippedRect(&oldMouse);
+        Rect old(oldMouse->x, oldMouse->y, MOUSE_W, MOUSE_H);
+        context->addClippedRect(&old);
 
         // New mouse position
-        Rect newMouse(mouseX, mouseY, MOUSE_W, MOUSE_H);
+        Rect newMouse(mouse->x, mouse->y, MOUSE_W, MOUSE_H);
         context->addClippedRect(&newMouse);
 
-        oldMouseX = mouseX;
-        oldMouseY = mouseY;
+        oldMouse->x = mouse->x;
+        oldMouse->y = mouse->y;
 
         context->moveClippedToDirty();
     }
@@ -121,10 +121,8 @@ void CWindow::applyDirtyMouse(void) {
 CWindow::CWindow()
     : Window(NULL, 0, 0, FbContext::getInstance()->getFbContext()->fb_width,
              FbContext::getInstance()->getFbContext()->fb_height), nEvents(0) {
-    mouseX = getWidth() / 2;
-    mouseY = getHeight() / 2;
-    oldMouseX = mouseX;
-    oldMouseY = mouseY;
+    mouse = new vec2(getWidth() / 2, getHeight() / 2);
+    oldMouse = new vec2(mouse->x, mouse->y);
 
     Image *background = new Image(0, 0, context->getFbContext()->fb_width,
                                   context->getFbContext()->fb_height);
@@ -154,34 +152,30 @@ CWindow::CWindow()
 
     devManager = new Device::DeviceManager;
     devManager->addDevice(new Device::DeviceMousePs2("/dev/ms0"));
-    // devManager->addDevice(new Device::DeviceKeyboardPs2("/dev/kb0"));    
+    // devManager->addDevice(new Device::DeviceKeyboardPs2("/dev/kb0"));
 }
 
 CWindow::~CWindow() {}
 
 void CWindow::updateMousePos(Device::MouseData *data) {
-    int xNew = mouseX + data->delta_x;
-    int yNew = mouseY - data->delta_y;
+    int xNew = getMouseX() + data->delta_x;
+    int yNew = getMouseY() - data->delta_y;
 
     FbMeta *meta = FbContext::getInstance()->getFbContext();
     if (xNew >= 0 && xNew < (int)meta->fb_width) {
-        mouseX = xNew;
+        mouse->x = xNew;
     }
 
     if (yNew >= 0 && yNew < (int)meta->fb_height) {
-        mouseY = yNew;
+        mouse->y = yNew;
     }
 }
 
 bool CWindow::mouseInBounds(Window *window) {
-    return ((mouseX >= window->getX()) &&
-            (mouseX <= (window->getX() + window->getWidth())) &&
-            (mouseY >= window->getY()) &&
-            (mouseY <= (window->getY() + window->getHeight())));
+    return ((getMouseX() >= window->getX()) &&
+            (getMouseX() <= (window->getX() + window->getWidth())) &&
+            (getMouseY() >= window->getY()) &&
+            (getMouseY() <= (window->getY() + window->getHeight())));
 }
-
-}
-
-namespace Device {
 
 }

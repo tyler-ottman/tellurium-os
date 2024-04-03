@@ -34,16 +34,14 @@ private:
     
     void applyDirtyMouse(void);
     
-    int getMouseX(void) { return mouseX; }
-    int getMouseY(void) { return mouseY; }
+    int getMouseX(void) { return mouse->x; }
+    int getMouseY(void) { return mouse->y; }
 
     void updateMousePos(Device::MouseData *data);
     bool mouseInBounds(Window *window);
 
-    int mouseX;
-    int mouseY;
-    int oldMouseX;
-    int oldMouseY;
+    vec2 *mouse;
+    vec2 *oldMouse;
 
     int nEvents;
 
@@ -51,10 +49,6 @@ private:
 
     static CWindow *instance;
 };
-
-}
-
-namespace Device {
 
 }
 

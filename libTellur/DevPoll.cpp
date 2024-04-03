@@ -24,10 +24,14 @@ int keyboardPoll(KeyboardData *data, size_t count) {
 }
 
 Device::Device(const char *devPath, size_t eventDataLen) {
+    this->eventDataLen = eventDataLen;
+
     // Allocate device read buffer
     event = new TellurEvent();
-    this->eventDataLen = eventDataLen;
     event->data = new uint8_t[eventDataLen];
+
+    prevEvent = new TellurEvent();
+    prevEvent->data = new uint8_t[eventDataLen];
     
     // Set device path name
     size_t devPathLen = __strlen(devPath);
@@ -51,18 +55,47 @@ Device::~Device() {
 TellurEvent *Device::devicePoll() {
     if (syscall_read(devFd, event->data, eventDataLen)) {
         event->type = getEventType();
+        
+        TellurEvent *temp = prevEvent;
+        prevEvent = event;
+        event = temp;
+
         return event;
     }
 
     return nullptr;
 }
 
-DeviceMousePs2::DeviceMousePs2(const char *devPath) : Device(devPath, sizeof(MouseData)) {}
+DeviceMousePs2::DeviceMousePs2(const char *devPath)
+    : Device(devPath, sizeof(MouseData)) {
+    // Initial state of mouse = nothing moved or clicked
+    MouseData *prevMouseData = (MouseData *)prevEvent->data;
+    MouseData *mouseData = (MouseData *)event->data;
+
+    *prevMouseData = {
+        .flags = 0,
+        .delta_x = 0,
+        .delta_y = 0
+    };
+
+    *mouseData = *prevMouseData;
+}
 
 DeviceMousePs2::~DeviceMousePs2() {}
 
 TellurEventType DeviceMousePs2::getEventType() {
-    return TellurEventType::MouseDefault;
+    MouseData *newData = (MouseData *)event->data;
+    MouseData *prevData = (MouseData *)prevEvent->data;
+
+    if (newData->lButton() && prevData->lButton()) {
+        return TellurEventType::MouseMoveClick;
+    } else if (newData->lButton() && !prevData->lButton()) {
+        return TellurEventType::MouseLeftClick;
+    } else if (!newData->lButton() && prevData->lButton()) {
+        return TellurEventType::MouseLeftRelease;
+    } else { // if (!newData->mButton() && !prevData->lButton()) {
+        return TellurEventType::MouseMove;
+    }
 }
 
 DeviceKeyboardPs2::DeviceKeyboardPs2(const char *devPath) : Device(devPath, sizeof(KeyboardData)) {}
@@ -70,6 +103,7 @@ DeviceKeyboardPs2::DeviceKeyboardPs2(const char *devPath) : Device(devPath, size
 DeviceKeyboardPs2::~DeviceKeyboardPs2() {}
 
 TellurEventType DeviceKeyboardPs2::getEventType() {
+
     return TellurEventType::KeyboardDefault;
 }
 

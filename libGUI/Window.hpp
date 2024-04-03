@@ -1,6 +1,7 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include "libGUI/Utility.hpp"
 #include "libTellur/DevPoll.hpp"
 #include <stdbool.h>
 #include <stdint.h>
@@ -84,10 +85,9 @@ public:
 
     //// @brief Process event
     /// @param data Incoming mouse data
-    /// @param mouseX X-position of mouse
-    /// @param mouseY Y-position of mouse
+    /// @param mouse Position of mouse
     /// @return Event process status
-    virtual bool onEvent(Device::TellurEvent *data, int mouseX, int mouseY);
+    virtual bool onEvent(Device::TellurEvent *data, vec2 *mouse);
     
     /// @brief Process window raise event
     /// @return Event process status
@@ -197,10 +197,9 @@ public:
     bool hasMovable(void);
 
     /// @brief Check if mouse coordinates are in bounds of window
-    /// @param mouseX Mouse's x position
-    /// @param mouseY Mouse's y position
+    /// @param mouse
     /// @return If mouse is in bounds of window, return true, false otherwise
-    bool isMouseInBounds(int mouseX, int mouseY);
+    bool isMouseInBounds(vec2 *mouse);
 
 protected:
     /// @brief Move window to top of window stack

@@ -266,64 +266,57 @@ void Window::drawObject() {
     context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
 }
 
-bool Window::onEvent(Device::TellurEvent *event, int mouseX, int mouseY) {
+bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
     Device::MouseData *mouseData = (Device::MouseData *)event->data; // temp fix
     bool isNewMousePressed = mouseData->flags & 0x1;
 
     for (int i = numWindows - 1; i >= 0; i--) {
         Window *child = windows[i];
 
-        if (!child->isMouseInBounds(mouseX, mouseY)) {
+        if (!child->isMouseInBounds(mouse)) {
             continue;
         }
 
         // Pass event to child window
-        return child->onEvent(event, mouseX, mouseY);
+        return child->onEvent(event, mouse);
     }
 
-    // Window raise event (non-terminal event)
-    bool isNextClick = isNewMousePressed && !isLastMousePressed();
-    if (isNextClick) {
+    switch (event->type) {
+
+    case Device::TellurEventType::MouseLeftClick: {
         // Unselect old window
         if (selectedWindow && (selectedWindow != this)) {
             selectedWindow->onWindowUnselect();
         }       
         
         Window *windowRaise = type  == WindowMenuBar ? parent : this;
-        // Window *windowRaise = this;
         windowRaise->onWindowSelect();
         selectedWindow = windowRaise;
 
         xOld = selectedWindow->getX();
         yOld = selectedWindow->getY();
         windowRaise->onWindowRaise();
-    }
 
-    // Terminal events
-
-    // Event on menu bar, drag its window
-    if (type == GUI::WindowMenuBar && (parent == selectedWindow) &&
-        isNewMousePressed) {
-        return parent->onWindowDrag(mouseData);
-    }
-
-    // Window released from dragging
-    if (this == selectedWindow && isLastMousePressed() && !isNewMousePressed) {
-        // Window needs immediate refresh
-        if (this == selectedWindow) {
-            selectedWindow->applyDirtyDrag();
-        }
-
-        return onWindowRelease();
-    }
-
-    // Window click event
-    if (isNewMousePressed && !isLastMousePressed()) {
         return onWindowClick();
     }
 
-    // Window hover event
-    if (!isNewMousePressed && !isLastMousePressed()) {
+    case Device::TellurEventType::MouseMoveClick:
+        if (type == GUI::WindowMenuBar && (parent == selectedWindow) &&
+            isNewMousePressed) {
+            return parent->onWindowDrag(mouseData);
+        }
+        return true;
+
+    case Device::TellurEventType::MouseLeftRelease:
+        if (this == selectedWindow) {
+            // Window needs immediate refresh
+            selectedWindow->applyDirtyDrag();
+
+            return onWindowRelease();
+        }
+        return true;
+
+    case Device::TellurEventType::MouseMove:
         // Check if hovering over new component
         if (hoverWindow && hoverWindow != this) {
             hoverWindow->onWindowUnhover();
@@ -332,6 +325,9 @@ bool Window::onEvent(Device::TellurEvent *event, int mouseX, int mouseY) {
         hoverWindow = this;
 
         return onWindowHover();
+
+    default:
+        return true;
     }
 
     return true;
@@ -423,9 +419,9 @@ bool Window::hasDecoration() { return flags & WindowFlags::WDECORATION; }
 
 bool Window::hasMovable() { return flags & WindowFlags::WMOVABLE; }
 
-bool Window::isMouseInBounds(int mouseX, int mouseY) {
-    return ((mouseX >= getX()) && (mouseX <= (getX() + getWidth())) &&
-            (mouseY >= getY()) && (mouseY <= (getY() + getHeight())));
+bool Window::isMouseInBounds(vec2 *mouse) {
+    return ((mouse->x >= getX()) && (mouse->x <= (getX() + getWidth())) &&
+            (mouse->y >= getY()) && (mouse->y <= (getY() + getHeight())));
 }
 
 void Window::moveToTop(Window **refresh, bool recurse) {
