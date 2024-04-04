@@ -38,6 +38,10 @@ public:
     // Clipped Rectangle Operations
     void addClippedRect(Rect *rect);
     void reshapeRegion(Rect *rect);
+
+    void addDirtyRect(Rect *rect);
+    void reshapeDirty(Rect *rect);
+    
     void drawClippedRegions(void);
     void intersectClippedRect(Rect *rect);
 

@@ -79,7 +79,6 @@ public:
     Window *removeWindow(Window *window);
 
     void applyBoundClipping(void);
-    void applyDirtyDrag(void);
     void drawWindow(void);
     virtual void drawObject(void);
 
@@ -150,6 +149,10 @@ public:
     /// @brief Get window's color
     /// @return Window's color
     int getColor(void);
+
+    /// @brief Get window's Rect boundary
+    /// @return The Rect
+    Rect *getWinRect(void);
 
     /// @brief Set window's ID
     /// @param windowID The window ID
@@ -226,10 +229,7 @@ protected:
     Window *activeChild; // Activetly selected window
     
     static Window *selectedWindow; // Current selected window
-    // static Window *oldSelectedWindow; // Old selected window
     static Window *hoverWindow; // Window that mouse is hovering over
-    // static int xOld; // Old x position of selectedWindow for dirty calculations
-    // static int yOld; // Old y position of selectedWindow
     static Rect *oldSelected; // Old position of selected window
 };
 

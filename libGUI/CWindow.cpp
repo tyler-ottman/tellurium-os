@@ -45,20 +45,35 @@ CWindow *CWindow::getInstance() {
     return instance;
 }
 
-void CWindow::refresh() {
-    // If window was dragged since last refresh, update it
-    applyDirtyDrag();
-    applyDirtyMouse();
+void CWindow::applyDirtyDrag() {
+    if (!selectedWindow) {
+        return;
+    }
 
-    drawWindow();
+    if (*oldSelected != *selectedWindow->getWinRect()) {
+        context->addDirtyRect(oldSelected);
+        context->addDirtyRect(selectedWindow->getWinRect());
 
-    // Draw mouse
-    drawMouse();    
+        *oldSelected = *(selectedWindow->getWinRect());
+    }
 }
 
-void CWindow::forceRefresh() {
-    drawWindow();
-    drawMouse(); 
+void CWindow::refresh() {
+    // Only refresh if dirty regions generated
+    if (context->getNumDirty()) {
+        // If selectedWindow position changed since last refresh, add to dirty     
+        applyDirtyDrag();
+
+        // Draw the windows that intersect the dirty clipped regions
+        drawWindow();
+
+        // Draw mouse on top of final image, does not use clipped regions
+        drawMouse();
+
+        // Rendering done, reset dirty/clipped regions list
+        context->resetClippedList();
+        context->resetDirtyList();
+    }
 }
 
 void CWindow::drawMouse() {
@@ -66,30 +81,10 @@ void CWindow::drawMouse() {
 }
 
 void CWindow::processEvent(Device::TellurEvent *event) {
-    context->resetClippedList();
-    context->resetDirtyList();
-
     onEvent(event, mouse);
 
-    // Regions that need immediate refresh
-    if (context->getNumDirty()) {
-        applyDirtyMouse();
-
-        drawWindow();
-
-        drawMouse();
-        context->resetDirtyList();
-    }
-
-    if (event->isMouseEvent()) {
-        Device::MouseData *mouseData = (Device::MouseData *)event->data;
-        updateMousePos(mouseData);
-        // lastMouseState = mouseData->flags;
-    }
-
-    if (nEvents++ == 5) {
-        refresh();
-        nEvents = 0;
+    if (event->isMosueMove()) {
+        updateMousePos((Device::MouseData *)event->data);
     }
 }
 
@@ -98,23 +93,23 @@ void CWindow::pollEvents() {
     if (event) {
         processEvent(event);
     }
+
+    if (nEvents++ == 5) {
+        refresh();
+        nEvents = 0;
+    }
 }
 
 void CWindow::applyDirtyMouse(void) {
     // If mouse position changed since last refresh
-    if (!(oldMouse->x == mouse->x && oldMouse->y == mouse->y)) {
+    if (oldMouse->x != mouse->x || oldMouse->y != mouse->y) {
         // Original mouse position
         Rect old(oldMouse->x, oldMouse->y, MOUSE_W, MOUSE_H);
-        context->addClippedRect(&old);
+        context->addDirtyRect(&old);
 
         // New mouse position
         Rect newMouse(mouse->x, mouse->y, MOUSE_W, MOUSE_H);
-        context->addClippedRect(&newMouse);
-
-        oldMouse->x = mouse->x;
-        oldMouse->y = mouse->y;
-
-        context->moveClippedToDirty();
+        context->addDirtyRect(&newMouse);
     }
 }
 
@@ -153,11 +148,17 @@ CWindow::CWindow()
     devManager = new Device::DeviceManager;
     devManager->addDevice(new Device::DeviceMousePs2("/dev/ms0"));
     // devManager->addDevice(new Device::DeviceKeyboardPs2("/dev/kb0"));
+
+    // Entire screen is dirty on startup
+    context->addDirtyRect(winRect);
 }
 
 CWindow::~CWindow() {}
 
 void CWindow::updateMousePos(Device::MouseData *data) {
+    oldMouse->x = mouse->x;
+    oldMouse->y = mouse->y;
+
     int xNew = getMouseX() + data->delta_x;
     int yNew = getMouseY() - data->delta_y;
 
@@ -169,6 +170,8 @@ void CWindow::updateMousePos(Device::MouseData *data) {
     if (yNew >= 0 && yNew < (int)meta->fb_height) {
         mouse->y = yNew;
     }
+
+    applyDirtyMouse();
 }
 
 bool CWindow::mouseInBounds(Window *window) {

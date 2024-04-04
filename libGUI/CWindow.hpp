@@ -16,6 +16,10 @@ public:
     /// @brief Poll for received mouse/keyboard events
     void pollEvents(void);
 
+    /// @brief Add selected window region to dirty list if position changed
+    /// since the last refresh
+    void applyDirtyDrag(void);
+
     /// @brief Refresh the CWindow
     void refresh(void);
 

@@ -157,6 +157,34 @@ void FbContext::reshapeRegion(Rect *rect) {
     }
 }
 
+void FbContext::addDirtyRect(Rect *rect) {
+    reshapeDirty(rect);
+
+    appendDirtyRect(rect);
+}
+
+void FbContext::reshapeDirty(Rect *rect) {
+    for (int i = 0; i < numClipped; i++) {
+        Rect *clipped = &dirtyRects[i];
+
+        if (!clipped->intersects(rect)) {
+            continue;
+        }
+
+        Rect splitRects[4];
+        int count = clipped->getSplitRects(splitRects, rect);
+
+        // Update and split selected dirty region
+        removeDirtyRect(i);
+
+        for (int j = 0; j < count; j++) {
+            appendDirtyRect(&splitRects[j]);
+        }
+
+        i = -1;
+    }
+}
+
 void FbContext::drawClippedRegions() {
     int pixels = fb_meta.fb_height * fb_meta.fb_width;
     uint32_t *pixelBuff = (uint32_t *)fb_meta.fb_buff;
@@ -234,7 +262,7 @@ void FbContext::removeDirtyRect(int index) {
         return;
     }
 
-    for (int i = index; i < numClipped - 1; i++) {
+    for (int i = index; i < numDirty - 1; i++) {
         dirtyRects[i] = dirtyRects[i + 1];
     }
 

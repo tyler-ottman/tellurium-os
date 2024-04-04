@@ -11,10 +11,7 @@
 namespace GUI {
 
 Window *Window::selectedWindow = nullptr;
-// Window *Window::oldSelectedWindow = nullptr;
 Window *Window::hoverWindow = nullptr;
-// int Window::xOld = 0;
-// int Window::yOld = 0;
 Rect *Window::oldSelected = nullptr;
 
 Window::Window(const char *windowName, int x, int y, int width, int height,
@@ -202,22 +199,15 @@ void Window::applyBoundClipping() {
     }
 }
 
-void Window::applyDirtyDrag() {
-    if (!selectedWindow) {
-        return;
+bool rectIntersectsDirty(FbContext *context, Rect *rect) {
+    Rect *dirtyRegions = context->getDirtyRegions();
+    for (int j = 0; j < context->getNumDirty(); j++) {
+        if (rect->intersects(&dirtyRegions[j])) {
+            return true;
+        }
     }
 
-    context->resetClippedList();
-
-    if (!(oldSelected->getX() == getX() &&
-          oldSelected->getY() == getY())) {
-        context->addClippedRect(oldSelected);
-        context->addClippedRect(selectedWindow->winRect);
-
-        *oldSelected = *selectedWindow->winRect;
-
-        context->moveClippedToDirty();
-    }
+    return false;
 }
 
 void Window::drawWindow() {
@@ -231,31 +221,14 @@ void Window::drawWindow() {
     // Draw self
     drawObject();
 
-    context->resetClippedList();
-
     // Redraw children if they intersect with dirty region
-    Rect *dirtyRegions = context->getDirtyRegions();
     for (int i = 0; i < numWindows; i++) {
         context->resetClippedList();
-
         Window *child = windows[i];
 
-        if (context->getNumDirty()) {
-            bool isIntersect = false;
-            for (int j = 0; j < context->getNumDirty(); j++) {
-                Rect *dirtyRegion = &dirtyRegions[j];
-                if (child->intersects(dirtyRegion)) {
-                    isIntersect = true;
-                    break;
-                }
-            }
-
-            if (!isIntersect) {
-                continue;
-            }
-        }
-
-        child->drawWindow();
+        if (rectIntersectsDirty(context, child->winRect)) {
+            child->drawWindow();
+        }        
     }
 }
 
@@ -293,6 +266,12 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
         // Store position of selected window before drag
         *oldSelected = *selectedWindow->winRect;
 
+        Window *refreshWindow = nullptr;
+        moveToTop(&refreshWindow, true);
+        if (refreshWindow) {  // Window needs immediate refresh
+            context->addDirtyRect(refreshWindow->winRect);
+        }
+
         windowRaise->onWindowRaise();
 
         return onWindowClick();
@@ -307,9 +286,6 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
 
     case Device::TellurEventType::MouseLeftRelease:
         if (this == selectedWindow) {
-            // Window needs immediate refresh
-            selectedWindow->applyDirtyDrag();
-
             return onWindowRelease();
         }
         return true;
@@ -332,13 +308,6 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
 }
 
 bool Window::onWindowRaise() {
-    Window *refreshWindow = nullptr;
-    moveToTop(&refreshWindow, true);
-    if (refreshWindow) { // Window needs immediate refresh
-        context->addClippedRect(refreshWindow->winRect);
-        context->moveClippedToDirty();
-    }
-
     return true;
 }
 
@@ -385,6 +354,8 @@ int Window::getWidth() { return winRect->getWidth(); }
 int Window::getHeight() { return winRect->getHeight(); }
 
 int Window::getColor() { return color; }
+
+Rect *Window::getWinRect() { return winRect; }
 
 void Window::setWindowID(int windowID) { this->windowID = windowID; }
 
