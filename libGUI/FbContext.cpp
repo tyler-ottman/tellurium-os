@@ -217,14 +217,6 @@ void FbContext::intersectClippedRect(Rect *rect) {
     numClipped = appendedRects;
 }
 
-void FbContext::moveClippedToDirty() {
-    for (int i = 0; i < numClipped; i++) {
-        dirtyRects[numDirty++] = clippedRects[i];
-    }
-    
-    resetClippedList();
-}
-
 void FbContext::appendClippedRect(Rect *rect) {
     if (numClipped >= CLIPPED_MAX) {
         return;

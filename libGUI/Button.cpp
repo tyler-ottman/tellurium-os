@@ -10,9 +10,7 @@ Button::Button(int x, int y, int width, int height, WindowFlags flags,
       isImg(false),
       imgDefault(nullptr),
       imgHover(nullptr),
-      buttonFlags(bFlags) {
-    type = WindowButton;
-}
+      buttonFlags(bFlags) {}
 
 Button::~Button() {
 
@@ -23,7 +21,7 @@ bool Button::onWindowClick() {
         colorToggle ^= 1;
 
         // Button dirty, needs refresh
-        moveThisToDirty();
+        context->addDirtyRect(winRect);
     }
     
     return true;
@@ -36,7 +34,7 @@ bool Button::onWindowHover() {
 
     onHover = true;
 
-    moveThisToDirty();
+    context->addDirtyRect(winRect);
 
     return true;
 }
@@ -44,7 +42,7 @@ bool Button::onWindowHover() {
 bool Button::onWindowUnhover() {
     onHover = false;
 
-    moveThisToDirty();
+    context->addDirtyRect(winRect);
 
     return true;
 }

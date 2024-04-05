@@ -18,7 +18,6 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
                WindowFlags flags)
     : windowID(-1),
       flags(flags),
-      type(WindowDefault),
       priority(2),
       parent(nullptr),
       numWindows(0),
@@ -181,17 +180,8 @@ void Window::applyBoundClipping() {
     // Reduce visibility to main drawing area
     context->intersectClippedRect(winRect);
 
-    // Get ID of current window from parent's view
-    int winID = -1;
-    for (int i = 0; i < parent->numWindows; i++) {
-        if (parent->windows[i] == this) {
-            winID = i;
-            break;
-        }
-    }
-
     // Occlude areas of window where siblings overlap on top
-    for (int i = winID + 1; i < parent->numWindows; i++) {
+    for (int i = getWindowID() + 1; i < parent->numWindows; i++) {
         Window *aboveWin = parent->windows[i];
         if (intersects(aboveWin->winRect)) {
             context->reshapeRegion(aboveWin->winRect);
@@ -238,7 +228,6 @@ void Window::drawObject() {
 
 bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
     Device::MouseData *mouseData = (Device::MouseData *)event->data; // temp fix
-    bool isNewMousePressed = mouseData->flags & 0x1;
 
     for (int i = numWindows - 1; i >= 0; i--) {
         Window *child = windows[i];
@@ -257,11 +246,11 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
         // Unselect old window
         if (selectedWindow && (selectedWindow != this)) {
             selectedWindow->onWindowUnselect();
-        }       
-        
-        Window *windowRaise = type  == WindowMenuBar ? parent : this;
-        windowRaise->onWindowSelect();
-        selectedWindow = windowRaise;
+        }
+
+        // By default, selected window will be the one mouse clicks on
+        selectedWindow = this;
+        onWindowSelect();
 
         // Store position of selected window before drag
         *oldSelected = *selectedWindow->winRect;
@@ -272,17 +261,14 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
             context->addDirtyRect(refreshWindow->winRect);
         }
 
-        windowRaise->onWindowRaise();
+        // windowRaise->onWindowRaise();
+        onWindowRaise();
 
         return onWindowClick();
     }
 
     case Device::TellurEventType::MouseMoveClick:
-        if (type == GUI::WindowMenuBar && (parent == selectedWindow) &&
-            isNewMousePressed) {
-            return parent->onWindowDrag(mouseData);
-        }
-        return true;
+        return onWindowDrag(mouseData);
 
     case Device::TellurEventType::MouseLeftRelease:
         if (this == selectedWindow) {
@@ -312,8 +298,6 @@ bool Window::onWindowRaise() {
 }
 
 bool Window::onWindowDrag(Device::MouseData *data) {
-    setChildPositions(data);
-
     return true;
 }
 
@@ -411,11 +395,6 @@ void Window::moveToTop(Window **refresh, bool recurse) {
     if (recurse) {
         parent->moveToTop(refresh, recurse);
     }
-}
-
-void Window::moveThisToDirty() {
-    context->addClippedRect(winRect);
-    context->moveClippedToDirty();
 }
 
 void Window::setChildPositions(Device::MouseData *data) {

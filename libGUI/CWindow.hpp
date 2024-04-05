@@ -16,9 +16,8 @@ public:
     /// @brief Poll for received mouse/keyboard events
     void pollEvents(void);
 
-    /// @brief Add selected window region to dirty list if position changed
-    /// since the last refresh
-    void applyDirtyDrag(void);
+    /// @brief Add dirty regions that need to be redrawn upon refresh
+    void applyDirtyRegions(void);
 
     /// @brief Refresh the CWindow
     void refresh(void);
@@ -35,9 +34,7 @@ private:
     void processEvent(Device::TellurEvent *event);
 
     void drawMouse(void);
-    
-    void applyDirtyMouse(void);
-    
+        
     int getMouseX(void) { return mouse->x; }
     int getMouseY(void) { return mouse->y; }
 

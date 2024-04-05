@@ -19,14 +19,6 @@
 
 namespace GUI {
 
-enum WindowType {
-    WindowBorder,
-    WindowButton,
-    WindowDefault,
-    WindowImage,
-    WindowMenuBar
-};
-
 /// @brief Common window flags
 enum WindowFlags {
     WNONE = 0x0,
@@ -200,6 +192,10 @@ public:
     /// @return If mouse is in bounds of window, return true, false otherwise
     bool isMouseInBounds(vec2 *mouse);
 
+    /// @brief Recursively update position of parent windows
+    /// @param data The delta (x, y) position
+    void setChildPositions(Device::MouseData *data);
+
 protected:
     /// @brief Move window to top of window stack
     /// @param refresh The highest level window that was stack, implicates refresh
@@ -207,19 +203,13 @@ protected:
     /// @return The highest level window that was raised
     void moveToTop(Window **refresh, bool recurse);
 
-    /// @brief Add window to dirty list
-    void moveThisToDirty(void);
-
-    /// @brief Recursively update position of parent windows
-    /// @param data The delta (x, y) position
-    void setChildPositions(Device::MouseData *data);
+    
 
     char *windowName; // unused
     int windowID; // Used as index in window stack list
     WindowFlags flags; // Common window options
     Rect *winRect; // Window dimension as Rect
     uint32_t color; // Default background color of window
-    int type; // Type of window, if derived (TODO: remove)
     int priority; // Window priority, used in window list
     Window *parent; // Parent window that self is attached to
     Window *windows[WINDOW_MAX]; // Attached children windows

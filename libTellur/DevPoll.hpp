@@ -39,7 +39,7 @@ enum TellurEventType {
 struct TellurEvent {
     TellurEvent(TellurEventType type, void *data) : type(type), data(data) {}
     TellurEvent() : type(TellurEventType::Default), data(nullptr) {}
-    bool isMosueMove() { return type == MouseMove || type == MouseMoveClick; }
+    bool isMouseMove() { return type == MouseMove || type == MouseMoveClick; }
     bool isMouseEvent(void) { return type <= MouseDefault; }
     bool isKeyboardEvent(void) { return type > MouseDefault; }
     TellurEventType type;

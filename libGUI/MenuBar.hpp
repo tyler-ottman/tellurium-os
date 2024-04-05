@@ -14,8 +14,9 @@ public:
     bool onWindowClick(void) override;
     bool onWindowSelect(void) override;
     bool onWindowUnselect(void) override;
+    bool onWindowDrag(Device::MouseData *data) override;
 
-    void drawObject(void);
+    void drawObject(void) override;
 
     uint32_t getBarColor(void);
     

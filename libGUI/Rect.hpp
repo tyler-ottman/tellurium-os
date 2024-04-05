@@ -24,22 +24,6 @@ public:
     /// @brief Destructor
     ~Rect();
 
-    /// @brief Check if 2 Rects are equal
-    /// @param other The Rect to compare
-    /// @return If they are equal, true, false otherwise
-    bool operator==(const Rect &other) {
-        return x == other.x && y == other.y && width == other.width &&
-               height == other.width;
-    }
-
-    /// @brief Check if 2 Rects are not equal
-    /// @param other The Rect to compare
-    /// @return If they are not equal, true, false otherwise
-    bool operator!=(const Rect &other) {
-        return x != other.x || y != other.y || width != other.width ||
-               height != other.height;
-    }
-
     /// @brief Get the resulting Rect when overlapping 2 rectangles
     /// @param res Where the resulting Rect is placed
     /// @param rect The rectangle to intersect with
@@ -129,7 +113,17 @@ public:
     /// @brief Set (x, y) position of rectangle
     /// @param xPos x-position of rectangle
     /// @param yPos y-position of rectangle
-    void setPosition(int xPos, int yPos);    
+    void setPosition(int xPos, int yPos);
+
+    /// @brief Check if 2 Rects are equal
+    /// @param other The other Rect to compare to
+    /// @return If they are equal, return true, false otherwise
+    bool equals(Rect &other);
+
+    /// @brief Check if 2 Rects are equal
+    /// @param other The other Rect to compare to
+    /// @return If they are equal, return true, false otherwise
+    bool equals(Rect *other);
 
 private:
     int x; ///< x-position

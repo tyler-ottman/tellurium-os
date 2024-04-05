@@ -45,9 +45,6 @@ public:
     void drawClippedRegions(void);
     void intersectClippedRect(Rect *rect);
 
-    // Dirty Rectangle Operations
-    void moveClippedToDirty(void);
-
     // List operations
     void appendClippedRect(Rect *rect);
     void removeClippedRect(int index);

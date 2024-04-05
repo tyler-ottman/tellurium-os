@@ -179,4 +179,14 @@ void Rect::setPosition(int xPos, int yPos) {
     y = yPos;
 }
 
+bool Rect::equals(Rect &other) {
+    return x == other.x && y == other.y && width == other.width &&
+           height == other.height;
+}
+
+bool Rect::equals(Rect *other) {
+    return x == other->x && y == other->y && width == other->width &&
+           height == other->height;
+}
+
 }
