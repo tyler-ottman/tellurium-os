@@ -10,17 +10,14 @@
 
 namespace GUI {
 
-uint8_t Window::lastMouseState = 0;
 Window *Window::selectedWindow = nullptr;
 Window *Window::hoverWindow = nullptr;
-int Window::xOld = 0;
-int Window::yOld = 0;
+Rect *Window::oldSelected = nullptr;
 
 Window::Window(const char *windowName, int x, int y, int width, int height,
                WindowFlags flags)
     : windowID(-1),
       flags(flags),
-      type(WindowDefault),
       priority(2),
       parent(nullptr),
       numWindows(0),
@@ -28,6 +25,10 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
       context(FbContext::getInstance()),
       activeChild(nullptr) {
     color = 0xff333333;
+
+    if (!oldSelected) {
+        oldSelected = new Rect();
+    }
 
     if (windowName) {
         int len = __strlen(windowName);
@@ -179,17 +180,8 @@ void Window::applyBoundClipping() {
     // Reduce visibility to main drawing area
     context->intersectClippedRect(winRect);
 
-    // Get ID of current window from parent's view
-    int winID = -1;
-    for (int i = 0; i < parent->numWindows; i++) {
-        if (parent->windows[i] == this) {
-            winID = i;
-            break;
-        }
-    }
-
     // Occlude areas of window where siblings overlap on top
-    for (int i = winID + 1; i < parent->numWindows; i++) {
+    for (int i = getWindowID() + 1; i < parent->numWindows; i++) {
         Window *aboveWin = parent->windows[i];
         if (intersects(aboveWin->winRect)) {
             context->reshapeRegion(aboveWin->winRect);
@@ -197,30 +189,15 @@ void Window::applyBoundClipping() {
     }
 }
 
-void Window::applyDirtyDrag() {
-    if (!selectedWindow) {
-        return;
+bool rectIntersectsDirty(FbContext *context, Rect *rect) {
+    Rect *dirtyRegions = context->getDirtyRegions();
+    for (int j = 0; j < context->getNumDirty(); j++) {
+        if (rect->intersects(&dirtyRegions[j])) {
+            return true;
+        }
     }
 
-    context->resetClippedList();
-
-    if (!(xOld == selectedWindow->getX() && yOld == selectedWindow->getY())) {
-        int tempX = selectedWindow->getX();
-        int tempY = selectedWindow->getY();
-
-        // Original window position
-        selectedWindow->setPosition(xOld, yOld);
-        context->addClippedRect(selectedWindow->winRect);
-
-        // New window position
-        selectedWindow->setPosition(tempX, tempY);
-        context->addClippedRect(selectedWindow->winRect);
-
-        xOld = selectedWindow->getX();
-        yOld = selectedWindow->getY();
-
-        context->moveClippedToDirty();
-    }
+    return false;
 }
 
 void Window::drawWindow() {
@@ -234,31 +211,14 @@ void Window::drawWindow() {
     // Draw self
     drawObject();
 
-    context->resetClippedList();
-
     // Redraw children if they intersect with dirty region
-    Rect *dirtyRegions = context->getDirtyRegions();
     for (int i = 0; i < numWindows; i++) {
         context->resetClippedList();
-
         Window *child = windows[i];
 
-        if (context->getNumDirty()) {
-            bool isIntersect = false;
-            for (int j = 0; j < context->getNumDirty(); j++) {
-                Rect *dirtyRegion = &dirtyRegions[j];
-                if (child->intersects(dirtyRegion)) {
-                    isIntersect = true;
-                    break;
-                }
-            }
-
-            if (!isIntersect) {
-                continue;
-            }
-        }
-
-        child->drawWindow();
+        if (rectIntersectsDirty(context, child->winRect)) {
+            child->drawWindow();
+        }        
     }
 }
 
@@ -268,7 +228,6 @@ void Window::drawObject() {
 
 bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
     Device::MouseData *mouseData = (Device::MouseData *)event->data; // temp fix
-    bool isNewMousePressed = mouseData->flags & 0x1;
 
     for (int i = numWindows - 1; i >= 0; i--) {
         Window *child = windows[i];
@@ -287,31 +246,32 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
         // Unselect old window
         if (selectedWindow && (selectedWindow != this)) {
             selectedWindow->onWindowUnselect();
-        }       
-        
-        Window *windowRaise = type  == WindowMenuBar ? parent : this;
-        windowRaise->onWindowSelect();
-        selectedWindow = windowRaise;
+        }
 
-        xOld = selectedWindow->getX();
-        yOld = selectedWindow->getY();
-        windowRaise->onWindowRaise();
+        // By default, selected window will be the one mouse clicks on
+        selectedWindow = this;
+        onWindowSelect();
+
+        // Store position of selected window before drag
+        *oldSelected = *selectedWindow->winRect;
+
+        Window *refreshWindow = nullptr;
+        moveToTop(&refreshWindow, true);
+        if (refreshWindow) {  // Window needs immediate refresh
+            context->addDirtyRect(refreshWindow->winRect);
+        }
+
+        // windowRaise->onWindowRaise();
+        onWindowRaise();
 
         return onWindowClick();
     }
 
     case Device::TellurEventType::MouseMoveClick:
-        if (type == GUI::WindowMenuBar && (parent == selectedWindow) &&
-            isNewMousePressed) {
-            return parent->onWindowDrag(mouseData);
-        }
-        return true;
+        return onWindowDrag(mouseData);
 
     case Device::TellurEventType::MouseLeftRelease:
         if (this == selectedWindow) {
-            // Window needs immediate refresh
-            selectedWindow->applyDirtyDrag();
-
             return onWindowRelease();
         }
         return true;
@@ -334,19 +294,10 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
 }
 
 bool Window::onWindowRaise() {
-    Window *refreshWindow = nullptr;
-    moveToTop(&refreshWindow, true);
-    if (refreshWindow) { // Window needs immediate refresh
-        context->addClippedRect(refreshWindow->winRect);
-        context->moveClippedToDirty();
-    }
-
     return true;
 }
 
 bool Window::onWindowDrag(Device::MouseData *data) {
-    setChildPositions(data);
-
     return true;
 }
 
@@ -388,6 +339,8 @@ int Window::getHeight() { return winRect->getHeight(); }
 
 int Window::getColor() { return color; }
 
+Rect *Window::getWinRect() { return winRect; }
+
 void Window::setWindowID(int windowID) { this->windowID = windowID; }
 
 void Window::setX(int x) { winRect->setX(x); }
@@ -412,8 +365,6 @@ void Window::setPriority(int priority) {
 
     this->priority = priority;
 }
-
-bool Window::isLastMousePressed() { return lastMouseState & 0x1; }
 
 bool Window::hasDecoration() { return flags & WindowFlags::WDECORATION; }
 
@@ -444,11 +395,6 @@ void Window::moveToTop(Window **refresh, bool recurse) {
     if (recurse) {
         parent->moveToTop(refresh, recurse);
     }
-}
-
-void Window::moveThisToDirty() {
-    context->addClippedRect(winRect);
-    context->moveClippedToDirty();
 }
 
 void Window::setChildPositions(Device::MouseData *data) {

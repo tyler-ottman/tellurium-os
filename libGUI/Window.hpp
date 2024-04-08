@@ -19,14 +19,6 @@
 
 namespace GUI {
 
-enum WindowType {
-    WindowBorder,
-    WindowButton,
-    WindowDefault,
-    WindowImage,
-    WindowMenuBar
-};
-
 /// @brief Common window flags
 enum WindowFlags {
     WNONE = 0x0,
@@ -79,7 +71,6 @@ public:
     Window *removeWindow(Window *window);
 
     void applyBoundClipping(void);
-    void applyDirtyDrag(void);
     void drawWindow(void);
     virtual void drawObject(void);
 
@@ -151,6 +142,10 @@ public:
     /// @return Window's color
     int getColor(void);
 
+    /// @brief Get window's Rect boundary
+    /// @return The Rect
+    Rect *getWinRect(void);
+
     /// @brief Set window's ID
     /// @param windowID The window ID
     void setWindowID(int windowID);
@@ -184,10 +179,6 @@ public:
     /// @param priority The priortiy to set
     void setPriority(int priority);
 
-    /// @brief Check last status of mouse
-    /// @return True, if last mouse event was a clicker, otherwise false
-    bool isLastMousePressed(void);
-
     /// @brief Check if window is decorable
     /// @return If window is docorable
     bool hasDecoration(void);
@@ -201,6 +192,10 @@ public:
     /// @return If mouse is in bounds of window, return true, false otherwise
     bool isMouseInBounds(vec2 *mouse);
 
+    /// @brief Recursively update position of parent windows
+    /// @param data The delta (x, y) position
+    void setChildPositions(Device::MouseData *data);
+
 protected:
     /// @brief Move window to top of window stack
     /// @param refresh The highest level window that was stack, implicates refresh
@@ -208,19 +203,13 @@ protected:
     /// @return The highest level window that was raised
     void moveToTop(Window **refresh, bool recurse);
 
-    /// @brief Add window to dirty list
-    void moveThisToDirty(void);
-
-    /// @brief Recursively update position of parent windows
-    /// @param data The delta (x, y) position
-    void setChildPositions(Device::MouseData *data);
+    
 
     char *windowName; // unused
     int windowID; // Used as index in window stack list
     WindowFlags flags; // Common window options
     Rect *winRect; // Window dimension as Rect
     uint32_t color; // Default background color of window
-    int type; // Type of window, if derived (TODO: remove)
     int priority; // Window priority, used in window list
     Window *parent; // Parent window that self is attached to
     Window *windows[WINDOW_MAX]; // Attached children windows
@@ -229,11 +218,9 @@ protected:
     FbContext *context; // Screen buffer info (TODO: remove)
     Window *activeChild; // Activetly selected window
     
-    static uint8_t lastMouseState; // State of mouse from last event
     static Window *selectedWindow; // Current selected window
     static Window *hoverWindow; // Window that mouse is hovering over
-    static int xOld; // Old x position of selectedWindow for dirty calculations
-    static int yOld; // Old y position of selectedWindow
+    static Rect *oldSelected; // Old position of selected window
 };
 
 } // GUI

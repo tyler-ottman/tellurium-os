@@ -113,7 +113,17 @@ public:
     /// @brief Set (x, y) position of rectangle
     /// @param xPos x-position of rectangle
     /// @param yPos y-position of rectangle
-    void setPosition(int xPos, int yPos);    
+    void setPosition(int xPos, int yPos);
+
+    /// @brief Check if 2 Rects are equal
+    /// @param other The other Rect to compare to
+    /// @return If they are equal, return true, false otherwise
+    bool equals(Rect &other);
+
+    /// @brief Check if 2 Rects are equal
+    /// @param other The other Rect to compare to
+    /// @return If they are equal, return true, false otherwise
+    bool equals(Rect *other);
 
 private:
     int x; ///< x-position
