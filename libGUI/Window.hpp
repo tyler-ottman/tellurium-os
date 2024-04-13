@@ -28,6 +28,20 @@ enum WindowFlags {
     WUNBOUNDED = 0x8
 };
 
+/// @brief Common Window priorities
+enum WindowPriority {
+    WPRIO0 = 0,
+    WPRIO1,
+    WPRIO2,
+    WPRIO3,
+    WPRIO4,
+    WPRIO5,
+    WPRIO6,
+    WPRIO7,
+    WPRIO8,
+    WPRIO9
+};
+
 class Window {
 
 public:
@@ -39,7 +53,8 @@ public:
     /// @param height Height of window in pixels
     /// @param flags Window flags
     Window(const char *windowName, int xPos, int yPos, int width, int height,
-           WindowFlags flags = WindowFlags::WNONE);
+           WindowFlags flags = WindowFlags::WNONE,
+           WindowPriority priority = WindowPriority::WPRIO2);
 
     /// @brief Execute destructor of base and derives classes of Window
     virtual ~Window();
@@ -200,7 +215,7 @@ public:
     void setDirty(bool dirty);
 
     /// @brief Set window's priority
-    void setPriority(int priority);
+    void setPriority(WindowPriority priority);
 
     /// @brief Check if window is decorable
     bool hasDecoration(void);
@@ -223,7 +238,7 @@ protected:
     WindowFlags flags; // Common window options
     Rect *winRect; // Window dimension as Rect
     uint32_t color; // Default background color of window
-    int priority; // Window priority, used in window list
+    WindowPriority priority; // Window priority, used in window list
     Window *parent; // Parent window that self is attached to
     Window *windows[WINDOW_MAX]; // Attached children windows
     int numWindows; // Number of windows currently attached

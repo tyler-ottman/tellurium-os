@@ -11,13 +11,13 @@
 namespace GUI {
 
 Window::Window(const char *windowName, int x, int y, int width, int height,
-               WindowFlags flags)
+               WindowFlags flags, WindowPriority priority)
     : windowName(nullptr),
       windowID(-1),
       flags(flags),
       winRect(nullptr),
       color(0xff333333),
-      priority(2),
+      priority(priority),
       parent(nullptr),
       numWindows(0),
       maxWindows(WINDOW_MAX),
@@ -290,7 +290,7 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
     case Device::TellurEventType::KeyboardDefault:
     case Device::TellurEventType::Default:
         break;
-        
+
     }
 
     // If mouse was on child window, process event for child
@@ -447,12 +447,11 @@ void Window::setColor(uint32_t color) { this->color = color; }
 
 void Window::setDirty(bool dirty) { this->m_dirty = dirty; }
 
-void Window::setPriority(int priority) {
-    if (priority < WIN_PRIORITY_MIN || priority > WIN_PRIORITY_MAX) {
-        return;
+void Window::setPriority(WindowPriority priority) {
+    if (priority >= WindowPriority::WPRIO0 &&
+        priority <= WindowPriority::WPRIO9) {
+        this->priority = priority;
     }
-
-    this->priority = priority;
 }
 
 bool Window::hasDecoration() { return flags & WindowFlags::WDECORATION; }

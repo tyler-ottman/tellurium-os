@@ -10,7 +10,8 @@ namespace GUI {
 class Image : public Window {
 public:
     Image(int x, int y, int width, int height,
-          WindowFlags flags = WindowFlags::WNONE);
+          WindowFlags flags = WindowFlags::WNONE,
+          WindowPriority priority = WindowPriority::WPRIO0);
     ~Image();
 
     int loadImage(const char *path);

@@ -2,11 +2,10 @@
 
 namespace GUI {
 
-MenuBar::MenuBar(int x, int y, int width, int height, WindowFlags flags)
-    : Window::Window("menuBar", x, y, width, height, flags),
-    barColor(0xffbebebe) {
-    setPriority(5);
-}
+MenuBar::MenuBar(int x, int y, int width, int height, WindowFlags flags,
+                 WindowPriority priority)
+    : Window::Window("menuBar", x, y, width, height, flags, priority),
+    barColor(0xffbebebe) {}
 
 MenuBar::~MenuBar() {}
 

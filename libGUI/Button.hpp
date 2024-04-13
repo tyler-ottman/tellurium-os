@@ -17,7 +17,8 @@ class Button: public Window {
 public:
     Button(int x, int y, int width, int height,
             WindowFlags flags = WindowFlags::WNONE,
-            ButtonFlags bFlags = ButtonFlags::BNONE);
+            ButtonFlags bFlags = ButtonFlags::BNONE,
+            WindowPriority priority = WindowPriority::WPRIO2);
     ~Button();
 
     bool onWindowClick(void) override;
