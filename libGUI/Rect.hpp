@@ -24,6 +24,10 @@ public:
     /// @brief Destructor
     ~Rect();
 
+    /// @brief Set this Rect to other Rect
+    /// @param other The other Rect
+    void operator=(const Rect& other);
+
     /// @brief Get the resulting Rect when overlapping 2 rectangles
     /// @param res Where the resulting Rect is placed
     /// @param rect The rectangle to intersect with

@@ -16,6 +16,13 @@ Rect::Rect() {}
 
 Rect::~Rect() {}
 
+void Rect::operator=(const Rect& other) {
+    x = other.x;
+    y = other.y;
+    width = other.width;
+    height = other.height;
+}
+
 bool Rect::getOverlapRect(Rect *res, Rect *rect) {
     if (!(intersects(rect))) {
         return false;

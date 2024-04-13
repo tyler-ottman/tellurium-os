@@ -16,7 +16,6 @@ bool MenuBar::onWindowClick() {
 
 bool MenuBar::onWindowSelect() {
     setBarColor(0xffbebebe);
-    selectedWindow = parent;
 
     return true;
 }

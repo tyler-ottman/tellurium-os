@@ -25,6 +25,7 @@ enum WindowFlags {
     WDECORATION = 0x1,
     WHOVER = 0x2,
     WMOVABLE = 0x4,
+    WUNBOUNDED = 0x8
 };
 
 class Window {
@@ -112,11 +113,25 @@ public:
     /// @brief Process window unhover event
     /// @return Event process status
     virtual bool onWindowUnhover(void);
-    
+
+    /// @brief Unhover the subtree
+    /// @return Operation status
+    bool onSubtreeUnhover();
+
+    /// @brief Unselect the subtree
+    /// @return Operation status
+    bool onSubtreeUnselect();
+
     /// @brief Determine if rectangle intersects with Window
     /// @param rect The rectangle to test
     /// @return If they intersect return true, false otherwise
     bool intersects(Rect *rect);
+
+    /// @brief Get the child Window underneath the mouse
+    /// @param mouse the position
+    /// @return The child window underneath the mouse, or nullptr if the mouse
+    ///         is not hovering over any child window
+    Window *getWindowUnderMouse(vec2 *mouse);
 
     /// @brief Get ID of window
     /// @return windowID
@@ -141,6 +156,10 @@ public:
     /// @brief Get window's color
     /// @return Window's color
     int getColor(void);
+
+    int getNumChildren(void) { return numWindows; }
+
+    Window *getChild(int windowID) { return windows[windowID]; }
 
     /// @brief Get window's Rect boundary
     /// @return The Rect
@@ -175,6 +194,9 @@ public:
     /// @param color The color to set
     void setColor(uint32_t color);
 
+    /// @brief Mark Window as dirty
+    void setDirty(bool dirty);
+
     /// @brief Set window's priority
     /// @param priority The priortiy to set
     void setPriority(int priority);
@@ -187,6 +209,14 @@ public:
     /// @return If window is movable
     bool hasMovable(void);
 
+    /// @brief Check if window is unbounded by the boundaries of parent
+    /// @return If window is unbounded
+    bool hasUnbounded(void);
+
+    /// @brief Check if window is dirty
+    /// @return true if dirty, false otherwise
+    bool isDirty(void);
+
     /// @brief Check if mouse coordinates are in bounds of window
     /// @param mouse
     /// @return If mouse is in bounds of window, return true, false otherwise
@@ -196,14 +226,14 @@ public:
     /// @param data The delta (x, y) position
     void setChildPositions(Device::MouseData *data);
 
-protected:
+    void setPrevRect(void) { *m_pPrevRect = *winRect; }
+
+   protected:
     /// @brief Move window to top of window stack
     /// @param refresh The highest level window that was stack, implicates refresh
     /// @param recurse Recursively raise parent windows until root
     /// @return The highest level window that was raised
     void moveToTop(Window **refresh, bool recurse);
-
-    
 
     char *windowName; // unused
     int windowID; // Used as index in window stack list
@@ -215,12 +245,11 @@ protected:
     Window *windows[WINDOW_MAX]; // Attached children windows
     int numWindows; // Number of windows currently attached
     const int maxWindows; // Max amount of windows you can attach
+    Rect *m_pPrevRect; // Location/size of window on last refresh
+    bool m_dirty; // Flags that indicates if Window is dirty
+    Window *m_pHoverWindow;    // Which child window the mouse is hovering over
+    Window *m_pSelectedWindow; // Which child window was last selected
     FbContext *context; // Screen buffer info (TODO: remove)
-    Window *activeChild; // Activetly selected window
-    
-    static Window *selectedWindow; // Current selected window
-    static Window *hoverWindow; // Window that mouse is hovering over
-    static Rect *oldSelected; // Old position of selected window
 };
 
 } // GUI
