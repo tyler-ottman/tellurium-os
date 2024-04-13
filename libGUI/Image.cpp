@@ -33,11 +33,10 @@ static inline int getNumDigits(int num) {
 
 namespace GUI {
 
-Image::Image(int x, int y, int width, int height, WindowFlags flags)
-    : Window::Window("image", x, y, width, height, flags),
-      imgFd(-1) {
-    priority = 0;
-}
+Image::Image(int x, int y, int width, int height, WindowFlags flags,
+             WindowPriority priority)
+    : Window::Window("image", x, y, width, height, flags, priority),
+      imgFd(-1) {}
 
 Image::~Image() {}
 

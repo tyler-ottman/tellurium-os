@@ -45,14 +45,58 @@ CWindow *CWindow::getInstance() {
     return instance;
 }
 
-void CWindow::applyDirtyRegions() {
-    if (selectedWindow && !oldSelected->equals(selectedWindow->getWinRect())) {
-        context->addDirtyRect(oldSelected);
-        context->addDirtyRect(selectedWindow->getWinRect());
+/// @brief Recursively traverse the Window tree and add dirty Windows
+/// to list of regions that require re-rendering to screen/buffer
+/// @param win the current Window being traversing over
+/// @param dirtyAncestor stores a pointer to the highest ancestor Window in
+/// the tree that is dirty in the current branch being traversed, starts as
+/// null because we assume there is nothing dirty
+static void processDirtyWindowsInternal(Window *win, Window* dirtyAncestor) {
+    // If window is marked as dirty, add it to dirty list
+    // for the compositor
+    if (win->isDirty()) {
+        // Reset dirty flag because it won't be dirty after refresh
+        win->setDirty(false);
 
-        *oldSelected = *(selectedWindow->getWinRect());
+        if (win->hasUnbounded()) {
+            // TODO
+        } else {
+            // This is an optimization, dirty child Windows bounded by a dirty
+            // ancestor (parent or above) Window do not need to be added to 
+            // the dirty list for the compositor, because the ancestor already
+            // covers the region
+            if (!dirtyAncestor) {
+                dirtyAncestor = win;
+
+                FbContext *context = FbContext::getInstance();
+
+                // Add new and old location of window to dirty list
+                context->addDirtyRect(dirtyAncestor->getWinRect());
+                context->addDirtyRect(dirtyAncestor->getPrevRect());
+            }
+        }
+
+        // Now update previous Rect to be the current Rent (formaly dirty)
+        win->updatePrevRect();
     }
 
+    // Process dirty Windows for children
+    for (int i = 0; i < win->getNumChildren(); i++) {
+        processDirtyWindowsInternal(win->getChild(i), dirtyAncestor);
+    }
+}
+
+void CWindow::processDirtyWindows() {
+    processDirtyWindowsInternal(this, nullptr);
+}
+
+void CWindow::processDirtyRegions() {
+    // Add any Window state change to list of regions to re-render
+    // for the compositor
+    processDirtyWindows();
+    
+    // If mouse position has changes since last refresh, patch old position
+    // and draw new position
     if (!oldMouse->equals(mouse)) {
         // Original mouse position
         Rect old(oldMouse->x, oldMouse->y, MOUSE_W, MOUSE_H);
@@ -68,7 +112,7 @@ void CWindow::applyDirtyRegions() {
 
 void CWindow::refresh() {
     // If selectedWindow position changed since last refresh, add to dirty
-    applyDirtyRegions();
+    processDirtyRegions();
 
     // Only refresh if dirty regions generated
     if (context->getNumDirty()) {
@@ -145,7 +189,7 @@ CWindow::CWindow()
     // devManager->addDevice(new Device::DeviceKeyboardPs2("/dev/kb0"));
 
     // Entire screen is dirty on startup
-    context->addDirtyRect(winRect);
+    setDirty(true);
 }
 
 CWindow::~CWindow() {}

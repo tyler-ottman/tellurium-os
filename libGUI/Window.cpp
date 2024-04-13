@@ -10,25 +10,22 @@
 
 namespace GUI {
 
-Window *Window::selectedWindow = nullptr;
-Window *Window::hoverWindow = nullptr;
-Rect *Window::oldSelected = nullptr;
-
 Window::Window(const char *windowName, int x, int y, int width, int height,
-               WindowFlags flags)
-    : windowID(-1),
+               WindowFlags flags, WindowPriority priority)
+    : windowName(nullptr),
+      windowID(-1),
       flags(flags),
-      priority(2),
+      winRect(nullptr),
+      color(0xff333333),
+      priority(priority),
       parent(nullptr),
       numWindows(0),
       maxWindows(WINDOW_MAX),
-      context(FbContext::getInstance()),
-      activeChild(nullptr) {
-    color = 0xff333333;
-
-    if (!oldSelected) {
-        oldSelected = new Rect();
-    }
+      m_pPrevRect(nullptr),
+      m_dirty(false),
+      m_pHoverWindow(nullptr),
+      m_pSelectedWindow(nullptr),
+      context(FbContext::getInstance()) {
 
     if (windowName) {
         int len = __strlen(windowName);
@@ -37,7 +34,11 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
         this->windowName[len] = '\0';
     }
 
+    // This will always store the most up-to-date position/size of Window
     winRect = new Rect(x, y, width, height);
+
+    // This will store the position/size of Window on last refresh
+    m_pPrevRect = new Rect(*winRect);
 
     for (int i = 0; i < maxWindows; i++) {
         windows[i] = nullptr;
@@ -229,65 +230,72 @@ void Window::drawObject() {
 bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
     Device::MouseData *mouseData = (Device::MouseData *)event->data; // temp fix
 
-    for (int i = numWindows - 1; i >= 0; i--) {
-        Window *child = windows[i];
-
-        if (!child->isMouseInBounds(mouse)) {
-            continue;
-        }
-
-        // Pass event to child window
-        return child->onEvent(event, mouse);
-    }
+    // We use this pointer later if the event needs to be passed to a child
+    Window *childWindow = getWindowUnderMouse(mouse);
 
     switch (event->type) {
-
-    case Device::TellurEventType::MouseLeftClick: {
-        // Unselect old window
-        if (selectedWindow && (selectedWindow != this)) {
-            selectedWindow->onWindowUnselect();
+        
+    // Check here if the currently hovered over window changes
+    case Device::TellurEventType::MouseMove:
+        // Process hover event for this Window
+        onWindowHover();
+        
+        // If hovered over window changes, process un-hover on old hover window
+        if (m_pHoverWindow && (childWindow != m_pHoverWindow)) {
+            m_pHoverWindow->onSubtreeUnhover();
         }
 
-        // By default, selected window will be the one mouse clicks on
-        selectedWindow = this;
+        // Now update current hovered window and process hover event
+        m_pHoverWindow = childWindow;
+
+        break;
+
+    // Process window dragging event
+    case Device::TellurEventType::MouseMoveClick:
+        onWindowDrag(mouseData);
+
+        break;
+
+    // Check here if currently clicked on window changes
+    case Device::TellurEventType::MouseLeftClick:
+        // Process select even for this Window
         onWindowSelect();
 
-        // Store position of selected window before drag
-        *oldSelected = *selectedWindow->winRect;
-
-        Window *refreshWindow = nullptr;
-        moveToTop(&refreshWindow, true);
-        if (refreshWindow) {  // Window needs immediate refresh
-            context->addDirtyRect(refreshWindow->winRect);
+        // If selected window changes, process un-select on old selected window
+        if (m_pSelectedWindow && (childWindow != m_pSelectedWindow)) {
+            m_pSelectedWindow->onSubtreeUnselect();
         }
 
-        // windowRaise->onWindowRaise();
-        onWindowRaise();
+        // Now update current selected window and process select event
+        m_pSelectedWindow = childWindow;
 
-        return onWindowClick();
+        // Notify parent to move Window to top of stack if it's decorable
+        if (parent && hasDecoration()) {
+            parent->moveToTop(this);
+        }
+
+        break;
+
+    // TODO: Maybe releasing mouse is an operation on a subtree and not window
+    case Device::TellurEventType::MouseLeftRelease:
+        onWindowRelease();
+        
+        break;
+    
+    // Never reach here
+    case Device::TellurEventType::MouseDefault:
+        break;
+
+    // Never reach here
+    case Device::TellurEventType::KeyboardDefault:
+    case Device::TellurEventType::Default:
+        break;
+
     }
 
-    case Device::TellurEventType::MouseMoveClick:
-        return onWindowDrag(mouseData);
-
-    case Device::TellurEventType::MouseLeftRelease:
-        if (this == selectedWindow) {
-            return onWindowRelease();
-        }
-        return true;
-
-    case Device::TellurEventType::MouseMove:
-        // Check if hovering over new component
-        if (hoverWindow && hoverWindow != this) {
-            hoverWindow->onWindowUnhover();
-        }
-
-        hoverWindow = this;
-
-        return onWindowHover();
-
-    default:
-        return true;
+    // If mouse was on child window, process event for child
+    if (childWindow) {
+        childWindow->onEvent(event, mouse);
     }
 
     return true;
@@ -325,7 +333,80 @@ bool Window::onWindowUnhover() {
     return true;
 }
 
+bool Window::onSubtreeUnhover() {
+    // Process an un-hover event for the current Window
+    onWindowUnhover();
+
+    // Process un-hover event for hovered over window (if any)
+    if (m_pHoverWindow) {
+        m_pHoverWindow->onSubtreeUnhover();
+    }
+    
+    // Set the current hovered over Window to nullptr
+    m_pHoverWindow = nullptr;
+
+    return true;
+}
+
+bool Window::onSubtreeUnselect() {
+    // Process an un-hover event for the current Window
+    onWindowUnselect();
+
+    // Process un-hover event for hovered over window (if any)
+    if (m_pSelectedWindow) {
+        m_pSelectedWindow->onSubtreeUnselect();
+    }
+    
+    // Set the current hovered over Window to nullptr
+    m_pSelectedWindow = nullptr;
+
+    return true;
+}
+
 bool Window::intersects(Rect *rect) { return winRect->intersects(rect); }
+
+Window *Window::getWindowUnderMouse(vec2 *mouse) {
+    for (int i = numWindows - 1; i >= 0; i--) {
+        Window *child = windows[i];
+
+        // Return the first instance of the mouse being located within boundary
+        if (child->isMouseInBounds(mouse)) {
+            return child;
+        }
+    }
+
+    // The mouse is not hovering over any child
+    return nullptr;
+}
+
+void Window::updateChildPositions(Device::MouseData *data) {
+    for (int i = 0; i < numWindows; i++) {
+        windows[i]->updateChildPositions(data);
+    }
+
+    setX(getX() + data->delta_x);
+    setY(getY() - data->delta_y);
+}
+
+void Window::updatePrevRect() { *m_pPrevRect = *winRect; }
+
+bool Window::moveToTop(Window *child) {
+    // Invalid window
+    if (child != windows[child->windowID]) {
+        return false;
+    }
+
+    int oldWindowID = child->windowID;
+    removeWindow(child);
+
+    // If the Window actually moved in the stack, mark as dirty
+    Window *win = appendWindow(child);
+    if (win->getWindowID() != oldWindowID) {
+        win->setDirty(true);
+    }
+
+    return true;
+}
 
 int Window::getWindowID() { return this->windowID; }
 
@@ -339,7 +420,13 @@ int Window::getHeight() { return winRect->getHeight(); }
 
 int Window::getColor() { return color; }
 
+int Window::getNumChildren() { return numWindows; }
+
+Window *Window::getChild(int windowID) { return windows[windowID]; }
+
 Rect *Window::getWinRect() { return winRect; }
+
+Rect *Window::getPrevRect() { return m_pPrevRect; }
 
 void Window::setWindowID(int windowID) { this->windowID = windowID; }
 
@@ -358,52 +445,26 @@ void Window::setHeight(int height) { winRect->setHeight(height); }
 
 void Window::setColor(uint32_t color) { this->color = color; }
 
-void Window::setPriority(int priority) {
-    if (priority < WIN_PRIORITY_MIN || priority > WIN_PRIORITY_MAX) {
-        return;
-    }
+void Window::setDirty(bool dirty) { this->m_dirty = dirty; }
 
-    this->priority = priority;
+void Window::setPriority(WindowPriority priority) {
+    if (priority >= WindowPriority::WPRIO0 &&
+        priority <= WindowPriority::WPRIO9) {
+        this->priority = priority;
+    }
 }
 
 bool Window::hasDecoration() { return flags & WindowFlags::WDECORATION; }
 
 bool Window::hasMovable() { return flags & WindowFlags::WMOVABLE; }
 
+bool Window::hasUnbounded() { return flags & WindowFlags::WUNBOUNDED; }
+
+bool Window::isDirty() { return m_dirty; }
+
 bool Window::isMouseInBounds(vec2 *mouse) {
     return ((mouse->x >= getX()) && (mouse->x <= (getX() + getWidth())) &&
             (mouse->y >= getY()) && (mouse->y <= (getY() + getHeight())));
-}
-
-void Window::moveToTop(Window **refresh, bool recurse) {
-    Window *topWin = parent;
-    if (!topWin) { // Root window, terminate
-        return;
-    }
-
-    int oldWinID = windowID;
-    if (hasDecoration()) {
-        topWin->removeWindow(windowID);
-        topWin->appendWindow(this);
-
-        // Window was moved in stack list
-        if (oldWinID != windowID) {
-            *refresh = this;
-        }
-    }
-    
-    if (recurse) {
-        parent->moveToTop(refresh, recurse);
-    }
-}
-
-void Window::setChildPositions(Device::MouseData *data) {
-    for (int i = 0; i < numWindows; i++) {
-        windows[i]->setChildPositions(data);
-    }
-
-    setX(getX() + data->delta_x);
-    setY(getY() - data->delta_y);
 }
 
 }  // namespace GUI

@@ -31,7 +31,7 @@ enum TellurEventType {
     MouseMoveClick,
     MouseLeftClick,
     MouseLeftRelease,
-    MouseDefault,
+    MouseDefault, // This must be the last mouse event enum
     KeyboardDefault,
     Default
 };

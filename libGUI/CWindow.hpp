@@ -16,8 +16,12 @@ public:
     /// @brief Poll for received mouse/keyboard events
     void pollEvents(void);
 
-    /// @brief Add dirty regions that need to be redrawn upon refresh
-    void applyDirtyRegions(void);
+    /// @brief Add dirty Windows and mouse movement to dirty lists
+    void processDirtyWindows();
+
+    /// @brief Calculate the region of the screen/buffer that will be
+    ///re-rendered due to mouse movement and/or Window state changes
+    void processDirtyRegions(void);
 
     /// @brief Refresh the CWindow
     void refresh(void);

@@ -25,6 +25,21 @@ enum WindowFlags {
     WDECORATION = 0x1,
     WHOVER = 0x2,
     WMOVABLE = 0x4,
+    WUNBOUNDED = 0x8
+};
+
+/// @brief Common Window priorities
+enum WindowPriority {
+    WPRIO0 = 0,
+    WPRIO1,
+    WPRIO2,
+    WPRIO3,
+    WPRIO4,
+    WPRIO5,
+    WPRIO6,
+    WPRIO7,
+    WPRIO8,
+    WPRIO9
 };
 
 class Window {
@@ -38,7 +53,8 @@ public:
     /// @param height Height of window in pixels
     /// @param flags Window flags
     Window(const char *windowName, int xPos, int yPos, int width, int height,
-           WindowFlags flags = WindowFlags::WNONE);
+           WindowFlags flags = WindowFlags::WNONE,
+           WindowPriority priority = WindowPriority::WPRIO2);
 
     /// @brief Execute destructor of base and derives classes of Window
     virtual ~Window();
@@ -70,6 +86,7 @@ public:
     /// @return If window is invalid, return nullptr, the delete window
     Window *removeWindow(Window *window);
 
+    // TODO: Move drawing operations outside of Window definition
     void applyBoundClipping(void);
     void drawWindow(void);
     virtual void drawObject(void);
@@ -112,115 +129,125 @@ public:
     /// @brief Process window unhover event
     /// @return Event process status
     virtual bool onWindowUnhover(void);
-    
+
+    /// @brief Unhover the subtree
+    /// @return Operation status
+    bool onSubtreeUnhover(void);
+
+    /// @brief Unselect the subtree
+    /// @return Operation status
+    bool onSubtreeUnselect(void);
+
     /// @brief Determine if rectangle intersects with Window
     /// @param rect The rectangle to test
     /// @return If they intersect return true, false otherwise
     bool intersects(Rect *rect);
 
+    /// @brief Get the child Window underneath the mouse
+    /// @param mouse the position
+    /// @return The child window underneath the mouse, or nullptr if the mouse
+    ///         is not hovering over any child window
+    Window *getWindowUnderMouse(vec2 *mouse);
+
+    /// @brief Recursively update position of window and descendant
+    /// @param data The delta (x, y) position
+    void updateChildPositions(Device::MouseData *data);
+
+    /// @brief Move current Window dimensions to previous Window dimension
+    void updatePrevRect(void);
+
+    /// @brief Move window to top of window stack
+    /// @param child Recursively the child to raise on the window stack
+    /// @return The highest level window that was raised
+    bool moveToTop(Window *child);
+
     /// @brief Get ID of window
-    /// @return windowID
     int getWindowID(void);
 
     /// @brief Get window's x position
-    /// @return Window's x position
     int getX(void);
 
     /// @brief Get window's y position
-    /// @return Window's y position
     int getY(void);
 
     /// @brief Get window's width
-    /// @return Window's width
     int getWidth(void);
 
     /// @brief Get window's height
-    /// @return Window's height
     int getHeight(void);
 
     /// @brief Get window's color
-    /// @return Window's color
     int getColor(void);
 
+    /// @brief Get the number of children held by window
+    int getNumChildren(void);
+
+    Window *getChild(int windowID);
+
     /// @brief Get window's Rect boundary
-    /// @return The Rect
     Rect *getWinRect(void);
 
+    /// @brief Get window's previous Rect boundary
+    Rect *getPrevRect(void);
+
     /// @brief Set window's ID
-    /// @param windowID The window ID
     void setWindowID(int windowID);
 
     /// @brief Set window's x position
-    /// @param x The x position to set
     void setX(int x);
 
     /// @brief Set window's y position
-    /// @param y The y position to set
     void setY(int y);
 
     /// @brief Set window's (x, y) position
-    /// @param xNew The x position to set
-    /// @param yNew The y position to set
     void setPosition(int xNew, int yNew);
 
     /// @brief Set window's width
-    /// @param width The width to set
     void setWidth(int width);
 
     /// @brief Set window's height
-    /// @param height The height to set
     void setHeight(int height);
 
     /// @brief Set window's color
-    /// @param color The color to set
     void setColor(uint32_t color);
 
+    /// @brief Mark Window as dirty
+    void setDirty(bool dirty);
+
     /// @brief Set window's priority
-    /// @param priority The priortiy to set
-    void setPriority(int priority);
+    void setPriority(WindowPriority priority);
 
     /// @brief Check if window is decorable
-    /// @return If window is docorable
     bool hasDecoration(void);
     
     /// @brief Check if window is movable (TODO)
-    /// @return If window is movable
     bool hasMovable(void);
 
-    /// @brief Check if mouse coordinates are in bounds of window
-    /// @param mouse
-    /// @return If mouse is in bounds of window, return true, false otherwise
+    /// @brief Check if window is unbounded by the boundaries of parent
+    bool hasUnbounded(void);
+
+    /// @brief Check if window is dirty
+    bool isDirty(void);
+
+    /// @brief Check if mouse coordinates are within Window's boundary
     bool isMouseInBounds(vec2 *mouse);
 
-    /// @brief Recursively update position of parent windows
-    /// @param data The delta (x, y) position
-    void setChildPositions(Device::MouseData *data);
-
 protected:
-    /// @brief Move window to top of window stack
-    /// @param refresh The highest level window that was stack, implicates refresh
-    /// @param recurse Recursively raise parent windows until root
-    /// @return The highest level window that was raised
-    void moveToTop(Window **refresh, bool recurse);
-
-    
-
     char *windowName; // unused
     int windowID; // Used as index in window stack list
     WindowFlags flags; // Common window options
     Rect *winRect; // Window dimension as Rect
     uint32_t color; // Default background color of window
-    int priority; // Window priority, used in window list
+    WindowPriority priority; // Window priority, used in window list
     Window *parent; // Parent window that self is attached to
     Window *windows[WINDOW_MAX]; // Attached children windows
     int numWindows; // Number of windows currently attached
     const int maxWindows; // Max amount of windows you can attach
+    Rect *m_pPrevRect; // Location/size of window on last refresh
+    bool m_dirty; // Flags that indicates if Window is dirty
+    Window *m_pHoverWindow;    // Which child window the mouse is hovering over
+    Window *m_pSelectedWindow; // Which child window was last selected
     FbContext *context; // Screen buffer info (TODO: remove)
-    Window *activeChild; // Activetly selected window
-    
-    static Window *selectedWindow; // Current selected window
-    static Window *hoverWindow; // Window that mouse is hovering over
-    static Rect *oldSelected; // Old position of selected window
 };
 
 } // GUI

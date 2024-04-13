@@ -8,7 +8,8 @@ namespace GUI {
 class MenuBar : public Window {
 public:
     MenuBar(int x, int y, int width, int height,
-            WindowFlags flags = WindowFlags::WNONE);
+            WindowFlags flags = WindowFlags::WNONE,
+            WindowPriority priority = WindowPriority::WPRIO5);
     ~MenuBar();
 
     bool onWindowClick(void) override;
