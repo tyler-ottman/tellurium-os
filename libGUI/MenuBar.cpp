@@ -15,21 +15,16 @@ bool MenuBar::onWindowClick() {
 }
 
 bool MenuBar::onWindowSelect() {
-    setBarColor(0xffbebebe);
-
     return true;
 }
 
 bool MenuBar::onWindowUnselect() {
-    // setBarColor(0xffa9a9a9);
-    setBarColor(0xff00ff00);
-    context->addClippedRect(winRect);
-
     return true;
 }
 
 bool MenuBar::onWindowDrag(Device::MouseData *data) {
-    parent->setChildPositions(data);
+    parent->updateChildPositions(data);
+    parent->setDirty(true);
 
     return true;
 }

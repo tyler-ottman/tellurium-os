@@ -71,6 +71,7 @@ public:
     /// @return If window is invalid, return nullptr, the delete window
     Window *removeWindow(Window *window);
 
+    // TODO: Move drawing operations outside of Window definition
     void applyBoundClipping(void);
     void drawWindow(void);
     virtual void drawObject(void);
@@ -116,11 +117,11 @@ public:
 
     /// @brief Unhover the subtree
     /// @return Operation status
-    bool onSubtreeUnhover();
+    bool onSubtreeUnhover(void);
 
     /// @brief Unselect the subtree
     /// @return Operation status
-    bool onSubtreeUnselect();
+    bool onSubtreeUnselect(void);
 
     /// @brief Determine if rectangle intersects with Window
     /// @param rect The rectangle to test
@@ -133,108 +134,90 @@ public:
     ///         is not hovering over any child window
     Window *getWindowUnderMouse(vec2 *mouse);
 
+    /// @brief Recursively update position of window and descendant
+    /// @param data The delta (x, y) position
+    void updateChildPositions(Device::MouseData *data);
+
+    /// @brief Move current Window dimensions to previous Window dimension
+    void updatePrevRect(void);
+
+    /// @brief Move window to top of window stack
+    /// @param child Recursively the child to raise on the window stack
+    /// @return The highest level window that was raised
+    bool moveToTop(Window *child);
+
     /// @brief Get ID of window
-    /// @return windowID
     int getWindowID(void);
 
     /// @brief Get window's x position
-    /// @return Window's x position
     int getX(void);
 
     /// @brief Get window's y position
-    /// @return Window's y position
     int getY(void);
 
     /// @brief Get window's width
-    /// @return Window's width
     int getWidth(void);
 
     /// @brief Get window's height
-    /// @return Window's height
     int getHeight(void);
 
     /// @brief Get window's color
-    /// @return Window's color
     int getColor(void);
 
-    int getNumChildren(void) { return numWindows; }
+    /// @brief Get the number of children held by window
+    int getNumChildren(void);
 
-    Window *getChild(int windowID) { return windows[windowID]; }
+    Window *getChild(int windowID);
 
     /// @brief Get window's Rect boundary
-    /// @return The Rect
     Rect *getWinRect(void);
 
+    /// @brief Get window's previous Rect boundary
+    Rect *getPrevRect(void);
+
     /// @brief Set window's ID
-    /// @param windowID The window ID
     void setWindowID(int windowID);
 
     /// @brief Set window's x position
-    /// @param x The x position to set
     void setX(int x);
 
     /// @brief Set window's y position
-    /// @param y The y position to set
     void setY(int y);
 
     /// @brief Set window's (x, y) position
-    /// @param xNew The x position to set
-    /// @param yNew The y position to set
     void setPosition(int xNew, int yNew);
 
     /// @brief Set window's width
-    /// @param width The width to set
     void setWidth(int width);
 
     /// @brief Set window's height
-    /// @param height The height to set
     void setHeight(int height);
 
     /// @brief Set window's color
-    /// @param color The color to set
     void setColor(uint32_t color);
 
     /// @brief Mark Window as dirty
     void setDirty(bool dirty);
 
     /// @brief Set window's priority
-    /// @param priority The priortiy to set
     void setPriority(int priority);
 
     /// @brief Check if window is decorable
-    /// @return If window is docorable
     bool hasDecoration(void);
     
     /// @brief Check if window is movable (TODO)
-    /// @return If window is movable
     bool hasMovable(void);
 
     /// @brief Check if window is unbounded by the boundaries of parent
-    /// @return If window is unbounded
     bool hasUnbounded(void);
 
     /// @brief Check if window is dirty
-    /// @return true if dirty, false otherwise
     bool isDirty(void);
 
-    /// @brief Check if mouse coordinates are in bounds of window
-    /// @param mouse
-    /// @return If mouse is in bounds of window, return true, false otherwise
+    /// @brief Check if mouse coordinates are within Window's boundary
     bool isMouseInBounds(vec2 *mouse);
 
-    /// @brief Recursively update position of parent windows
-    /// @param data The delta (x, y) position
-    void setChildPositions(Device::MouseData *data);
-
-    void setPrevRect(void) { *m_pPrevRect = *winRect; }
-
-   protected:
-    /// @brief Move window to top of window stack
-    /// @param refresh The highest level window that was stack, implicates refresh
-    /// @param recurse Recursively raise parent windows until root
-    /// @return The highest level window that was raised
-    void moveToTop(Window **refresh, bool recurse);
-
+protected:
     char *windowName; // unused
     int windowID; // Used as index in window stack list
     WindowFlags flags; // Common window options

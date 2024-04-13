@@ -21,7 +21,7 @@ bool Button::onWindowClick() {
         colorToggle ^= 1;
 
         // Button dirty, needs refresh
-        context->addDirtyRect(winRect);
+        setDirty(true);
     }
     
     return true;
@@ -33,16 +33,14 @@ bool Button::onWindowHover() {
     }
 
     onHover = true;
-
-    context->addDirtyRect(winRect);
+    setDirty(true);
 
     return true;
 }
 
 bool Button::onWindowUnhover() {
     onHover = false;
-
-    context->addDirtyRect(winRect);
+    setDirty(true);
 
     return true;
 }

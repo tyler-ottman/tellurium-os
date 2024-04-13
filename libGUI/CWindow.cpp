@@ -68,13 +68,16 @@ static void processDirtyWindowsInternal(Window *win, Window* dirtyAncestor) {
             if (!dirtyAncestor) {
                 dirtyAncestor = win;
 
-                // Add ancestor Rect to dirty list
-                FbContext::getInstance()->addDirtyRect(dirtyAncestor->getWinRect());
+                FbContext *context = FbContext::getInstance();
+
+                // Add new and old location of window to dirty list
+                context->addDirtyRect(dirtyAncestor->getWinRect());
+                context->addDirtyRect(dirtyAncestor->getPrevRect());
             }
         }
 
         // Now update previous Rect to be the current Rent (formaly dirty)
-        win->setPrevRect();
+        win->updatePrevRect();
     }
 
     // Process dirty Windows for children
@@ -186,7 +189,7 @@ CWindow::CWindow()
     // devManager->addDevice(new Device::DeviceKeyboardPs2("/dev/kb0"));
 
     // Entire screen is dirty on startup
-    context->addDirtyRect(winRect);
+    setDirty(true);
 }
 
 CWindow::~CWindow() {}

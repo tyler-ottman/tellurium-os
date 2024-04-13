@@ -250,6 +250,12 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
 
         break;
 
+    // Process window dragging event
+    case Device::TellurEventType::MouseMoveClick:
+        onWindowDrag(mouseData);
+
+        break;
+
     // Check here if currently clicked on window changes
     case Device::TellurEventType::MouseLeftClick:
         // Process select even for this Window
@@ -263,22 +269,28 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
         // Now update current selected window and process select event
         m_pSelectedWindow = childWindow;
 
+        // Notify parent to move Window to top of stack if it's decorable
+        if (parent && hasDecoration()) {
+            parent->moveToTop(this);
+        }
+
         break;
 
-    // Process window dragging event
-    case Device::TellurEventType::MouseMoveClick:
-        onWindowDrag(mouseData);
-
-        break;
-
+    // TODO: Maybe releasing mouse is an operation on a subtree and not window
     case Device::TellurEventType::MouseLeftRelease:
         onWindowRelease();
         
         break;
     
-    // Do nothing for unhandled mouse events
-    default:
+    // Never reach here
+    case Device::TellurEventType::MouseDefault:
         break;
+
+    // Never reach here
+    case Device::TellurEventType::KeyboardDefault:
+    case Device::TellurEventType::Default:
+        break;
+        
     }
 
     // If mouse was on child window, process event for child
@@ -367,6 +379,35 @@ Window *Window::getWindowUnderMouse(vec2 *mouse) {
     return nullptr;
 }
 
+void Window::updateChildPositions(Device::MouseData *data) {
+    for (int i = 0; i < numWindows; i++) {
+        windows[i]->updateChildPositions(data);
+    }
+
+    setX(getX() + data->delta_x);
+    setY(getY() - data->delta_y);
+}
+
+void Window::updatePrevRect() { *m_pPrevRect = *winRect; }
+
+bool Window::moveToTop(Window *child) {
+    // Invalid window
+    if (child != windows[child->windowID]) {
+        return false;
+    }
+
+    int oldWindowID = child->windowID;
+    removeWindow(child);
+
+    // If the Window actually moved in the stack, mark as dirty
+    Window *win = appendWindow(child);
+    if (win->getWindowID() != oldWindowID) {
+        win->setDirty(true);
+    }
+
+    return true;
+}
+
 int Window::getWindowID() { return this->windowID; }
 
 int Window::getX() { return winRect->getX(); }
@@ -379,7 +420,13 @@ int Window::getHeight() { return winRect->getHeight(); }
 
 int Window::getColor() { return color; }
 
+int Window::getNumChildren() { return numWindows; }
+
+Window *Window::getChild(int windowID) { return windows[windowID]; }
+
 Rect *Window::getWinRect() { return winRect; }
+
+Rect *Window::getPrevRect() { return m_pPrevRect; }
 
 void Window::setWindowID(int windowID) { this->windowID = windowID; }
 
@@ -419,37 +466,6 @@ bool Window::isDirty() { return m_dirty; }
 bool Window::isMouseInBounds(vec2 *mouse) {
     return ((mouse->x >= getX()) && (mouse->x <= (getX() + getWidth())) &&
             (mouse->y >= getY()) && (mouse->y <= (getY() + getHeight())));
-}
-
-void Window::moveToTop(Window **refresh, bool recurse) {
-    Window *topWin = parent;
-    if (!topWin) { // Root window, terminate
-        return;
-    }
-
-    int oldWinID = windowID;
-    if (hasDecoration()) {
-        topWin->removeWindow(windowID);
-        topWin->appendWindow(this);
-
-        // Window was moved in stack list
-        if (oldWinID != windowID) {
-            *refresh = this;
-        }
-    }
-    
-    if (recurse) {
-        parent->moveToTop(refresh, recurse);
-    }
-}
-
-void Window::setChildPositions(Device::MouseData *data) {
-    for (int i = 0; i < numWindows; i++) {
-        windows[i]->setChildPositions(data);
-    }
-
-    setX(getX() + data->delta_x);
-    setY(getY() - data->delta_y);
 }
 
 }  // namespace GUI
