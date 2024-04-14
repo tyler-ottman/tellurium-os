@@ -1,6 +1,7 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include "libGUI/Rect.hpp"
 #include "libGUI/Utility.hpp"
 #include "libTellur/DevPoll.hpp"
 #include <stdbool.h>
@@ -18,6 +19,8 @@
 #define WIN_PRIORITY_MAX                    9
 
 namespace GUI {
+
+class FbContext;
 
 /// @brief Common window flags
 enum WindowFlags {
@@ -43,6 +46,7 @@ enum WindowPriority {
 };
 
 class Window {
+    friend class FbContext;
 
 public:
     /// @brief Constructor to create a new window
@@ -87,8 +91,6 @@ public:
     Window *removeWindow(Window *window);
 
     // TODO: Move drawing operations outside of Window definition
-    void applyBoundClipping(void);
-    void drawWindow(void);
     virtual void drawObject(void);
 
     //// @brief Process event
@@ -140,8 +142,11 @@ public:
 
     /// @brief Determine if rectangle intersects with Window
     /// @param rect The rectangle to test
-    /// @return If they intersect return true, false otherwise
     bool intersects(Rect *rect);
+
+    /// @brief Determine if rectangle intersects with Window
+    /// @param rect The window to test
+    bool intersects(Window *rect) { return intersects(rect->winRect); }
 
     /// @brief Get the child Window underneath the mouse
     /// @param mouse the position
@@ -247,7 +252,7 @@ protected:
     bool m_dirty; // Flags that indicates if Window is dirty
     Window *m_pHoverWindow;    // Which child window the mouse is hovering over
     Window *m_pSelectedWindow; // Which child window was last selected
-    FbContext *context; // Screen buffer info (TODO: remove)
+    // FbContext *context; // Screen buffer info (TODO: remove)
 };
 
 } // GUI

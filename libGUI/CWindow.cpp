@@ -2,6 +2,7 @@
 #include "libGUI/Image.hpp"
 #include "libGUI/Taskbar.hpp"
 #include "libGUI/Terminal.hpp"
+#include "libGUI/FbContext.hpp"
 
 namespace GUI {
 
@@ -94,7 +95,7 @@ void CWindow::processDirtyRegions() {
     // Add any Window state change to list of regions to re-render
     // for the compositor
     processDirtyWindows();
-    
+    FbContext *context = FbContext::getInstance();
     // If mouse position has changes since last refresh, patch old position
     // and draw new position
     if (!oldMouse->equals(mouse)) {
@@ -113,11 +114,11 @@ void CWindow::processDirtyRegions() {
 void CWindow::refresh() {
     // If selectedWindow position changed since last refresh, add to dirty
     processDirtyRegions();
-
+    FbContext *context = FbContext::getInstance();
     // Only refresh if dirty regions generated
     if (context->dirtyRegion->getNumClipped()) {
         // Draw the windows that intersect the dirty clipped regions
-        drawWindow();
+        context->drawWindow(this);
 
         // Draw mouse on top of final image, does not use clipped regions
         drawMouse();
@@ -130,6 +131,8 @@ void CWindow::refresh() {
 
 void CWindow::drawMouse() {
     Rect mouseRect(mouse->x, mouse->y, MOUSE_W, MOUSE_H);
+        FbContext *context = FbContext::getInstance();
+
     context->drawBitmapNoRegion(mouseRect, mouseBitmap);
 }
 
@@ -158,6 +161,7 @@ CWindow::CWindow()
              FbContext::getInstance()->getFbContext()->fb_height), nEvents(0) {
     mouse = new vec2(getWidth() / 2, getHeight() / 2);
     oldMouse = new vec2(mouse->x, mouse->y);
+        FbContext *context = FbContext::getInstance();
 
     Image *background = new Image(0, 0, context->getFbContext()->fb_width,
                                   context->getFbContext()->fb_height);

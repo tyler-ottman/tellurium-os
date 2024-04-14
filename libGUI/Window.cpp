@@ -24,8 +24,7 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
       m_pPrevRect(nullptr),
       m_dirty(false),
       m_pHoverWindow(nullptr),
-      m_pSelectedWindow(nullptr),
-      context(FbContext::getInstance()) {
+      m_pSelectedWindow(nullptr) {
 
     if (windowName) {
         int len = __strlen(windowName);
@@ -158,75 +157,8 @@ Window *Window::removeWindow(Window *window) {
     return removeWindow(window->getWindowID());
 }
 
-void Window::applyBoundClipping() {
-    if (!parent) {
-        int nDirtyRegions = context->dirtyRegion->getNumClipped();
-        if (nDirtyRegions) {
-            Rect *dirtyRegions = context->dirtyRegion->getClippedRegions();
-
-            for (int i = 0; i < nDirtyRegions; i++) {
-                context->renderRegion->addClippedRect(&dirtyRegions[i]);
-            }
-
-            context->renderRegion->intersectClippedRect(winRect);
-        } else {
-            context->renderRegion->addClippedRect(winRect);
-        }
-
-        return;
-    }
-
-    // Reduce drawing to parent window
-    parent->applyBoundClipping();
-
-    // Reduce visibility to main drawing area
-    context->renderRegion->intersectClippedRect(winRect);
-
-    // Occlude areas of window where siblings overlap on top
-    for (int i = getWindowID() + 1; i < parent->numWindows; i++) {
-        Window *aboveWin = parent->windows[i];
-        if (intersects(aboveWin->winRect)) {
-            context->renderRegion->reshapeRegion(aboveWin->winRect);
-        }
-    }
-}
-
-bool rectIntersectsDirty(FbContext *context, Rect *rect) {
-    Rect *dirtyRegions = context->dirtyRegion->getClippedRegions();
-    int nDirtyRegions = context->dirtyRegion->getNumClipped();
-    for (int j = 0; j < nDirtyRegions; j++) {
-        if (rect->intersects(&dirtyRegions[j])) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void Window::drawWindow() {
-    applyBoundClipping();
-
-    // Remove child window clipped rectangles
-    for (int i = 0; i < numWindows; i++) {
-        context->renderRegion->reshapeRegion(windows[i]->winRect);
-    }
-
-    // Draw self
-    drawObject();
-
-    // Redraw children if they intersect with dirty region
-    for (int i = 0; i < numWindows; i++) {
-        context->renderRegion->resetClippedList();
-        Window *child = windows[i];
-
-        if (rectIntersectsDirty(context, child->winRect)) {
-            child->drawWindow();
-        }        
-    }
-}
-
 void Window::drawObject() {
-    context->drawRect(*winRect, color);
+    FbContext::getInstance()->drawRect(*winRect, color);
 }
 
 bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
@@ -303,37 +235,21 @@ bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
     return true;
 }
 
-bool Window::onWindowRaise() {
-    return true;
-}
+bool Window::onWindowRaise() { return true; }
 
-bool Window::onWindowDrag(Device::MouseData *data) {
-    return true;
-}
+bool Window::onWindowDrag(Device::MouseData *data) { return true; }
 
-bool Window::onWindowRelease() {
-    return true;
-}
+bool Window::onWindowRelease() { return true; }
 
-bool Window::onWindowClick() {
-    return true;
-}
+bool Window::onWindowClick() { return true; }
 
-bool Window::onWindowSelect() {
-    return true;
-}
+bool Window::onWindowSelect() { return true; }
 
-bool Window::onWindowUnselect() {
-    return true;
-}
+bool Window::onWindowUnselect() { return true; }
 
-bool Window::onWindowHover() {
-    return true;
-}
+bool Window::onWindowHover() { return true; }
 
-bool Window::onWindowUnhover() {
-    return true;
-}
+bool Window::onWindowUnhover() { return true; }
 
 bool Window::onSubtreeUnhover() {
     // Process an un-hover event for the current Window

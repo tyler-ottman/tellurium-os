@@ -1,11 +1,13 @@
 #include "libTellur/mem.hpp"
 #include "Terminal.hpp"
+#include "libGUI/FbContext.hpp"
 
 namespace GUI {
 
 Terminal::Terminal(int x, int y, int width, int height, WindowFlags flags,
                    WindowPriority priority)
     : Window::Window("terminal", x, y, width, height, flags, priority) {
+    FbContext *context = FbContext::getInstance();
     FbMeta *meta = context->getFbContext();
     terminal = terminal_alloc(
         14, 8, height, width, meta->fb_height, meta->fb_width, meta->fb_pitch,
@@ -18,6 +20,7 @@ Terminal::Terminal(int x, int y, int width, int height, WindowFlags flags,
 Terminal::~Terminal() {}
 
 void Terminal::drawObject() {
+    FbContext *context = FbContext::getInstance();
     context->drawBuff(*winRect, terminal->buf1);
 }
 

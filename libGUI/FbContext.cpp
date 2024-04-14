@@ -21,7 +21,7 @@ FbContext *FbContext::getInstance() {
     
     instance = new FbContext();
 
-    syscall_get_fb_context(&instance->fb_meta);
+    syscall_get_fb_context((void *)&instance->fb_meta);
 
     instance->fb_buff = (uint32_t *)instance->fb_meta.fb_buff;
     instance->screen =
@@ -70,8 +70,13 @@ void FbContext::drawClippedRect(Rect &rect, uint32_t color, Rect *area) {
     area->restrictRect(&drawRect);
     screen->restrictRect(&drawRect);
 
-    for (int i = drawRect.getY(); i <= drawRect.getBottom(); i++) {
-        for (int j = drawRect.getX(); j <= drawRect.getRight(); j++) {
+    int x = drawRect.getX();
+    int y = drawRect.getY();
+    int xMax = drawRect.getRight();
+    int yMax = drawRect.getBottom();
+
+    for (int i = y; i <= yMax; i++) {
+        for (int j = x; j <= xMax; j++) {
             fb_buff[i * fb_meta.fb_width + j] = color;
         }
     }
@@ -86,9 +91,15 @@ void FbContext::drawClippedBuff(Rect &rect, uint32_t *buff, Rect *area) {
     area->restrictRect(&drawRect);
     screen->restrictRect(&drawRect);
 
-    for (int i = drawRect.getY(); i <= drawRect.getBottom(); i++) {
-        for (int j = drawRect.getX(); j <= drawRect.getRight(); j++) {
-            fb_buff[i * fb_meta.fb_width + j] = buff[(i - translateY) * rect.getWidth() + (j - translateX)];
+    int x = drawRect.getX();
+    int y = drawRect.getY();
+    int width = rect.getWidth();
+    int xMax = drawRect.getRight();
+    int yMax = drawRect.getBottom();
+
+    for (int i = y; i <= yMax; i++) {
+        for (int j = x; j <= xMax; j++) {
+            fb_buff[i * fb_meta.fb_width + j] = buff[(i - translateY) * width + (j - translateX)];
         }
     }
 }
@@ -102,12 +113,87 @@ void FbContext::drawClippedBitmap(Rect &rect, uint32_t *bitmap, Rect *area) {
     area->restrictRect(&drawRect);
     screen->restrictRect(&drawRect);
 
-    for (int i = drawRect.getY(); i <= drawRect.getBottom(); i++) {
-        for (int j = drawRect.getX(); j <= drawRect.getRight(); j++) {
-            if (bitmap[(i - translateY) * rect.getWidth() + (j - translateX)] & 0xff000000) {
-                fb_buff[i * fb_meta.fb_width + j] = bitmap[(i - translateY) * rect.getWidth() + (j - translateX)];
+    int x = drawRect.getX();
+    int y = drawRect.getY();
+    int width = rect.getWidth();
+    int xMax = drawRect.getRight();
+    int yMax = drawRect.getBottom();
+
+    for (int i = y; i <= yMax; i++) {
+        for (int j = x; j <= xMax; j++) {
+            if (bitmap[(i - translateY) * width + (j - translateX)] & 0xff000000) {
+                fb_buff[i * fb_meta.fb_width + j] = bitmap[(i - translateY) * width + (j - translateX)];
             }
         }
+    }
+}
+
+void FbContext::applyBoundClipping(Window *win) {
+    Window *parent = win->parent;
+
+    if (!parent) {
+        int nDirtyRegions = dirtyRegion->getNumClipped();
+        if (nDirtyRegions) {
+            Rect *dirtyRegions = dirtyRegion->getClippedRegions();
+
+            for (int i = 0; i < nDirtyRegions; i++) {
+                renderRegion->addClippedRect(&dirtyRegions[i]);
+            }
+
+            renderRegion->intersectClippedRect(win->winRect);
+        } else {
+            renderRegion->addClippedRect(win->winRect);
+        }
+
+        return;
+    }
+
+    // Reduce drawing to parent window
+    applyBoundClipping(parent);
+
+    // Reduce visibility to main drawing area
+    renderRegion->intersectClippedRect(win->winRect);
+
+    // Occlude areas of window where siblings overlap on top
+    for (int i = win->windowID + 1; i < parent->numWindows; i++) {
+        Window *aboveWin = parent->windows[i];
+        if (win->intersects(aboveWin)) {
+            renderRegion->reshapeRegion(aboveWin->winRect);
+        }
+    }
+}
+
+bool FbContext::rectIntersectsDirty(Rect *rect) {
+    Rect *dirtyRegions = dirtyRegion->getClippedRegions();
+    int nDirtyRegions = dirtyRegion->getNumClipped();
+    for (int j = 0; j < nDirtyRegions; j++) {
+        if (rect->intersects(&dirtyRegions[j])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void FbContext::drawWindow(Window *win) {
+    applyBoundClipping(win);
+
+    // Remove child window clipped rectangles
+    for (int i = 0; i < win->numWindows; i++) {
+        Window *child = win->windows[i];
+        renderRegion->reshapeRegion(child->winRect);
+    }
+
+    // Draw self
+    win->drawObject();
+
+    // Redraw children if they intersect with dirty region
+    for (int i = 0; i < win->numWindows; i++) {
+        renderRegion->resetClippedList();
+        Window *child = win->windows[i];
+        if (rectIntersectsDirty(child->winRect)) {
+            drawWindow(child);
+        }        
     }
 }
 

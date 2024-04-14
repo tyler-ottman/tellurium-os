@@ -1,5 +1,5 @@
 #include "Border.hpp"
-
+#include "libGUI/FbContext.hpp"
 namespace GUI {
 
 Border::Border(int x, int y, int width, int height, WindowFlags flags,
@@ -11,6 +11,7 @@ Border::Border(int x, int y, int width, int height, WindowFlags flags,
 Border::~Border() {}
 
 void Border::drawObject() {
+    FbContext *context = FbContext::getInstance();
     context->drawRect(*winRect, color);
 }
 

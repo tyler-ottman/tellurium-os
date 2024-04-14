@@ -1,4 +1,5 @@
 #include "MenuBar.hpp"
+#include "libGUI/FbContext.hpp"
 
 namespace GUI {
 
@@ -29,6 +30,7 @@ bool MenuBar::onWindowDrag(Device::MouseData *data) {
 }
 
 void MenuBar::drawObject() {
+    FbContext *context = FbContext::getInstance();
     context->drawRect(*winRect, getBarColor());
 }
 

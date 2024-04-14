@@ -1,9 +1,11 @@
-#pragma once
+#ifndef FBCONTEXT_H
+#define FBCONTEXT_H
 
 #include <stdint.h>
 
 #include "ClippingManager.hpp"
 #include "Rect.hpp"
+#include "libGUI/Window.hpp"
 
 namespace GUI {
 
@@ -36,6 +38,10 @@ public:
     // Clipped Region that is dirty and needs to be re-rendered
     ClippingManager *dirtyRegion;
 
+    void applyBoundClipping(Window *win);
+    bool rectIntersectsDirty(Rect *rect);
+    void drawWindow(Window *win);
+
 private:
     FbMeta fb_meta;
     uint32_t *fb_buff;
@@ -54,6 +60,11 @@ private:
 
     // Draw a clipped bitmap within bounds of Rect area
     void drawClippedBitmap(Rect &rect, uint32_t *bitmap, Rect *area);
+
+    
+    
 };
 
 }
+
+#endif // FBCONTEXT_H

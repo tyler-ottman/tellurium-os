@@ -1,6 +1,7 @@
 #include "flibc/stdlib.h"
 #include "flibc/string.h"
 #include "Image.hpp"
+#include "libGUI/FbContext.hpp"
 
 #define MAX_FIELD_LEN                   10
 
@@ -126,6 +127,7 @@ void Image::drawObject() {
         return;
     }
 
+    FbContext *context = FbContext::getInstance();
     context->drawBuff(*winRect, imgBuff);
 }
 

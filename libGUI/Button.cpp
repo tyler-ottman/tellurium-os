@@ -1,5 +1,6 @@
 #include "Button.hpp"
 #include "Utility.hpp"
+#include "FbContext.hpp"
 
 namespace GUI {
 
@@ -63,6 +64,7 @@ void Button::drawObject() {
     //                               getHeight() - 2, 0xffff66cc);
     // }
 
+    FbContext *context = FbContext::getInstance();
     if (isImg) {
         Image *image = onHover ? imgHover : imgDefault;
         context->drawBuff(*winRect, image->getBuff());
