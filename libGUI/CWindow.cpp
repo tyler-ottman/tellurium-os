@@ -79,10 +79,8 @@ CWindow::CWindow(FbInfo *fbInfo)
 
     compositor = new Compositor(fbInfo);
 
-    Window *background = new Window(NULL, 0, 0, fbInfo->fb_width,
-                                    fbInfo->fb_height);
     PpmReader backgroundImg("/tmp/background.ppm");
-    background->loadBuff(backgroundImg.getBuff());
+    Window *background = new Window(NULL, 0, 0, &backgroundImg);
     appendWindow(background);
 
     Taskbar *taskbar = new Taskbar(0, getHeight() - 40, getWidth(), 40);

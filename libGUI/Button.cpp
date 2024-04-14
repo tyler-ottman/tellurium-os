@@ -12,12 +12,11 @@ Button::Button(int x, int y, int width, int height, WindowFlags flags,
 
 Button::Button(int x, int y, ImageReader *img, WindowFlags flags,
                ButtonFlags bFlags, WindowPriority priority)
-    : Window::Window("", x, y, img->getWidth(), img->getHeight(), flags,
-                     priority),
-      imgNoHover(nullptr), imgHover(nullptr), buttonFlags(bFlags) {
-    // Use initial winBuff as location for default button image
+    : Window::Window("", x, y, img, flags, priority),
+      imgNoHover(nullptr),
+      imgHover(nullptr),
+      buttonFlags(bFlags) {
     imgNoHover = (uint8_t *)winBuff;
-    loadBuff(img->getBuff());
 }
 
 Button::~Button() {}

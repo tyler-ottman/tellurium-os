@@ -28,12 +28,9 @@ int main() {
 
     // Image window
     const char *imagePath = "/tmp/basketOfFruits.ppm";
-    GUI::Window *fruitWin = new GUI::Window(imagePath, 150, 100, 402,
-        316 + TITLE_HEIGHT, GUI::WindowFlags::WDECORATION);
+    GUI::Window *fruitWin = new GUI::Window(imagePath, 150, 100, 402, 316 + TITLE_HEIGHT, GUI::WindowFlags::WDECORATION);
     PpmReader fruitPpm(imagePath);
-    GUI::Window *fruitImg = new GUI::Window(NULL, 151, 101 + TITLE_HEIGHT,
-        fruitWin->getWidth() - 2, fruitWin->getHeight() - 2 - TITLE_HEIGHT);
-    fruitImg->loadBuff(fruitPpm.getBuff());
+    GUI::Window *fruitImg = new GUI::Window(NULL, 151, 101 + TITLE_HEIGHT, &fruitPpm);
     fruitWin->appendWindow(fruitImg);
 
     // Terminal window

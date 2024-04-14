@@ -3,6 +3,7 @@
 
 #include "libGUI/Rect.hpp"
 #include "libTellur/DevPoll.hpp"
+#include "libTellur/ImageReader.hpp"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -49,6 +50,16 @@ public:
     /// @param height Height of window in pixels
     /// @param flags Window flags
     Window(const char *windowName, int xPos, int yPos, int width, int height,
+           WindowFlags flags = WindowFlags::WNONE,
+           WindowPriority priority = WindowPriority::WPRIO2);
+
+    /// @brief Constructor to create a new window
+    /// @param windowName Name of the window
+    /// @param x Horizontal pixel coordinate position of window
+    /// @param y Vertical pixel coordinate position of window
+    /// @param img The image reader
+    /// @param flags Window flags
+    Window(const char *windowName, int xPos, int yPos, ImageReader *img,
            WindowFlags flags = WindowFlags::WNONE,
            WindowPriority priority = WindowPriority::WPRIO2);
 
@@ -226,6 +237,9 @@ public:
     bool isCoordInBounds(int x, int y);
 
 protected:
+    void initialize(const char *windowName, int x, int y, int width, int height,
+               WindowFlags flags, WindowPriority priority);
+
     char *windowName; // unused
     int windowID; // Used as index in window stack list
     WindowFlags flags; // Common window options
@@ -236,7 +250,7 @@ protected:
     Window *parent; // Parent window that self is attached to
     Window *windows[WINDOW_MAX]; // Attached children windows
     int numWindows; // Number of windows currently attached
-    const int maxWindows; // Max amount of windows you can attach
+    int maxWindows; // Max amount of windows you can attach
     Rect *winPrevRect; // Location/size of window on last refresh
     bool dirty; // Flags that indicates if Window is dirty
     Window *hoverWindow;    // Which child window the mouse is hovering over

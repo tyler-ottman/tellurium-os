@@ -9,21 +9,37 @@
 namespace GUI {
 
 Window::Window(const char *windowName, int x, int y, int width, int height,
-               WindowFlags flags, WindowPriority priority)
-    : windowName(nullptr),
-      windowID(-1),
-      flags(flags),
-      winRect(nullptr),
-      winBuff(nullptr),
-      color(0xff333333),
-      priority(priority),
-      parent(nullptr),
-      numWindows(0),
-      maxWindows(WINDOW_MAX),
-      winPrevRect(nullptr),
-      dirty(false),
-      hoverWindow(nullptr),
-      selectedWindow(nullptr) {
+               WindowFlags flags, WindowPriority priority) {
+    initialize(windowName, x, y, width, height, flags, priority);
+}
+
+Window::Window(const char *windowName, int xPos, int yPos, ImageReader *img,
+               WindowFlags flags, WindowPriority priority){    
+    initialize(windowName, xPos, yPos, img->getWidth(), img->getHeight(), flags,
+               priority);
+    
+    // Load image into buffer
+    loadBuff(img->getBuff());
+}
+
+Window::~Window() {}
+
+void Window::initialize(const char *windowName, int x, int y, int width,
+        int height, WindowFlags flags, WindowPriority priority) {
+    this->windowName = nullptr;
+    windowID = -1;
+    this->flags = flags;
+    winRect = nullptr;
+    winBuff = nullptr;
+    color = 0xff333333;
+    this->priority = priority;
+    parent = nullptr;
+    numWindows = 0;
+    maxWindows = WINDOW_MAX;
+    winPrevRect = nullptr;
+    dirty = false;
+    hoverWindow = nullptr;
+    selectedWindow = nullptr;
 
     if (windowName) {
         int len = __strlen(windowName);
@@ -83,8 +99,6 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
         appendWindow(new Border(x, y + TITLE_HEIGHT, width, 1));
     }
 }
-
-Window::~Window() {}
 
 Window *Window::appendWindow(Window *window) {
     if (numWindows == maxWindows || !window) {
