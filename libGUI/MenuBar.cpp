@@ -29,7 +29,7 @@ bool MenuBar::onWindowDrag(Device::MouseData *data) {
 }
 
 void MenuBar::drawObject() {
-    context->drawRect(getX(), getY(), getWidth(), 32, getBarColor());
+    context->drawRect(*winRect, getBarColor());
 }
 
 uint32_t MenuBar::getBarColor() {

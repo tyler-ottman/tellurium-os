@@ -71,8 +71,8 @@ static void processDirtyWindowsInternal(Window *win, Window* dirtyAncestor) {
                 FbContext *context = FbContext::getInstance();
 
                 // Add new and old location of window to dirty list
-                context->addDirtyRect(dirtyAncestor->getWinRect());
-                context->addDirtyRect(dirtyAncestor->getPrevRect());
+                context->dirtyRegion->addClippedRect(dirtyAncestor->getWinRect());
+                context->dirtyRegion->addClippedRect(dirtyAncestor->getPrevRect());
             }
         }
 
@@ -100,11 +100,11 @@ void CWindow::processDirtyRegions() {
     if (!oldMouse->equals(mouse)) {
         // Original mouse position
         Rect old(oldMouse->x, oldMouse->y, MOUSE_W, MOUSE_H);
-        context->addDirtyRect(&old);
+        context->dirtyRegion->addClippedRect(&old);
 
         // New mouse position
         Rect newMouse(mouse->x, mouse->y, MOUSE_W, MOUSE_H);
-        context->addDirtyRect(&newMouse);
+        context->dirtyRegion->addClippedRect(&newMouse);
 
         *oldMouse = *mouse;
     }
@@ -115,21 +115,22 @@ void CWindow::refresh() {
     processDirtyRegions();
 
     // Only refresh if dirty regions generated
-    if (context->getNumDirty()) {
+    if (context->dirtyRegion->getNumClipped()) {
         // Draw the windows that intersect the dirty clipped regions
         drawWindow();
 
         // Draw mouse on top of final image, does not use clipped regions
         drawMouse();
 
-        // Rendering done, reset dirty/clipped regions list
-        context->resetClippedList();
-        context->resetDirtyList();
+        // Rendering done, reset dirty/render regions list
+        context->dirtyRegion->resetClippedList();
+        context->renderRegion->resetClippedList();
     }
 }
 
 void CWindow::drawMouse() {
-    context->drawBitmapNoRegion(mouse->x, mouse->y, MOUSE_W, MOUSE_H, mouseBitmap);
+    Rect mouseRect(mouse->x, mouse->y, MOUSE_W, MOUSE_H);
+    context->drawBitmapNoRegion(mouseRect, mouseBitmap);
 }
 
 void CWindow::processEvent(Device::TellurEvent *event) {

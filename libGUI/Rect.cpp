@@ -105,6 +105,24 @@ int Rect::getSplitRects(Rect *splitRects, Rect *cutRect) {
     return numRegions;
 }
 
+void Rect::restrictRect(Rect *other) {
+    if (other->getTop() < getTop()) {
+        other->setTop(getTop());
+    }
+
+    if (other->getBottom() > getBottom()) {
+        other->setBottom(getBottom());
+    }
+
+    if (other->getLeft() < getLeft()) {
+        other->setLeft(getLeft());
+    }
+
+    if (other->getRight() > getRight()) {
+        other->setRight(getRight());
+    }
+}
+
 bool Rect::intersects(Rect *rect) {
     return getLeft() <= rect->getRight() && getRight() >= rect->getLeft() &&
            getTop() <= rect->getBottom() && getBottom() >= rect->getTop();

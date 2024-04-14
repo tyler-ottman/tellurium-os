@@ -160,16 +160,17 @@ Window *Window::removeWindow(Window *window) {
 
 void Window::applyBoundClipping() {
     if (!parent) {
-        if (context->getNumDirty()) {
-            Rect *dirtyRegions = context->getDirtyRegions();
+        int nDirtyRegions = context->dirtyRegion->getNumClipped();
+        if (nDirtyRegions) {
+            Rect *dirtyRegions = context->dirtyRegion->getClippedRegions();
 
-            for (int i = 0; i < context->getNumDirty(); i++) {
-                context->addClippedRect(&dirtyRegions[i]);
+            for (int i = 0; i < nDirtyRegions; i++) {
+                context->renderRegion->addClippedRect(&dirtyRegions[i]);
             }
 
-            context->intersectClippedRect(winRect);
+            context->renderRegion->intersectClippedRect(winRect);
         } else {
-            context->addClippedRect(winRect);
+            context->renderRegion->addClippedRect(winRect);
         }
 
         return;
@@ -179,20 +180,21 @@ void Window::applyBoundClipping() {
     parent->applyBoundClipping();
 
     // Reduce visibility to main drawing area
-    context->intersectClippedRect(winRect);
+    context->renderRegion->intersectClippedRect(winRect);
 
     // Occlude areas of window where siblings overlap on top
     for (int i = getWindowID() + 1; i < parent->numWindows; i++) {
         Window *aboveWin = parent->windows[i];
         if (intersects(aboveWin->winRect)) {
-            context->reshapeRegion(aboveWin->winRect);
+            context->renderRegion->reshapeRegion(aboveWin->winRect);
         }
     }
 }
 
 bool rectIntersectsDirty(FbContext *context, Rect *rect) {
-    Rect *dirtyRegions = context->getDirtyRegions();
-    for (int j = 0; j < context->getNumDirty(); j++) {
+    Rect *dirtyRegions = context->dirtyRegion->getClippedRegions();
+    int nDirtyRegions = context->dirtyRegion->getNumClipped();
+    for (int j = 0; j < nDirtyRegions; j++) {
         if (rect->intersects(&dirtyRegions[j])) {
             return true;
         }
@@ -206,7 +208,7 @@ void Window::drawWindow() {
 
     // Remove child window clipped rectangles
     for (int i = 0; i < numWindows; i++) {
-        context->reshapeRegion(windows[i]->winRect);
+        context->renderRegion->reshapeRegion(windows[i]->winRect);
     }
 
     // Draw self
@@ -214,7 +216,7 @@ void Window::drawWindow() {
 
     // Redraw children if they intersect with dirty region
     for (int i = 0; i < numWindows; i++) {
-        context->resetClippedList();
+        context->renderRegion->resetClippedList();
         Window *child = windows[i];
 
         if (rectIntersectsDirty(context, child->winRect)) {
@@ -224,7 +226,7 @@ void Window::drawWindow() {
 }
 
 void Window::drawObject() {
-    context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
+    context->drawRect(*winRect, color);
 }
 
 bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {

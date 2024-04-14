@@ -1,10 +1,9 @@
 #pragma once
 
-#include "Rect.hpp"
 #include <stdint.h>
 
-#define CLIPPED_MAX                         200
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#include "ClippingManager.hpp"
+#include "Rect.hpp"
 
 namespace GUI {
 
@@ -24,50 +23,20 @@ public:
     void *getFbBuff(void) { return fb_meta.fb_buff; }
 
     // Framebuffer operations
-    void drawRect(int x, int y, int width, int height, uint32_t color);
-    void drawBuff(int x, int y, int width, int height, uint32_t *buff);
-    void drawRectNoRegion(int x, int y, int width, int height, uint32_t color);
-    void drawBitmapNoRegion(int x, int y, int width, int height, uint32_t *bitmap);
-    void drawVerticalLine(int xPos, int yPos, int length, int color);
-    void drawHorizontalLine(int xPos, int yPos, int length, int color);
-    void drawOutlinedRect(int xPos, int yPos, int width, int length, int color);
+    void drawRect(Rect &rect, uint32_t color);
+    void drawBuff(Rect &rect, uint32_t *buff);
+    void drawRectNoRegion(Rect &rect, uint32_t color);
+    void drawBitmapNoRegion(Rect &rect, uint32_t *bitmap);
 
-    // Translations
-    uint32_t translateLightColor(uint32_t color);
+    // void drawClippedRegions(void);
 
-    // Clipped Rectangle Operations
-    void addClippedRect(Rect *rect);
-    void reshapeRegion(Rect *rect);
+    // Clipped Region that is rendered to screen
+    ClippingManager *renderRegion;
 
-    void addDirtyRect(Rect *rect);
-    void reshapeDirty(Rect *rect);
-    
-    void drawClippedRegions(void);
-    void intersectClippedRect(Rect *rect);
+    // Clipped Region that is dirty and needs to be re-rendered
+    ClippingManager *dirtyRegion;
 
-    // List operations
-    void appendClippedRect(Rect *rect);
-    void removeClippedRect(int index);
-    void resetClippedList(void);
-
-    void appendDirtyRect(Rect *rect);
-    void removeDirtyRect(int index);
-    void resetDirtyList(void);
-
-    int getNumClipped(void) { return numClipped; }
-    int getNumDirty(void) { return numDirty; }
-
-    Rect *getDirtyRegions(void) { return dirtyRects; }
 private:
-    // Dirty region info
-    int numDirty;
-    Rect *dirtyRects;
-
-    // Clipped region info
-    bool clippingEnabled;
-    int numClipped;
-    Rect *clippedRects;
-
     FbMeta fb_meta;
     uint32_t *fb_buff;
 
@@ -77,19 +46,14 @@ private:
     FbContext(void);
     ~FbContext();
 
-    // Restrict drawing to Rect area
-    void restrictToArea(Rect *area, int *x, int *y, int *xMax, int *yMax);
-
     // Draw a clipped rectangle within the bounds of Rect area
-    void drawClippedRect(int x, int y, int width, int height, uint32_t color,
-                         Rect *area);
+    void drawClippedRect(Rect &rect, uint32_t color, Rect *area);
 
     // Draw a clipped buffer within bounds of Rect area
-    void drawClippedBuff(int x, int y, int width, int height, uint32_t *buff,
-                         Rect *area);
+    void drawClippedBuff(Rect &rect, uint32_t *buff, Rect *area);
 
     // Draw a clipped bitmap within bounds of Rect area
-    void drawClippedBitmap(int x, int y, int width, int height,
-                           uint32_t *bitmap, Rect *area);
+    void drawClippedBitmap(Rect &rect, uint32_t *bitmap, Rect *area);
 };
+
 }

@@ -32,13 +32,17 @@ public:
     /// @param res Where the resulting Rect is placed
     /// @param rect The rectangle to intersect with
     /// @return True if intersected Rect was created, otherwise false
-    bool getOverlapRect(Rect* res, Rect *rect);
+    bool getOverlapRect(Rect *res, Rect *rect);
 
     /// @brief Get all the split rectangles when intersecting 2 rectangles
     /// @param res Where the resultings Rects are placed
     /// @param rect The rectangle to intersect with this
     /// @return The number of rectangles split whewn intersects the 2
     int getSplitRects(Rect *res, Rect *crossRect);
+
+    /// @brief Restrict other Rect dimension to this Rect's dimension
+    /// @param other The Rect that will be restricted
+    void restrictRect(Rect *other);
 
     /// @brief Check if rect intersects with this
     /// @param rect The other rectangle

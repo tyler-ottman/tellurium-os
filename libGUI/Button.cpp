@@ -1,4 +1,5 @@
 #include "Button.hpp"
+#include "Utility.hpp"
 
 namespace GUI {
 
@@ -49,25 +50,24 @@ void Button::drawObject() {
     color = colorToggle ? 0xff01796f : 0xffca3433;
 
     if (onHover) {
-        color = context->translateLightColor(this->color);
+        color = translateLightColor(this->color);
     }
 
     // Draw window border if flag set
-    if (isFlagBorder()) {
-        context->drawRect(getX() + 2, getY() + 2, getWidth() - 4,
-                          getHeight() - 4, color);
-        context->drawOutlinedRect(getX(), getY(), getWidth(), getHeight(),
-                                  0xffff66cc);
-        context->drawOutlinedRect(getX() + 1, getY() + 1, getWidth() - 2,
-                                  getHeight() - 2, 0xffff66cc);
-    }
+    // if (isFlagBorder()) {
+    //     context->drawRect(getX() + 2, getY() + 2, getWidth() - 4,
+    //                       getHeight() - 4, color);
+    //     context->drawOutlinedRect(getX(), getY(), getWidth(), getHeight(),
+    //                               0xffff66cc);
+    //     context->drawOutlinedRect(getX() + 1, getY() + 1, getWidth() - 2,
+    //                               getHeight() - 2, 0xffff66cc);
+    // }
 
     if (isImg) {
         Image *image = onHover ? imgHover : imgDefault;
-        context->drawBuff(getX(), getY(), getWidth(), getHeight(),
-                          image->getBuff());
+        context->drawBuff(*winRect, image->getBuff());
     } else {
-        context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
+        context->drawRect(*winRect, color);
     }
 }
 

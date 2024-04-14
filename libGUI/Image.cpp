@@ -126,7 +126,7 @@ void Image::drawObject() {
         return;
     }
 
-    context->drawBuff(getX(), getY(), getWidth(), getHeight(), imgBuff);
+    context->drawBuff(*winRect, imgBuff);
 }
 
 uint32_t *Image::getBuff() {

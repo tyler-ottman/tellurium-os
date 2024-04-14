@@ -11,7 +11,7 @@ Border::Border(int x, int y, int width, int height, WindowFlags flags,
 Border::~Border() {}
 
 void Border::drawObject() {
-    context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
+    context->drawRect(*winRect, color);
 }
 
 };
