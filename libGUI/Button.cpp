@@ -1,25 +1,36 @@
 #include "Button.hpp"
+#include "flibc/string.h"
 
 namespace GUI {
 
 Button::Button(int x, int y, int width, int height, WindowFlags flags,
                ButtonFlags bFlags, WindowPriority priority)
     : Window::Window("", x, y, width, height, flags, priority),
-      imgDefault(nullptr),
-      imgHover(nullptr),
-      buttonFlags(bFlags) {}
-
-Button::~Button() {
-
+      imgNoHover(nullptr), imgHover(nullptr), buttonFlags(bFlags) {
+    imgNoHover = (uint8_t *)winBuff;
 }
+
+Button::Button(int x, int y, ImageReader *img, WindowFlags flags,
+               ButtonFlags bFlags, WindowPriority priority)
+    : Window::Window("", x, y, img->getWidth(), img->getHeight(), flags,
+                     priority),
+      imgNoHover(nullptr), imgHover(nullptr), buttonFlags(bFlags) {
+    // Use initial winBuff as location for default button image
+    imgNoHover = (uint8_t *)winBuff;
+    loadBuff(img->getBuff());
+}
+
+Button::~Button() {}
 
 bool Button::onWindowHover() {
     if (!isFlagHover()) {
         return false;
     }
 
-    winBuff = imgHover->getBuff();
-    setDirty(true);
+    if (imgHover) {
+        winBuff = (uint32_t *)imgHover;
+        setDirty(true);
+    }
 
     return true;
 }
@@ -29,40 +40,18 @@ bool Button::onWindowUnhover() {
         return false;
     }
 
-    winBuff = imgDefault->getBuff();
+    winBuff = (uint32_t *)imgNoHover;
     setDirty(true);
 
     return true;
 }
 
-void Button::loadImage(const char *path) {
-    GUI::Image *image = new GUI::Image(getX(), getY(), getWidth(), getHeight());
-    int err = image->loadImage(path);
-    if (err) {
-        return;
+void Button::loadHoverImage(ImageReader *img) {
+    if (img->getWidth() == getWidth() && img->getHeight() == getHeight()) {
+        int nBytes = img->getBpp() * img->getWidth() * img->getHeight();
+        imgHover = new uint8_t[nBytes];
+        __memcpy((void *)imgHover, img->getBuff(), nBytes);
     }
-
-    imgDefault = image;
-    if (!imgHover) {
-        imgHover = imgDefault;
-        winBuff = imgHover->getBuff();
-    }
-
-    setWidth(image->getWidth());
-    setHeight(image->getHeight());
-}
-
-void Button::loadHoverImage(const char *path) {
-    GUI::Image *image = new GUI::Image(getX(), getY(), getWidth(), getHeight());
-    int err = image->loadImage(path);
-    if (err) {
-        return;
-    }
-
-    imgHover = image;
-
-    setWidth(image->getWidth());
-    setHeight(image->getHeight());
 }
 
 }

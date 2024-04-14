@@ -1,6 +1,6 @@
 #include "Button.hpp"
 #include "CWindow.hpp"
-#include "Image.hpp"
+#include "libTellur/ImageReader.hpp"
 #include "Taskbar.hpp"
 #include "Terminal.hpp"
 
@@ -79,9 +79,10 @@ CWindow::CWindow(FbInfo *fbInfo)
 
     compositor = new Compositor(fbInfo);
 
-    Image *background = new Image(0, 0, fbInfo->fb_width, fbInfo->fb_height);
-
-    background->loadImage("/tmp/background.ppm");
+    Window *background = new Window(NULL, 0, 0, fbInfo->fb_width,
+                                    fbInfo->fb_height);
+    PpmReader backgroundImg("/tmp/background.ppm");
+    background->loadBuff(backgroundImg.getBuff());
     appendWindow(background);
 
     Taskbar *taskbar = new Taskbar(0, getHeight() - 40, getWidth(), 40);
@@ -89,10 +90,12 @@ CWindow::CWindow(FbInfo *fbInfo)
     appendWindow(taskbar);
 
     // Sample home button
-    Button *homeButton = new Button(taskbar->getX(), taskbar->getY(), 40, 40,
-                                    WindowFlags::WNONE, ButtonFlags::BHOVER);
-    homeButton->loadImage("/tmp/homeButtonUnhover.ppm");
-    homeButton->loadHoverImage("/tmp/homeButtonHover.ppm");
+    PpmReader homeButtonImg("/tmp/homeButtonUnhover.ppm");
+    PpmReader homeButtonHoverImg("/tmp/homeButtonHover.ppm");
+    Button *homeButton = new Button(taskbar->getX(), taskbar->getY(),
+        &homeButtonImg, WindowFlags::WNONE, ButtonFlags::BHOVER);
+    homeButton->loadHoverImage(&homeButtonHoverImg);
+    
     taskbar->appendWindow(homeButton);
 
     // Sample clock

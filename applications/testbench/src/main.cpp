@@ -30,10 +30,11 @@ int main() {
     const char *imagePath = "/tmp/basketOfFruits.ppm";
     GUI::Window *fruitWin = new GUI::Window(imagePath, 150, 100, 402,
         316 + TITLE_HEIGHT, GUI::WindowFlags::WDECORATION);
-    GUI::Image *fruitImg = new GUI::Image(151, 101 + TITLE_HEIGHT,
+    PpmReader fruitPpm(imagePath);
+    GUI::Window *fruitImg = new GUI::Window(NULL, 151, 101 + TITLE_HEIGHT,
         fruitWin->getWidth() - 2, fruitWin->getHeight() - 2 - TITLE_HEIGHT);
+    fruitImg->loadBuff(fruitPpm.getBuff());
     fruitWin->appendWindow(fruitImg);
-    fruitImg->loadImage(imagePath);
 
     // Terminal window
     GUI::Window *termWin = new GUI::Window("Terminal", 100, 150, 500, 300,

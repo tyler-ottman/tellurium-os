@@ -1,6 +1,7 @@
 #ifndef SYSCALLS_H
 #define SYSCALLS_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 struct FbInfo {

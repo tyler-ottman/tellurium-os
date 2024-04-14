@@ -1,7 +1,6 @@
 #include "Border.hpp"
 #include "Button.hpp"
 #include "flibc/string.h"
-#include "Image.hpp"
 #include "libTellur/mem.hpp"
 #include "MenuBar.hpp"
 #include "Terminal.hpp"
@@ -63,33 +62,25 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
             menuBar->appendWindow(title);
         }
 
-        Button *exitButton = new Button(x + width - 20, y + 5, 31, 31,
+        PpmReader exitImg("/tmp/exitButtonUnhover.ppm");
+        PpmReader exitHoverImg("/tmp/exitButtonHover.ppm");
+        Button *exitButton = new Button(x + width - 20, y + 5, &exitImg,
             WindowFlags::WNONE, ButtonFlags::BHOVER);
+        exitButton->loadHoverImage(&exitHoverImg);
         menuBar->appendWindow(exitButton);
-        exitButton->loadImage("/tmp/exitButtonUnhover.ppm");
-        exitButton->loadHoverImage("/tmp/exitButtonHover.ppm");
 
-        Button *minimizeButton = new Button(x + width - 40, y + 5, 31, 31,
+        PpmReader minimizeImg("/tmp/minimizeButtonUnhover.ppm");
+        PpmReader minimizeHoverImg("/tmp/minimizeButtonHover.ppm");
+        Button *minimizeButton = new Button(x + width - 40, y + 5, &minimizeImg,
             WindowFlags::WNONE, ButtonFlags::BHOVER);
+        minimizeButton->loadHoverImage(&minimizeHoverImg);
         menuBar->appendWindow(minimizeButton);
-        minimizeButton->loadImage("/tmp/minimizeButtonUnhover.ppm");
-        minimizeButton->loadHoverImage("/tmp/minimizeButtonHover.ppm");
 
         appendWindow(menuBar);
-
-        Border *border =
-            new Border(x, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1);
-        appendWindow(border);
-
-        border = new Border(x + width - 1, y + TITLE_HEIGHT, 1,
-                            height - TITLE_HEIGHT - 1);
-        appendWindow(border);
-
-        border = new Border(x, y + height - 1, width, 1);
-        appendWindow(border);
-
-        border = new Border(x, y + TITLE_HEIGHT, width, 1);
-        appendWindow(border);
+        appendWindow(new Border(x, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1));
+        appendWindow(new Border(x + width - 1, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1));
+        appendWindow(new Border(x, y + height - 1, width, 1));
+        appendWindow(new Border(x, y + TITLE_HEIGHT, width, 1));
     }
 }
 
