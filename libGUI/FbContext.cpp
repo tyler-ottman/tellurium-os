@@ -6,38 +6,30 @@ namespace GUI {
 
 FbContext *FbContext::instance = nullptr;
 
-FbContext::FbContext() {
-
-}
-
-FbContext::~FbContext() {
-    
-}
-
 FbContext *FbContext::getInstance() {
-    if (instance) {
-        return instance;
+    if (!instance) {
+        instance = new FbContext();
     }
-    
-    instance = new FbContext();
-
-    syscall_get_fb_context((void *)&instance->fb_meta);
-
-    instance->fb_buff = (uint32_t *)instance->fb_meta.fb_buff;
-    instance->screen =
-        new Rect(0, 0, instance->fb_meta.fb_width, instance->fb_meta.fb_height);
-
-    instance->renderRegion = new ClippingManager();
-    instance->dirtyRegion = new ClippingManager();
 
     return instance;
 }
 
-FbMeta *FbContext::getFbContext() {
-    return &instance->fb_meta;
+FbContext::FbContext() { syscall_get_fb_context((void *)&fbInfo); }
+
+FbContext::~FbContext() {}
+
+Compositor::Compositor(FbContext *context) : context(context) {
+    screen = new Rect(0, 0, context->fbInfo.fb_width, context->fbInfo.fb_height);
+    
+    renderRegion = new ClippingManager();
+    dirtyRegion = new ClippingManager();
 }
 
-void FbContext::drawBuff(Rect &rect, uint32_t *buff) {
+Compositor::~Compositor() {
+    
+}
+
+void Compositor::drawBuff(Rect &rect, uint32_t *buff) {
     Rect *renderRects = renderRegion->getClippedRegions();
     int numRenderRects = renderRegion->getNumClipped();
 
@@ -46,12 +38,12 @@ void FbContext::drawBuff(Rect &rect, uint32_t *buff) {
     }
 }
 
-void FbContext::drawBuffRaw(Rect &rect, uint32_t *bitmap) {
-    // Not clipped in the sense that the entire screen is the restricted area
+void Compositor::drawBuffRaw(Rect &rect, uint32_t *bitmap) {
+    // Not clipped in the sense that the entire client window is the restricted area
     drawClippedBuff(rect, bitmap, screen);
 }
 
-void FbContext::drawClippedBuff(Rect &rect, uint32_t *buff, Rect *area) {
+void Compositor::drawClippedBuff(Rect &rect, uint32_t *buff, Rect *area) {
     Rect drawRect(rect);
     
     int translateX = drawRect.getX();
@@ -66,14 +58,16 @@ void FbContext::drawClippedBuff(Rect &rect, uint32_t *buff, Rect *area) {
     int xMax = drawRect.getRight();
     int yMax = drawRect.getBottom();
 
+    int screenWidth = context->fbInfo.fb_width;
+    uint32_t *screenBuff = (uint32_t *)context->fbInfo.fb_buff;
     for (int i = y; i <= yMax; i++) {
         for (int j = x; j <= xMax; j++) {
-            fb_buff[i * fb_meta.fb_width + j] = buff[(i - translateY) * width + (j - translateX)];
+            screenBuff[i * screenWidth + j] = buff[(i - translateY) * width + (j - translateX)];
         }
     }
 }
 
-void FbContext::applyBoundClipping(Window *win) {
+void Compositor::applyBoundClipping(Window *win) {
     Window *parent = win->parent;
 
     if (!parent) {
@@ -108,7 +102,7 @@ void FbContext::applyBoundClipping(Window *win) {
     }
 }
 
-bool FbContext::rectIntersectsDirty(Rect *rect) {
+bool Compositor::rectIntersectsDirty(Rect *rect) {
     Rect *dirtyRegions = dirtyRegion->getClippedRegions();
     int nDirtyRegions = dirtyRegion->getNumClipped();
     for (int j = 0; j < nDirtyRegions; j++) {
@@ -120,7 +114,7 @@ bool FbContext::rectIntersectsDirty(Rect *rect) {
     return false;
 }
 
-void FbContext::drawWindow(Window *win) {
+void Compositor::drawWindow(Window *win) {
     applyBoundClipping(win);
 
     // Remove child window clipped rectangles
@@ -130,7 +124,7 @@ void FbContext::drawWindow(Window *win) {
     }
 
     // Draw self
-    win->drawObject();
+    drawBuff(*win->getWinRect(), win->getWinBuff());
 
     // Redraw children if they intersect with dirty region
     for (int i = 0; i < win->numWindows; i++) {
@@ -148,7 +142,7 @@ void FbContext::drawWindow(Window *win) {
 /// @param dirtyAncestor stores a pointer to the highest ancestor Window in
 /// the tree that is dirty in the current branch being traversed, starts as
 /// null because we assume there is nothing dirty
-void FbContext::createDirtyWindowRegions(Window *win, Window* dirtyAncestor) {
+void Compositor::createDirtyWindowRegions(Window *win, Window *dirtyAncestor) {
     // If window is marked as dirty, add it to dirty list
     // for the compositor
     if (win->isDirty()) {
@@ -165,11 +159,9 @@ void FbContext::createDirtyWindowRegions(Window *win, Window* dirtyAncestor) {
             if (!dirtyAncestor) {
                 dirtyAncestor = win;
 
-                FbContext *context = FbContext::getInstance();
-
                 // Add new and old location of window to dirty list
-                context->dirtyRegion->addClippedRect(dirtyAncestor->getWinRect());
-                context->dirtyRegion->addClippedRect(dirtyAncestor->getPrevRect());
+                dirtyRegion->addClippedRect(dirtyAncestor->getWinRect());
+                dirtyRegion->addClippedRect(dirtyAncestor->getPrevRect());
             }
         }
 
@@ -183,31 +175,30 @@ void FbContext::createDirtyWindowRegions(Window *win, Window* dirtyAncestor) {
     }
 }
 
-#define MOUSE_W                             11
-#define MOUSE_H                             18
-void FbContext::createDirtyMouseRegion(vec2 *mouse, vec2 *oldMouse) {
-    if (!oldMouse->equals(mouse)) {
+void Compositor::createDirtyMouseRegion(Window *mouse) {
+    if (mouse->isDirty()) {
+        // Reset dirty flag because it won't be dirty after refresh
+        mouse->setDirty(false);
+
         // Original mouse position
-        Rect old(oldMouse->x, oldMouse->y, MOUSE_W, MOUSE_H);
-        dirtyRegion->addClippedRect(&old);
+        dirtyRegion->addClippedRect(mouse->getPrevRect());
 
         // New mouse position
-        Rect newMouse(mouse->x, mouse->y, MOUSE_W, MOUSE_H);
-        dirtyRegion->addClippedRect(&newMouse);
+        dirtyRegion->addClippedRect(mouse->getWinRect());
 
-        *oldMouse = *mouse;
+        // Now store current position of mouse in previous position
+        mouse->updatePrevRect();
     }
 }
 
-extern uint32_t mouseBitmap[MOUSE_W * MOUSE_H];
-void FbContext::render(Window *root, vec2 *mouse, vec2 *oldMouse) {
+void Compositor::render(Window *root, Window *mouse) {
     // Add any Window state change to list of regions to re-render
     // for the compositor
     createDirtyWindowRegions(root, nullptr);
 
     // If mouse position has changes since last refresh, patch old position
     // and draw new position
-    createDirtyMouseRegion(mouse, oldMouse);
+    createDirtyMouseRegion(mouse);
 
     // Only refresh if dirty regions generated
     if (dirtyRegion->getNumClipped()) {
@@ -215,8 +206,7 @@ void FbContext::render(Window *root, vec2 *mouse, vec2 *oldMouse) {
         drawWindow(root);
 
         // Draw mouse on top of final image, does not use clipped regions
-        Rect mouseRect(mouse->x, mouse->y, MOUSE_W, MOUSE_H);
-        drawBuffRaw(mouseRect, mouseBitmap);
+        drawBuffRaw(*mouse->getWinRect(), mouse->getWinBuff());
 
         // Rendering done, reset dirty/render regions list
         dirtyRegion->resetClippedList();

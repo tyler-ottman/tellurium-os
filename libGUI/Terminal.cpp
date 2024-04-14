@@ -4,25 +4,21 @@
 
 namespace GUI {
 
-Terminal::Terminal(int x, int y, int width, int height, WindowFlags flags,
+Terminal::Terminal(int x, int y, int width, int height,
+                   FbContext::FbInfo *fbInfo, WindowFlags flags,
                    WindowPriority priority)
     : Window::Window("terminal", x, y, width, height, flags, priority) {
-    FbContext *context = FbContext::getInstance();
-    FbMeta *meta = context->getFbContext();
     terminal = terminal_alloc(
-        14, 8, height, width, meta->fb_height, meta->fb_width, meta->fb_pitch,
-        meta->fb_bpp, FG_COLOR_DEFAULT, BG_COLOR_DEFAULT, NULL, NULL,
-        (uint32_t *)context->getFbBuff(), user_malloc, user_free);
+        14, 8, height, width, fbInfo->fb_height, fbInfo->fb_width,
+        fbInfo->fb_pitch, fbInfo->fb_bpp, FG_COLOR_DEFAULT, BG_COLOR_DEFAULT,
+        NULL, NULL, (uint32_t *)fbInfo->fb_buff, user_malloc, user_free);
 
     terminal->clear(terminal);
+
+    winBuff = terminal->buf1;
 }
 
 Terminal::~Terminal() {}
-
-void Terminal::drawObject() {
-    FbContext *context = FbContext::getInstance();
-    context->drawBuff(*winRect, terminal->buf1);
-}
 
 void Terminal::clear() {
     terminal->clear(terminal);

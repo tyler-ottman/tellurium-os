@@ -2,21 +2,20 @@
 
 #include "modules/terminal.h"
 #include "Window.hpp"
+#include "FbContext.hpp"
 
 namespace GUI {
 
 class Terminal : public Window {
 public:
-    Terminal(int x, int y, int width, int height,
+    Terminal(int x, int y, int width, int height, FbContext::FbInfo *fbInfo,
              WindowFlags flags = WindowFlags::WNONE,
              WindowPriority priority = WindowPriority::WPRIO2);
     ~Terminal();
 
     // Buffer opeations
-    void drawObject(void);
     void clear(void);
     int printf(const char *format, ...);
-
 
     void enableCursor(void);
     void disableCursor(void);

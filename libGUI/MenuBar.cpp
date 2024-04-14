@@ -31,11 +31,6 @@ bool MenuBar::onWindowDrag(Device::MouseData *data) {
     return true;
 }
 
-void MenuBar::drawObject() {
-    FbContext *context = FbContext::getInstance();
-    context->drawBuff(*winRect, winBuff);
-}
-
 uint32_t MenuBar::getBarColor() {
     return barColor;
 }

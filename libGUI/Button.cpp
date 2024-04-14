@@ -47,31 +47,31 @@ bool Button::onWindowUnhover() {
     return true;
 }
 
-void Button::drawObject() {
-    color = colorToggle ? 0xff01796f : 0xffca3433;
+// void Button::drawObject() {
+//     color = colorToggle ? 0xff01796f : 0xffca3433;
 
-    if (onHover) {
-        color = translateLightColor(this->color);
-    }
+//     if (onHover) {
+//         color = translateLightColor(this->color);
+//     }
 
-    // Draw window border if flag set
-    // if (isFlagBorder()) {
-    //     context->drawRect(getX() + 2, getY() + 2, getWidth() - 4,
-    //                       getHeight() - 4, color);
-    //     context->drawOutlinedRect(getX(), getY(), getWidth(), getHeight(),
-    //                               0xffff66cc);
-    //     context->drawOutlinedRect(getX() + 1, getY() + 1, getWidth() - 2,
-    //                               getHeight() - 2, 0xffff66cc);
-    // }
+//     // Draw window border if flag set
+//     // if (isFlagBorder()) {
+//     //     context->drawRect(getX() + 2, getY() + 2, getWidth() - 4,
+//     //                       getHeight() - 4, color);
+//     //     context->drawOutlinedRect(getX(), getY(), getWidth(), getHeight(),
+//     //                               0xffff66cc);
+//     //     context->drawOutlinedRect(getX() + 1, getY() + 1, getWidth() - 2,
+//     //                               getHeight() - 2, 0xffff66cc);
+//     // }
 
-    FbContext *context = FbContext::getInstance();
-    if (isImg) {
-        Image *image = onHover ? imgHover : imgDefault;
-        context->drawBuff(*winRect, image->getBuff());
-    } else {
-        context->drawBuff(*winRect, winBuff);
-    }
-}
+//     FbContext *context = FbContext::getInstance();
+//     if (isImg) {
+//         Image *image = onHover ? imgHover : imgDefault;
+//         context->drawBuff(*winRect, image->getBuff());
+//     } else {
+//         context->drawBuff(*winRect, winBuff);
+//     }
+// }
 
 void Button::loadImage(const char *path) {
     GUI::Image *image = new GUI::Image(getX(), getY(), getWidth(), getHeight());
@@ -83,6 +83,7 @@ void Button::loadImage(const char *path) {
     imgDefault = image;
     if (!imgHover) {
         imgHover = imgDefault;
+        winBuff = imgHover->getBuff();
     }
 
     isImg = true;

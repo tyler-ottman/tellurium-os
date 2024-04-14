@@ -39,8 +39,10 @@ int main() {
     // Terminal window
     GUI::Window *termWin = new GUI::Window("Terminal", 100, 150, 500, 300,
         GUI::WindowFlags::WDECORATION);
-    GUI::Terminal *term = new GUI::Terminal(100 + 1, 150 + TITLE_HEIGHT + 1,
-        termWin->getWidth() - 2, termWin->getHeight() - 2 - TITLE_HEIGHT);
+    GUI::Terminal *term = new GUI::Terminal(
+        100 + 1, 150 + TITLE_HEIGHT + 1, termWin->getWidth() - 2,
+        termWin->getHeight() - 2 - TITLE_HEIGHT,
+        &GUI::FbContext::getInstance()->fbInfo);
     termWin->appendWindow(term);
     term->printf("TelluriumOS - Hello World!\n");
     for (size_t i = 0; i < 16; i++) {

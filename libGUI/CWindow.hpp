@@ -2,6 +2,7 @@
 #define CWINDOW_H
 
 #include "libTellur/DevPoll.hpp"
+#include "libGUI/FbContext.hpp"
 #include "libGUI/Window.hpp"
 
 namespace GUI {
@@ -20,25 +21,21 @@ public:
     void forceRefresh(void);
 
 private:
-    CWindow(void);
+    CWindow(FbContext *context);
     ~CWindow();
 
     /// @brief Process event 
     /// @param event The event to be processed
     void processEvent(Device::TellurEvent *event);
-        
-    int getMouseX(void) { return mouse->x; }
-    int getMouseY(void) { return mouse->y; }
 
     void updateMousePos(Device::MouseData *data);
-    bool mouseInBounds(Window *window);
 
-    vec2 *mouse;
-    vec2 *oldMouse;
-
+    Window *mouse;
     int nEvents;
-
     Device::DeviceManager *devManager;
+
+    Compositor *compositor;
+    FbContext *context;
 
     static CWindow *instance;
 };

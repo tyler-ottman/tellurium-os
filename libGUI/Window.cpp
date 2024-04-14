@@ -56,8 +56,8 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
 
         if (this->windowName) {
             int titleLen = __strlen(this->windowName) * 8;  // 8 is default font width
-            Terminal *title =
-                new Terminal(x + width / 2 - titleLen / 2, y + 10, titleLen, 30);
+            Terminal *title = new Terminal(x + width / 2 - titleLen / 2,
+                y + 10, titleLen, 30, &FbContext::getInstance()->fbInfo);
             title->disableCursor();
             title->setBg(0xffbebebe);
             title->setFg(0);
@@ -164,11 +164,7 @@ Window *Window::removeWindow(Window *window) {
     return removeWindow(window->getWindowID());
 }
 
-void Window::drawObject() {
-    FbContext::getInstance()->drawBuff(*winRect, winBuff);
-}
-
-bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
+bool Window::onEvent(Device::TellurEvent *event, Window *mouse) {
     Device::MouseData *mouseData = (Device::MouseData *)event->data; // temp fix
 
     // We use this pointer later if the event needs to be passed to a child
@@ -290,12 +286,12 @@ bool Window::onSubtreeUnselect() {
 
 bool Window::intersects(Rect *rect) { return winRect->intersects(rect); }
 
-Window *Window::getWindowUnderMouse(vec2 *mouse) {
+Window *Window::getWindowUnderMouse(Window *mouse) {
     for (int i = numWindows - 1; i >= 0; i--) {
         Window *child = windows[i];
 
         // Return the first instance of the mouse being located within boundary
-        if (child->isMouseInBounds(mouse)) {
+        if (child->isCoordInBounds(mouse->getX(), mouse->getY())) {
             return child;
         }
     }
@@ -331,6 +327,13 @@ bool Window::moveToTop(Window *child) {
     }
 
     return true;
+}
+
+void Window::copyBuff(uint32_t *buff) {
+    size_t buffSize = winRect->getWidth() * winRect->getHeight();
+    for (size_t i = 0; i < buffSize; i++) {
+        winBuff[i] = buff[i];
+    }
 }
 
 int Window::getWindowID() { return this->windowID; }
@@ -392,9 +395,9 @@ bool Window::hasUnbounded() { return flags & WindowFlags::WUNBOUNDED; }
 
 bool Window::isDirty() { return m_dirty; }
 
-bool Window::isMouseInBounds(vec2 *mouse) {
-    return ((mouse->x >= getX()) && (mouse->x <= (getX() + getWidth())) &&
-            (mouse->y >= getY()) && (mouse->y <= (getY() + getHeight())));
+bool Window::isCoordInBounds(int x, int y) {
+    return ((x >= getX()) && (x <= (getX() + getWidth())) &&
+            (y >= getY()) && (y <= (getY() + getHeight())));
 }
 
 }  // namespace GUI

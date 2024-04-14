@@ -15,7 +15,6 @@ public:
     ~Image();
 
     int loadImage(const char *path);
-    void drawObject(void);
     uint32_t *getBuff(void);
 private:
     int imgFd;

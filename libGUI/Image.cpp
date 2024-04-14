@@ -119,16 +119,9 @@ int Image::loadImage(const char *path) {
 
     delete ppm;
 
+    winBuff = imgBuff; // TODO
+
     return IMG_OK;
-}
-
-void Image::drawObject() {
-    if (!imgBuff) {
-        return;
-    }
-
-    FbContext *context = FbContext::getInstance();
-    context->drawBuff(*winRect, imgBuff);
 }
 
 uint32_t *Image::getBuff() {

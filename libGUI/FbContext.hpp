@@ -9,20 +9,38 @@
 
 namespace GUI {
 
-typedef struct {
-    void *fb_buff;
-    uint32_t fb_width;
-    uint32_t fb_height;
-    uint32_t fb_pitch;
-    uint32_t fb_bpp;
-} FbMeta;
+
 
 class FbContext {
 public:
-    FbContext(FbContext& obj) = delete;
     static FbContext *getInstance(void);
-    FbMeta *getFbContext(void);
-    void *getFbBuff(void) { return fb_meta.fb_buff; }
+
+    struct FbInfo {
+        void *fb_buff;
+        uint32_t fb_width;
+        uint32_t fb_height;
+        uint32_t fb_pitch;
+        uint32_t fb_bpp;
+        FbInfo() : fb_buff(nullptr),
+              fb_width(0),
+              fb_height(0),
+              fb_pitch(0),
+              fb_bpp(0) {}
+    };
+
+    FbInfo fbInfo;
+
+private:
+    FbContext(void);
+    ~FbContext(void);
+
+    static FbContext *instance;
+};
+
+class Compositor {
+public:
+    Compositor(FbContext *context);
+    ~Compositor(void);
 
     // Framebuffer operations
     void drawBuff(Rect &rect, uint32_t *buff);
@@ -40,25 +58,20 @@ public:
     /// @brief Generate dirty regions for the Mouse
     /// @param mouse Current position of mouse
     /// @param oldMouse Old position of mouse
-    void createDirtyMouseRegion(vec2 *mouse, vec2 *oldMouse);
+    void createDirtyMouseRegion(Window *mouse);
 
     /// @brief Render to final buffer
     /// @param root Top of Window structure
     /// @param mouse Current position of mouse
     /// @param oldMouse Old position of mouse
-    void render(Window *root, vec2 *mouse, vec2 *oldMouse);
+    void render(Window *root, Window *mouse);
 
 private:
-    FbMeta fb_meta;
-    uint32_t *fb_buff;
+    FbContext *context;
 
     Rect *screen;
     ClippingManager *renderRegion; // Regions to render to screen
-    ClippingManager *dirtyRegion; // Dirty regions that need to be rendered
-
-    static FbContext *instance;
-    FbContext(void);
-    ~FbContext(void);
+    ClippingManager *dirtyRegion; // Dirty regions that need to be rendered    
 
     // Draw a clipped buffer within bounds of Rect area
     void drawClippedBuff(Rect &rect, uint32_t *buff, Rect *area);

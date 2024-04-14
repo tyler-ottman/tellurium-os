@@ -20,7 +20,7 @@
 
 namespace GUI {
 
-class FbContext;
+class Compositor;
 
 /// @brief Common window flags
 enum WindowFlags {
@@ -46,7 +46,7 @@ enum WindowPriority {
 };
 
 class Window {
-    friend class FbContext;
+    friend class Compositor;
 
 public:
     /// @brief Constructor to create a new window
@@ -90,14 +90,11 @@ public:
     /// @return If window is invalid, return nullptr, the delete window
     Window *removeWindow(Window *window);
 
-    // TODO: Move drawing operations outside of Window definition
-    virtual void drawObject(void);
-
     //// @brief Process event
     /// @param data Incoming mouse data
     /// @param mouse Position of mouse
     /// @return Event process status
-    virtual bool onEvent(Device::TellurEvent *data, vec2 *mouse);
+    virtual bool onEvent(Device::TellurEvent *data, Window *mouse);
     
     /// @brief Process window raise event
     /// @return Event process status
@@ -152,7 +149,7 @@ public:
     /// @param mouse the position
     /// @return The child window underneath the mouse, or nullptr if the mouse
     ///         is not hovering over any child window
-    Window *getWindowUnderMouse(vec2 *mouse);
+    Window *getWindowUnderMouse(Window *mouse);
 
     /// @brief Recursively update position of window and descendant
     /// @param data The delta (x, y) position
@@ -165,6 +162,12 @@ public:
     /// @param child Recursively the child to raise on the window stack
     /// @return The highest level window that was raised
     bool moveToTop(Window *child);
+
+    /// @brief Copy buff into winBuff
+    void copyBuff(uint32_t *buff);
+
+    /// @brief Get the Window's buffer
+    uint32_t *getWinBuff(void) { return winBuff; }
 
     /// @brief Get ID of window
     int getWindowID(void);
@@ -234,8 +237,8 @@ public:
     /// @brief Check if window is dirty
     bool isDirty(void);
 
-    /// @brief Check if mouse coordinates are within Window's boundary
-    bool isMouseInBounds(vec2 *mouse);
+    /// @brief Check if coordinates are within Window's boundary
+    bool isCoordInBounds(int x, int y);
 
 protected:
     char *windowName; // unused
@@ -253,7 +256,6 @@ protected:
     bool m_dirty; // Flags that indicates if Window is dirty
     Window *m_pHoverWindow;    // Which child window the mouse is hovering over
     Window *m_pSelectedWindow; // Which child window was last selected
-    // FbContext *context; // Screen buffer info (TODO: remove)
 };
 
 } // GUI
