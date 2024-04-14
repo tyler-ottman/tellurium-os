@@ -1,6 +1,5 @@
 #include "libGUI/Button.hpp"
 #include "libGUI/CWindow.hpp"
-#include "libGUI/FbContext.hpp"
 #include "libGUI/Terminal.hpp"
 #include "libGUI/Window.hpp"
 #include "libTellur/mem.hpp"
@@ -16,10 +15,10 @@ int main() {
     GUI::Window *square2 = new GUI::Window("square", 150, 100, 200, 70);
     GUI::Window *square3 = new GUI::Window("square", 100, 250, 150, 100);
     GUI::Window *square4 = new GUI::Window("square", 220, 130, 100, 140);
-    square1->setColor(0xff89cff0);
-    square2->setColor(0xffd1ffbd);
-    square3->setColor(0xfffaa0a0);
-    square4->setColor(0xffffd580);
+    square1->loadBuff(0xff89cff0);
+    square2->loadBuff(0xffd1ffbd);
+    square3->loadBuff(0xfffaa0a0);
+    square4->loadBuff(0xffffd580);
     geoWin->appendWindow(square1);
     geoWin->appendWindow(square2);
     geoWin->appendWindow(square3);
@@ -31,16 +30,18 @@ int main() {
     const char *imagePath = "/tmp/basketOfFruits.ppm";
     GUI::Window *fruitWin = new GUI::Window(imagePath, 150, 100, 402,
         316 + TITLE_HEIGHT, GUI::WindowFlags::WDECORATION);
-    GUI::Image *fruitImg = new GUI::Image(151, 101 + TITLE_HEIGHT,
+    PpmReader fruitPpm(imagePath);
+    GUI::Window *fruitImg = new GUI::Window(NULL, 151, 101 + TITLE_HEIGHT,
         fruitWin->getWidth() - 2, fruitWin->getHeight() - 2 - TITLE_HEIGHT);
+    fruitImg->loadBuff(fruitPpm.getBuff());
     fruitWin->appendWindow(fruitImg);
-    fruitImg->loadImage(imagePath);
 
     // Terminal window
     GUI::Window *termWin = new GUI::Window("Terminal", 100, 150, 500, 300,
         GUI::WindowFlags::WDECORATION);
-    GUI::Terminal *term = new GUI::Terminal(100 + 1, 150 + TITLE_HEIGHT + 1,
-        termWin->getWidth() - 2, termWin->getHeight() - 2 - TITLE_HEIGHT);
+    GUI::Terminal *term = new GUI::Terminal(
+        100 + 1, 150 + TITLE_HEIGHT + 1, termWin->getWidth() - 2,
+        termWin->getHeight() - 2 - TITLE_HEIGHT);
     termWin->appendWindow(term);
     term->printf("TelluriumOS - Hello World!\n");
     for (size_t i = 0; i < 16; i++) {

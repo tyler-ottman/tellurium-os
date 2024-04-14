@@ -1,4 +1,5 @@
 #include "libTellur/mem.hpp"
+#include "libTellur/syscalls.hpp"
 #include "Terminal.hpp"
 
 namespace GUI {
@@ -6,20 +7,20 @@ namespace GUI {
 Terminal::Terminal(int x, int y, int width, int height, WindowFlags flags,
                    WindowPriority priority)
     : Window::Window("terminal", x, y, width, height, flags, priority) {
-    FbMeta *meta = context->getFbContext();
+    FbInfo fbInfo;
+    syscall_get_fb_context(&fbInfo); // TODO: don't use syscall
+
     terminal = terminal_alloc(
-        14, 8, height, width, meta->fb_height, meta->fb_width, meta->fb_pitch,
-        meta->fb_bpp, FG_COLOR_DEFAULT, BG_COLOR_DEFAULT, NULL, NULL,
-        (uint32_t *)context->getFbBuff(), user_malloc, user_free);
+        14, 8, height, width, fbInfo.fb_height, fbInfo.fb_width,
+        fbInfo.fb_pitch, fbInfo.fb_bpp, FG_COLOR_DEFAULT, BG_COLOR_DEFAULT,
+        NULL, NULL, (uint32_t *)fbInfo.fb_buff, user_malloc, user_free);
 
     terminal->clear(terminal);
+
+    winBuff = terminal->buf1;
 }
 
 Terminal::~Terminal() {}
-
-void Terminal::drawObject() {
-    context->drawBuff(getX(), getY(), getWidth(), getHeight(), terminal->buf1);
-}
 
 void Terminal::clear() {
     terminal->clear(terminal);

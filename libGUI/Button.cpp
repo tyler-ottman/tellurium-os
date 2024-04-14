@@ -1,105 +1,57 @@
 #include "Button.hpp"
+#include "flibc/string.h"
 
 namespace GUI {
 
 Button::Button(int x, int y, int width, int height, WindowFlags flags,
                ButtonFlags bFlags, WindowPriority priority)
     : Window::Window("", x, y, width, height, flags, priority),
-      colorToggle(false),
-      onHover(false),
-      isImg(false),
-      imgDefault(nullptr),
-      imgHover(nullptr),
-      buttonFlags(bFlags) {}
-
-Button::~Button() {
-
+      imgNoHover(nullptr), imgHover(nullptr), buttonFlags(bFlags) {
+    imgNoHover = (uint8_t *)winBuff;
 }
 
-bool Button::onWindowClick() {
-    if (isFlagToggle()) {
-        colorToggle ^= 1;
-
-        // Button dirty, needs refresh
-        setDirty(true);
-    }
-    
-    return true;
+Button::Button(int x, int y, ImageReader *img, WindowFlags flags,
+               ButtonFlags bFlags, WindowPriority priority)
+    : Window::Window("", x, y, img->getWidth(), img->getHeight(), flags,
+                     priority),
+      imgNoHover(nullptr), imgHover(nullptr), buttonFlags(bFlags) {
+    // Use initial winBuff as location for default button image
+    imgNoHover = (uint8_t *)winBuff;
+    loadBuff(img->getBuff());
 }
+
+Button::~Button() {}
 
 bool Button::onWindowHover() {
     if (!isFlagHover()) {
         return false;
     }
 
-    onHover = true;
-    setDirty(true);
+    if (imgHover) {
+        winBuff = (uint32_t *)imgHover;
+        setDirty(true);
+    }
 
     return true;
 }
 
 bool Button::onWindowUnhover() {
-    onHover = false;
+    if (!isFlagHover()) {
+        return false;
+    }
+
+    winBuff = (uint32_t *)imgNoHover;
     setDirty(true);
 
     return true;
 }
 
-void Button::drawObject() {
-    color = colorToggle ? 0xff01796f : 0xffca3433;
-
-    if (onHover) {
-        color = context->translateLightColor(this->color);
+void Button::loadHoverImage(ImageReader *img) {
+    if (img->getWidth() == getWidth() && img->getHeight() == getHeight()) {
+        int nBytes = img->getBpp() * img->getWidth() * img->getHeight();
+        imgHover = new uint8_t[nBytes];
+        __memcpy((void *)imgHover, img->getBuff(), nBytes);
     }
-
-    // Draw window border if flag set
-    if (isFlagBorder()) {
-        context->drawRect(getX() + 2, getY() + 2, getWidth() - 4,
-                          getHeight() - 4, color);
-        context->drawOutlinedRect(getX(), getY(), getWidth(), getHeight(),
-                                  0xffff66cc);
-        context->drawOutlinedRect(getX() + 1, getY() + 1, getWidth() - 2,
-                                  getHeight() - 2, 0xffff66cc);
-    }
-
-    if (isImg) {
-        Image *image = onHover ? imgHover : imgDefault;
-        context->drawBuff(getX(), getY(), getWidth(), getHeight(),
-                          image->getBuff());
-    } else {
-        context->drawRect(getX(), getY(), getWidth(), getHeight(), color);
-    }
-}
-
-void Button::loadImage(const char *path) {
-    GUI::Image *image = new GUI::Image(getX(), getY(), getWidth(), getHeight());
-    int err = image->loadImage(path);
-    if (err) {
-        return;
-    }
-
-    imgDefault = image;
-    if (!imgHover) {
-        imgHover = imgDefault;
-    }
-
-    isImg = true;
-
-    setWidth(image->getWidth());
-    setHeight(image->getHeight());
-}
-
-void Button::loadHoverImage(const char *path) {
-    GUI::Image *image = new GUI::Image(getX(), getY(), getWidth(), getHeight());
-    int err = image->loadImage(path);
-    if (err) {
-        return;
-    }
-
-    imgHover = image;
-
-    setWidth(image->getWidth());
-    setHeight(image->getHeight());
 }
 
 }

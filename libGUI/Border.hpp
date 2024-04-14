@@ -11,8 +11,6 @@ public:
         WindowFlags flags = WindowFlags::WNONE,
         WindowPriority priority = WindowPriority::WPRIO2);
     ~Border();
-
-    void drawObject(void);
 };
 
 };

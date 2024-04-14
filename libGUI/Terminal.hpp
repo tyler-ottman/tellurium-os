@@ -13,10 +13,8 @@ public:
     ~Terminal();
 
     // Buffer opeations
-    void drawObject(void);
     void clear(void);
     int printf(const char *format, ...);
-
 
     void enableCursor(void);
     void disableCursor(void);

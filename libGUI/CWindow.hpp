@@ -2,7 +2,8 @@
 #define CWINDOW_H
 
 #include "libTellur/DevPoll.hpp"
-#include "libGUI/Window.hpp"
+#include "Compositor.hpp"
+#include "Window.hpp"
 
 namespace GUI {
 
@@ -16,41 +17,25 @@ public:
     /// @brief Poll for received mouse/keyboard events
     void pollEvents(void);
 
-    /// @brief Add dirty Windows and mouse movement to dirty lists
-    void processDirtyWindows();
-
-    /// @brief Calculate the region of the screen/buffer that will be
-    ///re-rendered due to mouse movement and/or Window state changes
-    void processDirtyRegions(void);
-
-    /// @brief Refresh the CWindow
-    void refresh(void);
-
     /// @brief Force refresh the CWindow
     void forceRefresh(void);
 
 private:
-    CWindow(void);
+    CWindow(FbInfo *fbInfo);
     ~CWindow();
 
     /// @brief Process event 
     /// @param event The event to be processed
     void processEvent(Device::TellurEvent *event);
 
-    void drawMouse(void);
-        
-    int getMouseX(void) { return mouse->x; }
-    int getMouseY(void) { return mouse->y; }
-
     void updateMousePos(Device::MouseData *data);
-    bool mouseInBounds(Window *window);
 
-    vec2 *mouse;
-    vec2 *oldMouse;
-
+    Window *mouse;
     int nEvents;
-
     Device::DeviceManager *devManager;
+
+    Compositor *compositor;
+    FbInfo *fbInfo;
 
     static CWindow *instance;
 };
