@@ -16,6 +16,7 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
       windowID(-1),
       flags(flags),
       winRect(nullptr),
+      winBuff(nullptr),
       color(0xff333333),
       priority(priority),
       parent(nullptr),
@@ -35,6 +36,12 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
 
     // This will always store the most up-to-date position/size of Window
     winRect = new Rect(x, y, width, height);
+
+    // The actual contents of the window
+    winBuff = new uint32_t[width * height];
+    for (int i = 0; i < width * height; i++) {
+        winBuff[i] = color;
+    }
 
     // This will store the position/size of Window on last refresh
     m_pPrevRect = new Rect(*winRect);
@@ -158,7 +165,7 @@ Window *Window::removeWindow(Window *window) {
 }
 
 void Window::drawObject() {
-    FbContext::getInstance()->drawRect(*winRect, color);
+    FbContext::getInstance()->drawBuff(*winRect, winBuff);
 }
 
 bool Window::onEvent(Device::TellurEvent *event, vec2 *mouse) {
@@ -361,7 +368,12 @@ void Window::setWidth(int width) { winRect->setWidth(width); }
 
 void Window::setHeight(int height) { winRect->setHeight(height); }
 
-void Window::setColor(uint32_t color) { this->color = color; }
+void Window::setColor(uint32_t color) {
+    for (int i = 0; i < winRect->getWidth() * winRect->getHeight(); i++) {
+        winBuff[i] = color;
+    }
+    this->color = color;
+}
 
 void Window::setDirty(bool dirty) { this->m_dirty = dirty; }
 

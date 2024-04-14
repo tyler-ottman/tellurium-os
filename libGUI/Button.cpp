@@ -69,7 +69,7 @@ void Button::drawObject() {
         Image *image = onHover ? imgHover : imgDefault;
         context->drawBuff(*winRect, image->getBuff());
     } else {
-        context->drawRect(*winRect, color);
+        context->drawBuff(*winRect, winBuff);
     }
 }
 

@@ -25,44 +25,44 @@ public:
     void *getFbBuff(void) { return fb_meta.fb_buff; }
 
     // Framebuffer operations
-    void drawRect(Rect &rect, uint32_t color);
     void drawBuff(Rect &rect, uint32_t *buff);
-    void drawRectNoRegion(Rect &rect, uint32_t color);
-    void drawBitmapNoRegion(Rect &rect, uint32_t *bitmap);
-
-    // void drawClippedRegions(void);
-
-    // Clipped Region that is rendered to screen
-    ClippingManager *renderRegion;
-
-    // Clipped Region that is dirty and needs to be re-rendered
-    ClippingManager *dirtyRegion;
+    void drawBuffRaw(Rect &rect, uint32_t *bitmap);
 
     void applyBoundClipping(Window *win);
     bool rectIntersectsDirty(Rect *rect);
     void drawWindow(Window *win);
+
+    /// @brief Generate dirty regions from Window tree structure
+    /// @param win Cur traversed window
+    /// @param dirtyAncestor Highest ancestor of win marked as dirty
+    void createDirtyWindowRegions(Window *win, Window* dirtyAncestor);
+
+    /// @brief Generate dirty regions for the Mouse
+    /// @param mouse Current position of mouse
+    /// @param oldMouse Old position of mouse
+    void createDirtyMouseRegion(vec2 *mouse, vec2 *oldMouse);
+
+    /// @brief Render to final buffer
+    /// @param root Top of Window structure
+    /// @param mouse Current position of mouse
+    /// @param oldMouse Old position of mouse
+    void render(Window *root, vec2 *mouse, vec2 *oldMouse);
 
 private:
     FbMeta fb_meta;
     uint32_t *fb_buff;
 
     Rect *screen;
+    ClippingManager *renderRegion; // Regions to render to screen
+    ClippingManager *dirtyRegion; // Dirty regions that need to be rendered
 
     static FbContext *instance;
     FbContext(void);
-    ~FbContext();
-
-    // Draw a clipped rectangle within the bounds of Rect area
-    void drawClippedRect(Rect &rect, uint32_t color, Rect *area);
+    ~FbContext(void);
 
     // Draw a clipped buffer within bounds of Rect area
     void drawClippedBuff(Rect &rect, uint32_t *buff, Rect *area);
-
-    // Draw a clipped bitmap within bounds of Rect area
-    void drawClippedBitmap(Rect &rect, uint32_t *bitmap, Rect *area);
-
-    
-    
+    // void drawClippedRegions(void);
 };
 
 }

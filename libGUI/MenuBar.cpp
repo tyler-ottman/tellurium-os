@@ -5,8 +5,10 @@ namespace GUI {
 
 MenuBar::MenuBar(int x, int y, int width, int height, WindowFlags flags,
                  WindowPriority priority)
-    : Window::Window("menuBar", x, y, width, height, flags, priority),
-    barColor(0xffbebebe) {}
+    : Window::Window("menuBar", x, y, width, height, flags, priority) {
+    // barColor = 0xffbebebe;
+    setColor(0xffbebebe);
+}
 
 MenuBar::~MenuBar() {}
 
@@ -31,7 +33,7 @@ bool MenuBar::onWindowDrag(Device::MouseData *data) {
 
 void MenuBar::drawObject() {
     FbContext *context = FbContext::getInstance();
-    context->drawRect(*winRect, getBarColor());
+    context->drawBuff(*winRect, winBuff);
 }
 
 uint32_t MenuBar::getBarColor() {

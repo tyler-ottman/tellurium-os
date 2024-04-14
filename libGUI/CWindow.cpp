@@ -46,96 +46,6 @@ CWindow *CWindow::getInstance() {
     return instance;
 }
 
-/// @brief Recursively traverse the Window tree and add dirty Windows
-/// to list of regions that require re-rendering to screen/buffer
-/// @param win the current Window being traversing over
-/// @param dirtyAncestor stores a pointer to the highest ancestor Window in
-/// the tree that is dirty in the current branch being traversed, starts as
-/// null because we assume there is nothing dirty
-static void processDirtyWindowsInternal(Window *win, Window* dirtyAncestor) {
-    // If window is marked as dirty, add it to dirty list
-    // for the compositor
-    if (win->isDirty()) {
-        // Reset dirty flag because it won't be dirty after refresh
-        win->setDirty(false);
-
-        if (win->hasUnbounded()) {
-            // TODO
-        } else {
-            // This is an optimization, dirty child Windows bounded by a dirty
-            // ancestor (parent or above) Window do not need to be added to 
-            // the dirty list for the compositor, because the ancestor already
-            // covers the region
-            if (!dirtyAncestor) {
-                dirtyAncestor = win;
-
-                FbContext *context = FbContext::getInstance();
-
-                // Add new and old location of window to dirty list
-                context->dirtyRegion->addClippedRect(dirtyAncestor->getWinRect());
-                context->dirtyRegion->addClippedRect(dirtyAncestor->getPrevRect());
-            }
-        }
-
-        // Now update previous Rect to be the current Rent (formaly dirty)
-        win->updatePrevRect();
-    }
-
-    // Process dirty Windows for children
-    for (int i = 0; i < win->getNumChildren(); i++) {
-        processDirtyWindowsInternal(win->getChild(i), dirtyAncestor);
-    }
-}
-
-void CWindow::processDirtyWindows() {
-    processDirtyWindowsInternal(this, nullptr);
-}
-
-void CWindow::processDirtyRegions() {
-    // Add any Window state change to list of regions to re-render
-    // for the compositor
-    processDirtyWindows();
-    FbContext *context = FbContext::getInstance();
-    // If mouse position has changes since last refresh, patch old position
-    // and draw new position
-    if (!oldMouse->equals(mouse)) {
-        // Original mouse position
-        Rect old(oldMouse->x, oldMouse->y, MOUSE_W, MOUSE_H);
-        context->dirtyRegion->addClippedRect(&old);
-
-        // New mouse position
-        Rect newMouse(mouse->x, mouse->y, MOUSE_W, MOUSE_H);
-        context->dirtyRegion->addClippedRect(&newMouse);
-
-        *oldMouse = *mouse;
-    }
-}
-
-void CWindow::refresh() {
-    // If selectedWindow position changed since last refresh, add to dirty
-    processDirtyRegions();
-    FbContext *context = FbContext::getInstance();
-    // Only refresh if dirty regions generated
-    if (context->dirtyRegion->getNumClipped()) {
-        // Draw the windows that intersect the dirty clipped regions
-        context->drawWindow(this);
-
-        // Draw mouse on top of final image, does not use clipped regions
-        drawMouse();
-
-        // Rendering done, reset dirty/render regions list
-        context->dirtyRegion->resetClippedList();
-        context->renderRegion->resetClippedList();
-    }
-}
-
-void CWindow::drawMouse() {
-    Rect mouseRect(mouse->x, mouse->y, MOUSE_W, MOUSE_H);
-        FbContext *context = FbContext::getInstance();
-
-    context->drawBitmapNoRegion(mouseRect, mouseBitmap);
-}
-
 void CWindow::processEvent(Device::TellurEvent *event) {
     onEvent(event, mouse);
 
@@ -151,7 +61,8 @@ void CWindow::pollEvents() {
     }
 
     if (nEvents++ == 5) {
-        refresh();
+        FbContext::getInstance()->render(this, mouse, oldMouse);
+
         nEvents = 0;
     }
 }
@@ -211,13 +122,6 @@ void CWindow::updateMousePos(Device::MouseData *data) {
     if (yNew >= 0 && yNew < (int)meta->fb_height) {
         mouse->y = yNew;
     }
-}
-
-bool CWindow::mouseInBounds(Window *window) {
-    return ((getMouseX() >= window->getX()) &&
-            (getMouseX() <= (window->getX() + window->getWidth())) &&
-            (getMouseY() >= window->getY()) &&
-            (getMouseY() <= (window->getY() + window->getHeight())));
 }
 
 }

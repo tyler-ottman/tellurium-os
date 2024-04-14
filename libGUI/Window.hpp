@@ -242,6 +242,7 @@ protected:
     int windowID; // Used as index in window stack list
     WindowFlags flags; // Common window options
     Rect *winRect; // Window dimension as Rect
+    uint32_t *winBuff; // Window buffer
     uint32_t color; // Default background color of window
     WindowPriority priority; // Window priority, used in window list
     Window *parent; // Parent window that self is attached to
