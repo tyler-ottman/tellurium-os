@@ -1,12 +1,11 @@
+#include "Border.hpp"
+#include "Button.hpp"
 #include "flibc/string.h"
-#include "libGUI/Border.hpp"
-#include "libGUI/Button.hpp"
-#include "libGUI/FbContext.hpp"
-#include "libGUI/Image.hpp"
-#include "libGUI/MenuBar.hpp"
-#include "libGUI/Terminal.hpp"
-#include "libGUI/Window.hpp"
+#include "Image.hpp"
 #include "libTellur/mem.hpp"
+#include "MenuBar.hpp"
+#include "Terminal.hpp"
+#include "Window.hpp"
 
 namespace GUI {
 
@@ -22,10 +21,10 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
       parent(nullptr),
       numWindows(0),
       maxWindows(WINDOW_MAX),
-      m_pPrevRect(nullptr),
-      m_dirty(false),
-      m_pHoverWindow(nullptr),
-      m_pSelectedWindow(nullptr) {
+      winPrevRect(nullptr),
+      dirty(false),
+      hoverWindow(nullptr),
+      selectedWindow(nullptr) {
 
     if (windowName) {
         int len = __strlen(windowName);
@@ -39,12 +38,10 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
 
     // The actual contents of the window
     winBuff = new uint32_t[width * height];
-    for (int i = 0; i < width * height; i++) {
-        winBuff[i] = color;
-    }
+    loadBuff(color);
 
     // This will store the position/size of Window on last refresh
-    m_pPrevRect = new Rect(*winRect);
+    winPrevRect = new Rect(*winRect);
 
     for (int i = 0; i < maxWindows; i++) {
         windows[i] = nullptr;
@@ -57,7 +54,7 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
         if (this->windowName) {
             int titleLen = __strlen(this->windowName) * 8;  // 8 is default font width
             Terminal *title = new Terminal(x + width / 2 - titleLen / 2,
-                y + 10, titleLen, 30, &FbContext::getInstance()->fbInfo);
+                y + 10, titleLen, 30);
             title->disableCursor();
             title->setBg(0xffbebebe);
             title->setFg(0);
@@ -99,7 +96,7 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
 Window::~Window() {}
 
 Window *Window::appendWindow(Window *window) {
-    if (numWindows == WINDOW_MAX || !window) {
+    if (numWindows == maxWindows || !window) {
         return nullptr;
     }
 
@@ -178,12 +175,12 @@ bool Window::onEvent(Device::TellurEvent *event, Window *mouse) {
         onWindowHover();
         
         // If hovered over window changes, process un-hover on old hover window
-        if (m_pHoverWindow && (childWindow != m_pHoverWindow)) {
-            m_pHoverWindow->onSubtreeUnhover();
+        if (hoverWindow && (childWindow != hoverWindow)) {
+            hoverWindow->onSubtreeUnhover();
         }
 
         // Now update current hovered window and process hover event
-        m_pHoverWindow = childWindow;
+        hoverWindow = childWindow;
 
         break;
 
@@ -199,12 +196,12 @@ bool Window::onEvent(Device::TellurEvent *event, Window *mouse) {
         onWindowSelect();
 
         // If selected window changes, process un-select on old selected window
-        if (m_pSelectedWindow && (childWindow != m_pSelectedWindow)) {
-            m_pSelectedWindow->onSubtreeUnselect();
+        if (selectedWindow && (childWindow != selectedWindow)) {
+            selectedWindow->onSubtreeUnselect();
         }
 
         // Now update current selected window and process select event
-        m_pSelectedWindow = childWindow;
+        selectedWindow = childWindow;
 
         // Notify parent to move Window to top of stack if it's decorable
         if (parent && hasDecoration()) {
@@ -259,12 +256,12 @@ bool Window::onSubtreeUnhover() {
     onWindowUnhover();
 
     // Process un-hover event for hovered over window (if any)
-    if (m_pHoverWindow) {
-        m_pHoverWindow->onSubtreeUnhover();
+    if (hoverWindow) {
+        hoverWindow->onSubtreeUnhover();
     }
     
     // Set the current hovered over Window to nullptr
-    m_pHoverWindow = nullptr;
+    hoverWindow = nullptr;
 
     return true;
 }
@@ -274,12 +271,12 @@ bool Window::onSubtreeUnselect() {
     onWindowUnselect();
 
     // Process un-hover event for hovered over window (if any)
-    if (m_pSelectedWindow) {
-        m_pSelectedWindow->onSubtreeUnselect();
+    if (selectedWindow) {
+        selectedWindow->onSubtreeUnselect();
     }
     
     // Set the current hovered over Window to nullptr
-    m_pSelectedWindow = nullptr;
+    selectedWindow = nullptr;
 
     return true;
 }
@@ -309,7 +306,7 @@ void Window::updateChildPositions(Device::MouseData *data) {
     setY(getY() - data->delta_y);
 }
 
-void Window::updatePrevRect() { *m_pPrevRect = *winRect; }
+void Window::updatePrevRect() { *winPrevRect = *winRect; }
 
 bool Window::moveToTop(Window *child) {
     // Invalid window
@@ -329,11 +326,19 @@ bool Window::moveToTop(Window *child) {
     return true;
 }
 
-void Window::copyBuff(uint32_t *buff) {
+void Window::loadBuff(uint32_t *buff) {
     size_t buffSize = winRect->getWidth() * winRect->getHeight();
     for (size_t i = 0; i < buffSize; i++) {
         winBuff[i] = buff[i];
     }
+}
+
+void Window::loadBuff(uint32_t color) {
+    size_t buffSize = winRect->getWidth() * winRect->getHeight();
+    for (size_t i = 0; i < buffSize; i++) {
+        winBuff[i] = color;
+    }
+    this->color = color;
 }
 
 int Window::getWindowID() { return this->windowID; }
@@ -350,11 +355,9 @@ int Window::getColor() { return color; }
 
 int Window::getNumChildren() { return numWindows; }
 
-Window *Window::getChild(int windowID) { return windows[windowID]; }
-
 Rect *Window::getWinRect() { return winRect; }
 
-Rect *Window::getPrevRect() { return m_pPrevRect; }
+Rect *Window::getPrevRect() { return winPrevRect; }
 
 void Window::setWindowID(int windowID) { this->windowID = windowID; }
 
@@ -371,14 +374,7 @@ void Window::setWidth(int width) { winRect->setWidth(width); }
 
 void Window::setHeight(int height) { winRect->setHeight(height); }
 
-void Window::setColor(uint32_t color) {
-    for (int i = 0; i < winRect->getWidth() * winRect->getHeight(); i++) {
-        winBuff[i] = color;
-    }
-    this->color = color;
-}
-
-void Window::setDirty(bool dirty) { this->m_dirty = dirty; }
+void Window::setDirty(bool dirty) { this->dirty = dirty; }
 
 void Window::setPriority(WindowPriority priority) {
     if (priority >= WindowPriority::WPRIO0 &&
@@ -393,7 +389,7 @@ bool Window::hasMovable() { return flags & WindowFlags::WMOVABLE; }
 
 bool Window::hasUnbounded() { return flags & WindowFlags::WUNBOUNDED; }
 
-bool Window::isDirty() { return m_dirty; }
+bool Window::isDirty() { return dirty; }
 
 bool Window::isCoordInBounds(int x, int y) {
     return ((x >= getX()) && (x <= (getX() + getWidth())) &&

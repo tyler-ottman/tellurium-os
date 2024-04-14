@@ -2,8 +2,8 @@
 #define CWINDOW_H
 
 #include "libTellur/DevPoll.hpp"
-#include "libGUI/FbContext.hpp"
-#include "libGUI/Window.hpp"
+#include "Compositor.hpp"
+#include "Window.hpp"
 
 namespace GUI {
 
@@ -21,7 +21,7 @@ public:
     void forceRefresh(void);
 
 private:
-    CWindow(FbContext *context);
+    CWindow(FbInfo *fbInfo);
     ~CWindow();
 
     /// @brief Process event 
@@ -35,7 +35,7 @@ private:
     Device::DeviceManager *devManager;
 
     Compositor *compositor;
-    FbContext *context;
+    FbInfo *fbInfo;
 
     static CWindow *instance;
 };

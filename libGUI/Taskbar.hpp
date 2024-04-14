@@ -1,9 +1,8 @@
-#pragma once
+#ifndef TASKBAR_H
+#define TASKBAR_H
 
 #include "Button.hpp"
 #include "Window.hpp"
-
-#define TASKBAR_BUTTONS                     15
 
 namespace GUI {
 
@@ -16,3 +15,5 @@ public:
 };
 
 }
+
+#endif // TASKBAR_H

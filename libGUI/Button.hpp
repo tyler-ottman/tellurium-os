@@ -1,7 +1,8 @@
-#pragma once
+#ifndef BUTTON_H
+#define BUTTON_H
 
-#include "libGUI/Image.hpp"
-#include "libGUI/Window.hpp"
+#include "Image.hpp"
+#include "Window.hpp"
 
 /// @brief Common button flags
 enum ButtonFlags {
@@ -21,20 +22,16 @@ public:
             WindowPriority priority = WindowPriority::WPRIO2);
     ~Button();
 
-    bool onWindowClick(void) override;
     bool onWindowHover(void) override;
     bool onWindowUnhover(void) override;
     void loadImage(const char *path);
     void loadHoverImage(const char *path);
+
 private:
     inline bool isFlagBorder(void) { return buttonFlags & ButtonFlags::BBORDER; }
     inline bool isFlagToggle(void) { return buttonFlags & ButtonFlags::BTOGGLE; }
     inline bool isFlagHover(void) { return buttonFlags & ButtonFlags::BHOVER; }
 
-    bool colorToggle;
-    bool onHover;
-
-    bool isImg;
     Image *imgDefault;
     Image *imgHover;
 
@@ -42,3 +39,5 @@ private:
 };
 
 }
+
+#endif // BUTTON_H

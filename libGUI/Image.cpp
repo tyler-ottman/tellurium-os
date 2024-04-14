@@ -1,7 +1,6 @@
 #include "flibc/stdlib.h"
 #include "flibc/string.h"
 #include "Image.hpp"
-#include "libGUI/FbContext.hpp"
 
 #define MAX_FIELD_LEN                   10
 

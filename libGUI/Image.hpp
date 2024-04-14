@@ -1,4 +1,5 @@
-#pragma once
+#ifndef IMAGE_H
+#define IMAGE_H
 
 #include "Window.hpp"
 
@@ -22,3 +23,5 @@ private:
 };
 
 }
+
+#endif // IMAGE_H

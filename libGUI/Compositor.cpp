@@ -1,33 +1,15 @@
-#include "FbContext.hpp"
-#include "libTellur/mem.hpp"
-#include "libTellur/syscalls.hpp"
+#include "Compositor.hpp"
 
 namespace GUI {
 
-FbContext *FbContext::instance = nullptr;
-
-FbContext *FbContext::getInstance() {
-    if (!instance) {
-        instance = new FbContext();
-    }
-
-    return instance;
-}
-
-FbContext::FbContext() { syscall_get_fb_context((void *)&fbInfo); }
-
-FbContext::~FbContext() {}
-
-Compositor::Compositor(FbContext *context) : context(context) {
-    screen = new Rect(0, 0, context->fbInfo.fb_width, context->fbInfo.fb_height);
+Compositor::Compositor(FbInfo *fbInfo) : fbInfo(fbInfo) {
+    screen = new Rect(0, 0, fbInfo->fb_width, fbInfo->fb_height);
     
     renderRegion = new ClippingManager();
     dirtyRegion = new ClippingManager();
 }
 
-Compositor::~Compositor() {
-    
-}
+Compositor::~Compositor() {}
 
 void Compositor::drawBuff(Rect &rect, uint32_t *buff) {
     Rect *renderRects = renderRegion->getClippedRegions();
@@ -58,8 +40,8 @@ void Compositor::drawClippedBuff(Rect &rect, uint32_t *buff, Rect *area) {
     int xMax = drawRect.getRight();
     int yMax = drawRect.getBottom();
 
-    int screenWidth = context->fbInfo.fb_width;
-    uint32_t *screenBuff = (uint32_t *)context->fbInfo.fb_buff;
+    int screenWidth = fbInfo->fb_width;
+    uint32_t *screenBuff = (uint32_t *)fbInfo->fb_buff;
     for (int i = y; i <= yMax; i++) {
         for (int j = x; j <= xMax; j++) {
             screenBuff[i * screenWidth + j] = buff[(i - translateY) * width + (j - translateX)];
@@ -124,7 +106,7 @@ void Compositor::drawWindow(Window *win) {
     }
 
     // Draw self
-    drawBuff(*win->getWinRect(), win->getWinBuff());
+    drawBuff(*win->winRect, win->winBuff);
 
     // Redraw children if they intersect with dirty region
     for (int i = 0; i < win->numWindows; i++) {
@@ -171,7 +153,7 @@ void Compositor::createDirtyWindowRegions(Window *win, Window *dirtyAncestor) {
 
     // Process dirty Windows for children
     for (int i = 0; i < win->getNumChildren(); i++) {
-        createDirtyWindowRegions(win->getChild(i), dirtyAncestor);
+        createDirtyWindowRegions(win->windows[i], dirtyAncestor);
     }
 }
 
@@ -206,7 +188,7 @@ void Compositor::render(Window *root, Window *mouse) {
         drawWindow(root);
 
         // Draw mouse on top of final image, does not use clipped regions
-        drawBuffRaw(*mouse->getWinRect(), mouse->getWinBuff());
+        drawBuffRaw(*mouse->winRect, mouse->winBuff);
 
         // Rendering done, reset dirty/render regions list
         dirtyRegion->resetClippedList();
@@ -231,4 +213,4 @@ void Compositor::render(Window *root, Window *mouse) {
 //     }
 // }
 
-}
+};

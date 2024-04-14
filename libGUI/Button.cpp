@@ -1,15 +1,10 @@
 #include "Button.hpp"
-#include "Utility.hpp"
-#include "FbContext.hpp"
 
 namespace GUI {
 
 Button::Button(int x, int y, int width, int height, WindowFlags flags,
                ButtonFlags bFlags, WindowPriority priority)
     : Window::Window("", x, y, width, height, flags, priority),
-      colorToggle(false),
-      onHover(false),
-      isImg(false),
       imgDefault(nullptr),
       imgHover(nullptr),
       buttonFlags(bFlags) {}
@@ -18,60 +13,27 @@ Button::~Button() {
 
 }
 
-bool Button::onWindowClick() {
-    if (isFlagToggle()) {
-        colorToggle ^= 1;
-
-        // Button dirty, needs refresh
-        setDirty(true);
-    }
-    
-    return true;
-}
-
 bool Button::onWindowHover() {
     if (!isFlagHover()) {
         return false;
     }
 
-    onHover = true;
+    winBuff = imgHover->getBuff();
     setDirty(true);
 
     return true;
 }
 
 bool Button::onWindowUnhover() {
-    onHover = false;
+    if (!isFlagHover()) {
+        return false;
+    }
+
+    winBuff = imgDefault->getBuff();
     setDirty(true);
 
     return true;
 }
-
-// void Button::drawObject() {
-//     color = colorToggle ? 0xff01796f : 0xffca3433;
-
-//     if (onHover) {
-//         color = translateLightColor(this->color);
-//     }
-
-//     // Draw window border if flag set
-//     // if (isFlagBorder()) {
-//     //     context->drawRect(getX() + 2, getY() + 2, getWidth() - 4,
-//     //                       getHeight() - 4, color);
-//     //     context->drawOutlinedRect(getX(), getY(), getWidth(), getHeight(),
-//     //                               0xffff66cc);
-//     //     context->drawOutlinedRect(getX() + 1, getY() + 1, getWidth() - 2,
-//     //                               getHeight() - 2, 0xffff66cc);
-//     // }
-
-//     FbContext *context = FbContext::getInstance();
-//     if (isImg) {
-//         Image *image = onHover ? imgHover : imgDefault;
-//         context->drawBuff(*winRect, image->getBuff());
-//     } else {
-//         context->drawBuff(*winRect, winBuff);
-//     }
-// }
 
 void Button::loadImage(const char *path) {
     GUI::Image *image = new GUI::Image(getX(), getY(), getWidth(), getHeight());
@@ -85,8 +47,6 @@ void Button::loadImage(const char *path) {
         imgHover = imgDefault;
         winBuff = imgHover->getBuff();
     }
-
-    isImg = true;
 
     setWidth(image->getWidth());
     setHeight(image->getHeight());

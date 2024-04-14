@@ -2,13 +2,12 @@
 
 #include "modules/terminal.h"
 #include "Window.hpp"
-#include "FbContext.hpp"
 
 namespace GUI {
 
 class Terminal : public Window {
 public:
-    Terminal(int x, int y, int width, int height, FbContext::FbInfo *fbInfo,
+    Terminal(int x, int y, int width, int height,
              WindowFlags flags = WindowFlags::WNONE,
              WindowPriority priority = WindowPriority::WPRIO2);
     ~Terminal();

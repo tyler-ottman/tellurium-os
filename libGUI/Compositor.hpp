@@ -1,45 +1,14 @@
-#ifndef FBCONTEXT_H
-#define FBCONTEXT_H
-
-#include <stdint.h>
+#ifndef COMPOSITOR_H
+#define COMPOSITOR_H
 
 #include "ClippingManager.hpp"
-#include "Rect.hpp"
-#include "libGUI/Window.hpp"
+#include "Window.hpp"
 
 namespace GUI {
 
-
-
-class FbContext {
-public:
-    static FbContext *getInstance(void);
-
-    struct FbInfo {
-        void *fb_buff;
-        uint32_t fb_width;
-        uint32_t fb_height;
-        uint32_t fb_pitch;
-        uint32_t fb_bpp;
-        FbInfo() : fb_buff(nullptr),
-              fb_width(0),
-              fb_height(0),
-              fb_pitch(0),
-              fb_bpp(0) {}
-    };
-
-    FbInfo fbInfo;
-
-private:
-    FbContext(void);
-    ~FbContext(void);
-
-    static FbContext *instance;
-};
-
 class Compositor {
 public:
-    Compositor(FbContext *context);
+    Compositor(FbInfo *context);
     ~Compositor(void);
 
     // Framebuffer operations
@@ -67,7 +36,7 @@ public:
     void render(Window *root, Window *mouse);
 
 private:
-    FbContext *context;
+    FbInfo *fbInfo;
 
     Rect *screen;
     ClippingManager *renderRegion; // Regions to render to screen
@@ -78,6 +47,6 @@ private:
     // void drawClippedRegions(void);
 };
 
-}
+};
 
-#endif // FBCONTEXT_H
+#endif // COMPOSITOR_H

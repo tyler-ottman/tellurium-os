@@ -2,7 +2,6 @@
 #define WINDOW_H
 
 #include "libGUI/Rect.hpp"
-#include "libGUI/Utility.hpp"
 #include "libTellur/DevPoll.hpp"
 #include <stdbool.h>
 #include <stdint.h>
@@ -10,13 +9,6 @@
 #define WINDOW_MAX                          10
 #define TITLE_HEIGHT                        31
 #define TITLE_WIDTH                         (width)
-
-#define BORDER_COLOR                        0xff333333
-#define BORDER_WIDTH                        3
-#define MENUBAR_SELECT                      0xff545454
-
-#define WIN_PRIORITY_MIN                    0
-#define WIN_PRIORITY_MAX                    9
 
 namespace GUI {
 
@@ -163,11 +155,9 @@ public:
     /// @return The highest level window that was raised
     bool moveToTop(Window *child);
 
-    /// @brief Copy buff into winBuff
-    void copyBuff(uint32_t *buff);
-
-    /// @brief Get the Window's buffer
-    uint32_t *getWinBuff(void) { return winBuff; }
+    /// @brief Copy buff or color into winBuff
+    void loadBuff(uint32_t *buff);
+    void loadBuff(uint32_t color);
 
     /// @brief Get ID of window
     int getWindowID(void);
@@ -189,8 +179,6 @@ public:
 
     /// @brief Get the number of children held by window
     int getNumChildren(void);
-
-    Window *getChild(int windowID);
 
     /// @brief Get window's Rect boundary
     Rect *getWinRect(void);
@@ -215,9 +203,6 @@ public:
 
     /// @brief Set window's height
     void setHeight(int height);
-
-    /// @brief Set window's color
-    void setColor(uint32_t color);
 
     /// @brief Mark Window as dirty
     void setDirty(bool dirty);
@@ -252,10 +237,10 @@ protected:
     Window *windows[WINDOW_MAX]; // Attached children windows
     int numWindows; // Number of windows currently attached
     const int maxWindows; // Max amount of windows you can attach
-    Rect *m_pPrevRect; // Location/size of window on last refresh
-    bool m_dirty; // Flags that indicates if Window is dirty
-    Window *m_pHoverWindow;    // Which child window the mouse is hovering over
-    Window *m_pSelectedWindow; // Which child window was last selected
+    Rect *winPrevRect; // Location/size of window on last refresh
+    bool dirty; // Flags that indicates if Window is dirty
+    Window *hoverWindow;    // Which child window the mouse is hovering over
+    Window *selectedWindow; // Which child window was last selected
 };
 
 } // GUI

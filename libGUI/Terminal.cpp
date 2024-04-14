@@ -1,17 +1,19 @@
 #include "libTellur/mem.hpp"
+#include "libTellur/syscalls.hpp"
 #include "Terminal.hpp"
-#include "libGUI/FbContext.hpp"
 
 namespace GUI {
 
-Terminal::Terminal(int x, int y, int width, int height,
-                   FbContext::FbInfo *fbInfo, WindowFlags flags,
+Terminal::Terminal(int x, int y, int width, int height, WindowFlags flags,
                    WindowPriority priority)
     : Window::Window("terminal", x, y, width, height, flags, priority) {
+    FbInfo fbInfo;
+    syscall_get_fb_context(&fbInfo); // TODO: don't use syscall
+
     terminal = terminal_alloc(
-        14, 8, height, width, fbInfo->fb_height, fbInfo->fb_width,
-        fbInfo->fb_pitch, fbInfo->fb_bpp, FG_COLOR_DEFAULT, BG_COLOR_DEFAULT,
-        NULL, NULL, (uint32_t *)fbInfo->fb_buff, user_malloc, user_free);
+        14, 8, height, width, fbInfo.fb_height, fbInfo.fb_width,
+        fbInfo.fb_pitch, fbInfo.fb_bpp, FG_COLOR_DEFAULT, BG_COLOR_DEFAULT,
+        NULL, NULL, (uint32_t *)fbInfo.fb_buff, user_malloc, user_free);
 
     terminal->clear(terminal);
 

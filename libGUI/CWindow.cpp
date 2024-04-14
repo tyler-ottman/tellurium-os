@@ -1,8 +1,8 @@
-#include "libGUI/CWindow.hpp"
-#include "libGUI/Image.hpp"
-#include "libGUI/Taskbar.hpp"
-#include "libGUI/Terminal.hpp"
-#include "libGUI/FbContext.hpp"
+#include "Button.hpp"
+#include "CWindow.hpp"
+#include "Image.hpp"
+#include "Taskbar.hpp"
+#include "Terminal.hpp"
 
 namespace GUI {
 
@@ -41,9 +41,10 @@ CWindow *CWindow::getInstance() {
         return instance;
     }
 
-    FbContext *context = FbContext::getInstance();
+    FbInfo *fbInfo = new FbInfo;
+    syscall_get_fb_context(fbInfo);
 
-    instance = new CWindow(context);
+    instance = new CWindow(fbInfo);
     
     return instance;
 }
@@ -69,23 +70,22 @@ void CWindow::pollEvents() {
     }
 }
 
-CWindow::CWindow(FbContext *context)
-    : Window(NULL, 0, 0, context->fbInfo.fb_width,
-             context->fbInfo.fb_height), nEvents(0), context(context) {
+CWindow::CWindow(FbInfo *fbInfo)
+    : Window(NULL, 0, 0, fbInfo->fb_width,
+             fbInfo->fb_height), nEvents(0), fbInfo(fbInfo) {
     mouse = new Window("mouse", getWidth() / 2, getHeight() / 2, MOUSE_W,
                        MOUSE_H, WindowFlags::WNONE, WindowPriority::WPRIO9);
-    mouse->copyBuff(mouseBitmap); // Copy mouse image to its buffer
+    mouse->loadBuff(mouseBitmap); // Copy mouse image to its buffer
 
-    compositor = new Compositor(context);
+    compositor = new Compositor(fbInfo);
 
-    Image *background = new Image(0, 0, context->fbInfo.fb_width,
-                                  context->fbInfo.fb_height);
-    
+    Image *background = new Image(0, 0, fbInfo->fb_width, fbInfo->fb_height);
+
     background->loadImage("/tmp/background.ppm");
     appendWindow(background);
 
     Taskbar *taskbar = new Taskbar(0, getHeight() - 40, getWidth(), 40);
-    taskbar->setColor(0xffbebebe);
+    taskbar->loadBuff(0xffbebebe);
     appendWindow(taskbar);
 
     // Sample home button
@@ -97,7 +97,7 @@ CWindow::CWindow(FbContext *context)
 
     // Sample clock
     Terminal *clock = new Terminal(taskbar->getWidth() - 50,
-        taskbar->getY() + 14, 50, 20, &context->fbInfo);
+        taskbar->getY() + 14, 50, 20);
     clock->setBg(0xffbebebe);
     clock->setFg(0);
     clock->disableCursor();
@@ -120,11 +120,11 @@ void CWindow::updateMousePos(Device::MouseData *data) {
     int xNew = mouse->getX() + data->delta_x;
     int yNew = mouse->getY() - data->delta_y;
 
-    if (xNew >= 0 && xNew < (int)(context->fbInfo.fb_width)) {
+    if (xNew >= 0 && xNew < (int)(fbInfo->fb_width)) {
         mouse->setX(xNew);
     }
 
-    if (yNew >= 0 && yNew < (int)(context->fbInfo.fb_height)) {
+    if (yNew >= 0 && yNew < (int)(fbInfo->fb_height)) {
         mouse->setY(yNew);
     }
 

@@ -1,28 +1,14 @@
 #include "MenuBar.hpp"
-#include "libGUI/FbContext.hpp"
 
 namespace GUI {
 
 MenuBar::MenuBar(int x, int y, int width, int height, WindowFlags flags,
                  WindowPriority priority)
     : Window::Window("menuBar", x, y, width, height, flags, priority) {
-    // barColor = 0xffbebebe;
-    setColor(0xffbebebe);
+    loadBuff(0xffbebebe);
 }
 
 MenuBar::~MenuBar() {}
-
-bool MenuBar::onWindowClick() {
-    return true;
-}
-
-bool MenuBar::onWindowSelect() {
-    return true;
-}
-
-bool MenuBar::onWindowUnselect() {
-    return true;
-}
 
 bool MenuBar::onWindowDrag(Device::MouseData *data) {
     parent->updateChildPositions(data);

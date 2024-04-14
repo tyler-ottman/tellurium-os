@@ -12,9 +12,6 @@ public:
             WindowPriority priority = WindowPriority::WPRIO5);
     ~MenuBar();
 
-    bool onWindowClick(void) override;
-    bool onWindowSelect(void) override;
-    bool onWindowUnselect(void) override;
     bool onWindowDrag(Device::MouseData *data) override;
     uint32_t getBarColor(void);
     

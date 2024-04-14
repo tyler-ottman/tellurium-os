@@ -1,7 +1,7 @@
 #ifndef CLIPPINGMANAGER_H
 #define CLIPPINGMANAGER_H
 
-#include "libGUI/Rect.hpp"
+#include "Rect.hpp"
 
 namespace GUI {
 
