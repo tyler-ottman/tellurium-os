@@ -65,6 +65,7 @@ void Window::initialize(const char *windowName, int x, int y, int width,
     // Menu bar can only be attached to movable windows
     if (hasDecoration()) {
         MenuBar *menuBar = new MenuBar(x, y, width, TITLE_HEIGHT);
+        appendWindow(menuBar);
 
         if (this->windowName) {
             int titleLen = __strlen(this->windowName) * 8;  // 8 is default font width
@@ -78,21 +79,25 @@ void Window::initialize(const char *windowName, int x, int y, int width,
             menuBar->appendWindow(title);
         }
 
-        PpmReader exitImg("/tmp/exitButtonUnhover.ppm");
-        PpmReader exitHoverImg("/tmp/exitButtonHover.ppm");
-        Button *exitButton = new Button(x + width - 20, y + 5, &exitImg,
-            WindowFlags::WNONE, ButtonFlags::BHOVER);
-        exitButton->loadHoverImage(&exitHoverImg);
+        // Menu Bar's Exit Button
+        ImageReader *exitImg = imageReaderDriver("/tmp/exitButtonUnhover.ppm");
+        ImageReader *exitHoverImg = imageReaderDriver("/tmp/exitButtonHover.ppm");
+        Button *exitButton = new Button(x + width - 20, y + 5, exitImg, WindowFlags::WNONE, ButtonFlags::BHOVER);
+        exitButton->loadHoverImage(exitHoverImg);
         menuBar->appendWindow(exitButton);
+        delete exitImg;
+        delete exitHoverImg;
 
-        PpmReader minimizeImg("/tmp/minimizeButtonUnhover.ppm");
-        PpmReader minimizeHoverImg("/tmp/minimizeButtonHover.ppm");
-        Button *minimizeButton = new Button(x + width - 40, y + 5, &minimizeImg,
-            WindowFlags::WNONE, ButtonFlags::BHOVER);
-        minimizeButton->loadHoverImage(&minimizeHoverImg);
+        // Menu Bar's Minimize Button
+        ImageReader *minimizeImg = imageReaderDriver("/tmp/minimizeButtonUnhover.ppm");
+        ImageReader *minimizeHoverImg = imageReaderDriver("/tmp/minimizeButtonHover.ppm");
+        Button *minimizeButton = new Button(x + width - 40, y + 5, minimizeImg, WindowFlags::WNONE, ButtonFlags::BHOVER);
+        minimizeButton->loadHoverImage(minimizeHoverImg);
         menuBar->appendWindow(minimizeButton);
+        delete minimizeImg;
+        delete minimizeHoverImg;
 
-        appendWindow(menuBar);
+        // Window's Border
         appendWindow(new Border(x, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1));
         appendWindow(new Border(x + width - 1, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1));
         appendWindow(new Border(x, y + height - 1, width, 1));

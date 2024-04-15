@@ -1,6 +1,8 @@
 #include "ImageReader.hpp"
-#include "syscalls.hpp"
 #include "flibc/stdlib.h"
+#include "flibc/string.h"
+#include "syscalls.hpp"
+#include "Utility.hpp"
 
 ImageReader::ImageReader(const char *path)
     : imgFd(-1), width(0), height(0), bpp(0), buff(nullptr) {}
@@ -22,20 +24,31 @@ int ImageReader::getHeight() { return height; }
 int ImageReader::getBpp() { return bpp; }
 
 uint32_t *ImageReader::getBuff() { return buff; }
-
-static inline bool isWhitespace(char c) {
-    return c < 0x30 || c > 0x39;
-}
-
-static inline int getNumDigits(int num) {
-    int count = 1;
-    
-    while (num / 10 != 0) {
-        count++;
-        num /= 10;
+ImageReader *imageReaderDriver(const char *path) {
+    if (!path) {
+        return nullptr;
     }
 
-    return count;
+    const char *fileType = nullptr;
+    for (int i = __strlen(path) - 1; i >= 0; i--) {
+        if (path[i] == '.') {
+            fileType = &path[i];
+            break;
+        }
+    }
+    
+    // If file extension not found, return error
+    if (!fileType) {
+        return nullptr;
+    }
+
+    int maxLen = __strlen(fileType);
+    if (!__strncmp(fileType, ".ppm", maxLen)) {
+        return new PpmReader(path);
+    }
+    
+    // Unsupported file format
+    return nullptr;
 }
 
 PpmReader::PpmReader(const char *path) : ImageReader(path) {

@@ -5,7 +5,9 @@
 
 enum ImageReaderErrors {
     ERR_NOERR = 0,
-    ERR_DEFAULT = 1
+    ERR_DEFAULT = 1,
+    ERR_INVALID_FILE_FORMAT = 2,
+    ERR_INVALID_ARGS = 3
 };
 
 class ImageReader {
@@ -37,6 +39,11 @@ protected:
     int bpp;
     uint32_t *buff;
 };
+
+/// @brief ImageReader driver returns reader for specific file format
+/// @param path The file name of the image
+/// @return Driver status
+ImageReader *imageReaderDriver(const char *path);
 
 class PpmReader : public ImageReader {
 public:

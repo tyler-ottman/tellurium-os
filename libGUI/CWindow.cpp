@@ -6,34 +6,6 @@
 
 namespace GUI {
 
-#define MOUSE_W                             11
-#define MOUSE_H                             18
-
-#define BL                                  0xff000000
-#define CL                                  0x0
-#define WH                                  0xffffffff
-
-uint32_t mouseBitmap[MOUSE_W * MOUSE_H] = {  
-    BL, CL, CL, CL, CL, CL, CL, CL, CL, CL, CL,
-    BL, BL, CL, CL, CL, CL, CL, CL, CL, CL, CL,
-    BL, WH, BL, CL, CL, CL, CL, CL, CL, CL, CL,
-    BL, WH, WH, BL, CL, CL, CL, CL, CL, CL, CL,
-    BL, WH, WH, WH, BL, CL, CL ,CL, CL, CL, CL,
-    BL, WH, WH, WH, WH, BL, CL, CL, CL, CL, CL,
-    BL, WH, WH, WH, WH, WH, BL, CL, CL, CL, CL,
-    BL, WH, WH, WH, WH, WH, WH, BL, CL, CL, CL,
-    BL, WH, WH, WH, WH, WH, WH, WH, BL, CL, CL,
-    BL, WH, WH, WH, WH, WH, WH, WH, WH, BL, CL,
-    BL, WH, WH, WH, WH, WH, WH, WH, WH, WH, BL,
-    BL, WH, WH, WH, WH, WH, WH, BL, BL, BL, BL,
-    BL, WH, WH, WH, BL, WH, WH, BL, CL, CL, CL,
-    BL, WH, WH, BL, BL, WH, WH, BL, CL, CL, CL,
-    BL, WH, BL, CL, CL, BL, WH, WH, BL, CL, CL,
-    BL, BL, CL, CL, CL, BL, WH, WH, BL, CL, CL,
-    BL, CL, CL, CL, CL, CL, BL, WH, BL, CL, CL,
-    CL, CL, CL, CL, CL, CL, CL, BL, BL, CL, CL
-};
-
 CWindow *CWindow::instance = nullptr;
 
 CWindow *CWindow::getInstance() {
@@ -73,26 +45,29 @@ void CWindow::pollEvents() {
 CWindow::CWindow(FbInfo *fbInfo)
     : Window(NULL, 0, 0, fbInfo->fb_width,
              fbInfo->fb_height), nEvents(0), fbInfo(fbInfo) {
-    mouse = new Window("mouse", getWidth() / 2, getHeight() / 2, MOUSE_W,
-                       MOUSE_H, WindowFlags::WNONE, WindowPriority::WPRIO9);
-    mouse->loadBuff(mouseBitmap); // Copy mouse image to its buffer
+    ImageReader *mouseImg = imageReaderDriver("/tmp/mouse.ppm");
+    mouse = new Window("mouse", getWidth() / 2, getHeight() / 2, mouseImg,
+                       WindowFlags::WNONE, WindowPriority::WPRIO9);
 
     compositor = new Compositor(fbInfo);
 
-    PpmReader backgroundImg("/tmp/background.ppm");
-    Window *background = new Window(NULL, 0, 0, &backgroundImg);
+    ImageReader *backgroundImg = imageReaderDriver("/tmp/background.ppm");
+    Window *background = new Window(NULL, 0, 0, backgroundImg);
     appendWindow(background);
+    delete backgroundImg;
 
     Taskbar *taskbar = new Taskbar(0, getHeight() - 40, getWidth(), 40);
     taskbar->loadBuff(0xffbebebe);
     appendWindow(taskbar);
 
     // Sample home button
-    PpmReader homeButtonImg("/tmp/homeButtonUnhover.ppm");
-    PpmReader homeButtonHoverImg("/tmp/homeButtonHover.ppm");
+    ImageReader *homeButtonImg = imageReaderDriver("/tmp/homeButtonUnhover.ppm");
+    ImageReader *homeButtonHoverImg = imageReaderDriver("/tmp/homeButtonHover.ppm");
     Button *homeButton = new Button(taskbar->getX(), taskbar->getY(),
-        &homeButtonImg, WindowFlags::WNONE, ButtonFlags::BHOVER);
-    homeButton->loadHoverImage(&homeButtonHoverImg);
+        homeButtonImg, WindowFlags::WNONE, ButtonFlags::BHOVER);
+    homeButton->loadHoverImage(homeButtonHoverImg);
+    delete homeButtonImg;
+    delete homeButtonHoverImg;
     
     taskbar->appendWindow(homeButton);
 
