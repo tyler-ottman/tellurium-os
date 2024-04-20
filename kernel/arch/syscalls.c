@@ -54,12 +54,12 @@ void init_syscall() {
     // Store address of syscall isr
     set_msr(IA32_LSTAR, (uint64_t)ISR_syscall);
 
-    // Clear rflags mask register
-    set_msr(IA32_FMASK, 0);
+    // Mask all fields in rflags
+    set_msr(IA32_FMASK, 0x3f7fd5);
 
     // Set CS/SS selector field for syscall/sysret
-    set_msr(IA32_STAR, ((uint64_t)GDT_KERNEL_CODE << 32));
-    uint16_t selector = GDT_USER_DATA - 0x8;
+    set_msr(IA32_STAR, ((uint64_t)(GDT_KERNEL_CODE | 3) << 32));
+    uint16_t selector = (GDT_USER_DATA | 3) - 0x8;
     uint64_t msr = get_msr(IA32_STAR) | ((uint64_t)selector << 48);
     set_msr(IA32_STAR, msr);
 
