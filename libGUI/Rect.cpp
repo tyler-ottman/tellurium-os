@@ -24,30 +24,22 @@ void Rect::operator=(const Rect& other) {
 }
 
 bool Rect::getOverlapRect(Rect *res, Rect *rect) {
-    if (!(intersects(rect))) {
-        return false;
+    *res = *rect;
+
+    if (res->getLeft() < getLeft()) {
+        res->setLeft(getLeft());
     }
 
-    *res = *this;
-
-    if (rect->getLeft() > res->getLeft() &&
-        rect->getLeft() < res->getRight()) {
-        res->setLeft(rect->getLeft());
+    if (res->getRight() > getRight()) {
+        res->setRight(getRight());
     }
 
-    if (rect->getTop() > res->getTop() &&
-        rect->getTop() < res->getBottom()) {
-        res->setTop(rect->getTop());
+    if (res->getTop() < getTop()) {
+        res->setTop(getTop());
     }
 
-    if (rect->getRight() > res->getLeft() &&
-        rect->getRight() < res->getRight()) {
-        res->setRight(rect->getRight());
-    }
-
-    if (rect->getBottom() > res->getTop() &&
-        rect->getBottom() < res->getBottom()) {
-        res->setBottom(rect->getBottom());
+    if (res->getBottom() > getBottom()) {
+        res->setBottom(getBottom());
     }
 
     return true;
@@ -124,7 +116,7 @@ void Rect::restrictRect(Rect *other) {
     }
 }
 
-bool Rect::intersects(Rect *rect) {
+bool Rect::overlaps(Rect *rect) {
     return getLeft() < rect->getRight() && getRight() > rect->getLeft() &&
            getTop() < rect->getBottom() && getBottom() > rect->getTop();
 }

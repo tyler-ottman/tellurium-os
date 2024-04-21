@@ -37,7 +37,6 @@ void Window::initialize(const char *windowName, int x, int y, int width,
     numWindows = 0;
     maxWindows = WINDOW_MAX;
     winPrevRect = nullptr;
-    dirty = false;
     hoverWindow = nullptr;
     selectedWindow = nullptr;
 
@@ -292,7 +291,7 @@ bool Window::onSubtreeUnselect() {
     return true;
 }
 
-bool Window::intersects(Rect *rect) { return winRect->intersects(rect); }
+bool Window::intersects(Rect *rect) { return winRect->overlaps(rect); }
 
 Window *Window::getWindowUnderMouse(Window *mouse) {
     for (int i = numWindows - 1; i >= 0; i--) {
@@ -349,7 +348,14 @@ void Window::loadBuff(uint32_t color) {
     for (size_t i = 0; i < buffSize; i++) {
         winBuff[i] = color;
     }
-    this->color = color;
+}
+
+void Window::loadTransparentColor(uint32_t color) {
+    size_t buffSize = winRect->getWidth() * winRect->getHeight();
+    for (size_t i = 0; i < buffSize; i++) {
+        winBuff[i] = 0x80000000 | (0xffffff & color);
+    }
+    setTransparent(true);
 }
 
 int Window::getWindowID() { return this->windowID; }
@@ -385,8 +391,6 @@ void Window::setWidth(int width) { winRect->setWidth(width); }
 
 void Window::setHeight(int height) { winRect->setHeight(height); }
 
-void Window::setDirty(bool dirty) { this->dirty = dirty; }
-
 void Window::setPriority(WindowPriority priority) {
     if (priority >= WindowPriority::WPRIO0 &&
         priority <= WindowPriority::WPRIO9) {
@@ -399,8 +403,6 @@ bool Window::hasDecoration() { return flags & WindowFlags::WDECORATION; }
 bool Window::hasMovable() { return flags & WindowFlags::WMOVABLE; }
 
 bool Window::hasUnbounded() { return flags & WindowFlags::WUNBOUNDED; }
-
-bool Window::isDirty() { return dirty; }
 
 bool Window::isCoordInBounds(int x, int y) {
     return ((x >= getX()) && (x <= (getX() + getWidth())) &&

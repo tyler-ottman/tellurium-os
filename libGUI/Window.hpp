@@ -169,6 +169,7 @@ public:
     /// @brief Copy buff or color into winBuff
     void loadBuff(uint32_t *buff);
     void loadBuff(uint32_t color);
+    void loadTransparentColor(uint32_t color); // For testing
 
     /// @brief Get ID of window
     int getWindowID(void);
@@ -215,11 +216,13 @@ public:
     /// @brief Set window's height
     void setHeight(int height);
 
-    /// @brief Mark Window as dirty
-    void setDirty(bool dirty);
-
     /// @brief Set window's priority
     void setPriority(WindowPriority priority);
+
+    /// @brief Set compositor flags
+    void setVisible(bool visible) { cFlags.visible = visible; }
+    void setDirty(bool dirty) { cFlags.dirty = dirty; }
+    void setTransparent(bool transparent) { cFlags.transparent = transparent; }
 
     /// @brief Check if window is decorable
     bool hasDecoration(void);
@@ -230,13 +233,24 @@ public:
     /// @brief Check if window is unbounded by the boundaries of parent
     bool hasUnbounded(void);
 
-    /// @brief Check if window is dirty
-    bool isDirty(void);
+    /// @brief Get compositor flags
+    bool isVisible(void) { return cFlags.visible; }
+    bool isDirty(void) { return cFlags.dirty; }
+    bool isTransparent(void) { return cFlags.transparent; }
 
     /// @brief Check if coordinates are within Window's boundary
     bool isCoordInBounds(int x, int y);
 
 protected:
+    // Flags used by compositor when rendering windows
+    struct CompositorFlags {
+        CompositorFlags() : visible(true), dirty(false), transparent(false) {}
+
+        bool visible; // If window is not marked visible, do not render
+        bool dirty; // If window state has changed, re-render is require
+        bool transparent; // If window is transparent, use alpha blending
+    };
+
     void initialize(const char *windowName, int x, int y, int width, int height,
                WindowFlags flags, WindowPriority priority);
 
@@ -252,7 +266,7 @@ protected:
     int numWindows; // Number of windows currently attached
     int maxWindows; // Max amount of windows you can attach
     Rect *winPrevRect; // Location/size of window on last refresh
-    bool dirty; // Flags that indicates if Window is dirty
+    CompositorFlags cFlags; // Flags used by the compositor
     Window *hoverWindow;    // Which child window the mouse is hovering over
     Window *selectedWindow; // Which child window was last selected
 };

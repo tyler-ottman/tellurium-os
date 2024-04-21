@@ -36,18 +36,18 @@ public:
 
     /// @brief Get all the split rectangles when intersecting 2 rectangles
     /// @param res Where the resultings Rects are placed
-    /// @param rect The rectangle to intersect with this
+    /// @param cutRect The rectangle that will cut and divide this
     /// @return The number of rectangles split whewn intersects the 2
-    int getSplitRects(Rect *res, Rect *crossRect);
+    int getSplitRects(Rect *res, Rect *cutRect);
 
     /// @brief Restrict other Rect dimension to this Rect's dimension
     /// @param other The Rect that will be restricted
     void restrictRect(Rect *other);
 
-    /// @brief Check if rect intersects with this
+    /// @brief Check if rect overlaps with self
     /// @param rect The other rectangle
     /// @return True if this and rect intersect, false otherwise
-    bool intersects(Rect *rect);
+    bool overlaps(Rect *rect);
 
     /// @brief Check if rect is contained in self/this
     /// @param rect The Rect to evaluate
