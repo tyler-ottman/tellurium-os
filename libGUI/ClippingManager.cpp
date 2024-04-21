@@ -10,28 +10,7 @@ ClippingManager::~ClippingManager() {
     delete clippedRects;
 }
 
-void ClippingManager::intersectClippedRect(Rect *rect) {
-    int appendedRects = 0;
-    for (int i = 0; i < numClipped; i++) {
-        Rect *currentRect = &clippedRects[i];
-        Rect intersectRect;
-
-        bool ret = currentRect->getOverlapRect(&intersectRect, rect);
-        if (ret) {
-            clippedRects[appendedRects++] = intersectRect;
-        }
-    }
-
-    numClipped = appendedRects;
-}
-
-void ClippingManager::addClippedRect(Rect *rect) {
-    reshapeRegion(rect);
-
-    appendClippedRect(rect);
-}
-
-void ClippingManager::reshapeRegion(Rect *rect) {
+void ClippingManager::removeClippedRegion(Rect *rect) {
     for (int i = 0; i < numClipped; i++) {
         Rect *clipped = &clippedRects[i];
 
@@ -43,17 +22,25 @@ void ClippingManager::reshapeRegion(Rect *rect) {
         int count = clipped->getSplitRects(splitRects, rect);
 
         // Update and split selected clipped region
-        removeClippedRect(i);
+        deleteRect(i);
 
         for (int j = 0; j < count; j++) {
-            appendClippedRect(&splitRects[j]);
+            pushRect(&splitRects[j]);
         }
 
-        i = -1;
+        i = -1; // Resets to 0 next iteration
     }
 }
 
-void ClippingManager::appendClippedRect(Rect *rect) {
+void ClippingManager::addClippedRegion(Rect *rect) {
+    // First, punch a hole in the clipped list
+    removeClippedRegion(rect);
+
+    // Second, now just add the Rect
+    pushRect(rect);
+}
+
+void ClippingManager::pushRect(Rect *rect) {
     if (numClipped >= maxClipped) {
         return;
     }
@@ -61,7 +48,7 @@ void ClippingManager::appendClippedRect(Rect *rect) {
     clippedRects[numClipped++] = *rect;
 }
 
-void ClippingManager::removeClippedRect(int index) {
+void ClippingManager::deleteRect(int index) {
     if (index < 0 || index >= numClipped) {
         return;
     }

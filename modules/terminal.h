@@ -73,6 +73,9 @@ typedef struct terminal {
     uint32_t cursor_color;
     bool cursor_enabled;
 
+    // Scroll Info
+    bool scroll_enabled;
+
     // ANSI state info
     uint32_t fg_color_default;
     uint32_t bg_color_default;

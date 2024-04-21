@@ -22,12 +22,14 @@ void fb_load_buffer(terminal_t *term) {
 
 void newline(terminal_t *term) {
     if (is_scroll_needed(term)) {
-        scroll_screen(term);
+        if (term->scroll_enabled) {
+            scroll_screen(term);
+            term->cursor_h = 0;
+        }
     } else {
         term->cursor_v++;
+        term->cursor_h = 0;
     }
-
-    term->cursor_h = 0;
 }
 
 void backspace(terminal_t *term) {

@@ -18,6 +18,7 @@ public:
 
     void enableCursor(void);
     void disableCursor(void);
+    void setScroll(bool enable);
 
     void setFg(uint32_t color);
     void setBg(uint32_t color);

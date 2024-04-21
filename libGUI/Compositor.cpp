@@ -6,7 +6,6 @@ Compositor::Compositor(FbInfo *fbInfo) : fbInfo(fbInfo) {
     screen = new Rect(0, 0, fbInfo->fb_width, fbInfo->fb_height);
     
     renderRegion = new ClippingManager();
-    dirtyRegion = new ClippingManager();
 }
 
 Compositor::~Compositor() {}
@@ -42,88 +41,28 @@ void Compositor::drawClippedBuff(Rect &rect, uint32_t *buff, Rect *area) {
 
     int screenWidth = fbInfo->fb_width;
     uint32_t *screenBuff = (uint32_t *)fbInfo->fb_buff;
-    for (int i = y; i <= yMax; i++) {
-        for (int j = x; j <= xMax; j++) {
+    for (int i = y; i < yMax; i++) {
+        for (int j = x; j < xMax; j++) {
             screenBuff[i * screenWidth + j] = buff[(i - translateY) * width + (j - translateX)];
         }
     }
 }
 
-void Compositor::applyBoundClipping(Window *win) {
-    Window *parent = win->parent;
-
-    if (!parent) {
-        int nDirtyRegions = dirtyRegion->getNumClipped();
-        if (nDirtyRegions) {
-            Rect *dirtyRegions = dirtyRegion->getClippedRegions();
-
-            for (int i = 0; i < nDirtyRegions; i++) {
-                renderRegion->addClippedRect(&dirtyRegions[i]);
-            }
-
-            renderRegion->intersectClippedRect(win->winRect);
-        } else {
-            renderRegion->addClippedRect(win->winRect);
-        }
-
-        return;
-    }
-
-    // Reduce drawing to parent window
-    applyBoundClipping(parent);
-
-    // Reduce visibility to main drawing area
-    renderRegion->intersectClippedRect(win->winRect);
-
-    // Occlude areas of window where siblings overlap on top
-    for (int i = win->windowID + 1; i < parent->numWindows; i++) {
-        Window *aboveWin = parent->windows[i];
-        if (win->intersects(aboveWin)) {
-            renderRegion->reshapeRegion(aboveWin->winRect);
-        }
-    }
-}
-
-bool Compositor::rectIntersectsDirty(Rect *rect) {
-    Rect *dirtyRegions = dirtyRegion->getClippedRegions();
-    int nDirtyRegions = dirtyRegion->getNumClipped();
-    for (int j = 0; j < nDirtyRegions; j++) {
-        if (rect->intersects(&dirtyRegions[j])) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
+// The Window structure is sorted by priority, so the surfaces can be drawn by
+// depth, starting with the shallowest depth (Z-Depth Buffering). Once a surface
+// at a given depth is drawn, any surface at a deeper depth will be occluded.
+// TODO: If a surface is transparent, the surfaces behind it will be blended
 void Compositor::drawWindow(Window *win) {
-    applyBoundClipping(win);
-
-    // Remove child window clipped rectangles
-    for (int i = 0; i < win->numWindows; i++) {
-        Window *child = win->windows[i];
-        renderRegion->reshapeRegion(child->winRect);
+    for (int i = win->numWindows - 1; i >= 0; i--) {
+        drawWindow(win->windows[i]);
     }
 
     // Draw self
     drawBuff(*win->winRect, win->winBuff);
 
-    // Redraw children if they intersect with dirty region
-    for (int i = 0; i < win->numWindows; i++) {
-        renderRegion->resetClippedList();
-        Window *child = win->windows[i];
-        if (rectIntersectsDirty(child->winRect)) {
-            drawWindow(child);
-        }        
-    }
+    renderRegion->removeClippedRegion(win->winRect);
 }
 
-/// @brief Recursively traverse the Window tree and add dirty Windows
-/// to list of regions that require re-rendering to screen/buffer
-/// @param win the current Window being traversing over
-/// @param dirtyAncestor stores a pointer to the highest ancestor Window in
-/// the tree that is dirty in the current branch being traversed, starts as
-/// null because we assume there is nothing dirty
 void Compositor::createDirtyWindowRegions(Window *win, Window *dirtyAncestor) {
     // If window is marked as dirty, add it to dirty list
     // for the compositor
@@ -142,8 +81,8 @@ void Compositor::createDirtyWindowRegions(Window *win, Window *dirtyAncestor) {
                 dirtyAncestor = win;
 
                 // Add new and old location of window to dirty list
-                dirtyRegion->addClippedRect(dirtyAncestor->getWinRect());
-                dirtyRegion->addClippedRect(dirtyAncestor->getPrevRect());
+                renderRegion->addClippedRegion(dirtyAncestor->getWinRect());
+                renderRegion->addClippedRegion(dirtyAncestor->getPrevRect());
             }
         }
 
@@ -163,10 +102,10 @@ void Compositor::createDirtyMouseRegion(Window *mouse) {
         mouse->setDirty(false);
 
         // Original mouse position
-        dirtyRegion->addClippedRect(mouse->getPrevRect());
+        renderRegion->addClippedRegion(mouse->getPrevRect());
 
         // New mouse position
-        dirtyRegion->addClippedRect(mouse->getWinRect());
+        renderRegion->addClippedRegion(mouse->getWinRect());
 
         // Now store current position of mouse in previous position
         mouse->updatePrevRect();
@@ -183,7 +122,7 @@ void Compositor::render(Window *root, Window *mouse) {
     createDirtyMouseRegion(mouse);
 
     // Only refresh if dirty regions generated
-    if (dirtyRegion->getNumClipped()) {
+    if (renderRegion->getNumClipped()) {
         // Draw the windows that intersect the dirty clipped regions
         drawWindow(root);
 
@@ -191,7 +130,6 @@ void Compositor::render(Window *root, Window *mouse) {
         drawBuffRaw(*mouse->winRect, mouse->winBuff);
 
         // Rendering done, reset dirty/render regions list
-        dirtyRegion->resetClippedList();
         renderRegion->resetClippedList();
     }
 }

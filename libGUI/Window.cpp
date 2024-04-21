@@ -70,8 +70,9 @@ void Window::initialize(const char *windowName, int x, int y, int width,
         if (this->windowName) {
             int titleLen = __strlen(this->windowName) * 8;  // 8 is default font width
             Terminal *title = new Terminal(x + width / 2 - titleLen / 2,
-                y + 10, titleLen, 30);
+                y + 10, titleLen, 20);
             title->disableCursor();
+            title->setScroll(false);
             title->setBg(0xffbebebe);
             title->setFg(0);
             title->clear();

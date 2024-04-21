@@ -50,8 +50,8 @@ int main() {
     // Attach test windows to root window
     GUI::CWindow *wapp = GUI::CWindow::getInstance();
 
-    wapp->appendWindow(geoWin);
-    wapp->appendWindow(fruitWin);
+    // wapp->appendWindow(geoWin);
+    // wapp->appendWindow(fruitWin);
     wapp->appendWindow(termWin);
 
     while (1) {

@@ -15,8 +15,6 @@ public:
     void drawBuff(Rect &rect, uint32_t *buff);
     void drawBuffRaw(Rect &rect, uint32_t *bitmap);
 
-    void applyBoundClipping(Window *win);
-    bool rectIntersectsDirty(Rect *rect);
     void drawWindow(Window *win);
 
     /// @brief Generate dirty regions from Window tree structure
@@ -39,8 +37,7 @@ private:
     FbInfo *fbInfo;
 
     Rect *screen;
-    ClippingManager *renderRegion; // Regions to render to screen
-    ClippingManager *dirtyRegion; // Dirty regions that need to be rendered    
+    ClippingManager *renderRegion; // Regions to render to screen  
 
     // Draw a clipped buffer within bounds of Rect area
     void drawClippedBuff(Rect &rect, uint32_t *buff, Rect *area);

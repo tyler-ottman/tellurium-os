@@ -48,6 +48,10 @@ void Terminal::disableCursor() {
     terminal->cursor_enabled = false;
 }
 
+void Terminal::setScroll(bool enable) {
+    terminal->scroll_enabled = enable;
+}
+
 void Terminal::setFg(uint32_t color) {
     terminal->fg_color_default = color;
 }
