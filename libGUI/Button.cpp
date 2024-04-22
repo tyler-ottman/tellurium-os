@@ -7,7 +7,7 @@ Button::Button(int x, int y, int width, int height, WindowFlags flags,
                ButtonFlags bFlags, WindowPriority priority)
     : Window::Window("", x, y, width, height, flags, priority),
       imgNoHover(nullptr), imgHover(nullptr), buttonFlags(bFlags) {
-    imgNoHover = (uint8_t *)winBuff;
+    imgNoHover = (uint8_t *)surface->buff;
 }
 
 Button::Button(int x, int y, ImageReader *img, WindowFlags flags,
@@ -16,7 +16,7 @@ Button::Button(int x, int y, ImageReader *img, WindowFlags flags,
       imgNoHover(nullptr),
       imgHover(nullptr),
       buttonFlags(bFlags) {
-    imgNoHover = (uint8_t *)winBuff;
+    imgNoHover = (uint8_t *)surface->buff;
 }
 
 Button::~Button() {}
@@ -27,7 +27,7 @@ bool Button::onWindowHover() {
     }
 
     if (imgHover) {
-        winBuff = (uint32_t *)imgHover;
+        surface->buff = (uint32_t *)imgHover;
         setDirty(true);
     }
 
@@ -39,7 +39,7 @@ bool Button::onWindowUnhover() {
         return false;
     }
 
-    winBuff = (uint32_t *)imgNoHover;
+    surface->buff = (uint32_t *)imgNoHover;
     setDirty(true);
 
     return true;

@@ -17,7 +17,7 @@ Terminal::Terminal(int x, int y, int width, int height, WindowFlags flags,
 
     terminal->clear(terminal);
 
-    winBuff = terminal->buf1;
+    surface->buff = terminal->buf1;
 }
 
 Terminal::~Terminal() {}

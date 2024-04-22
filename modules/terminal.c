@@ -145,21 +145,21 @@ static void parse_sgr(terminal_t *terminal, char *sequence) {
 
             // Apply 16 color mode normal foreground
             else if (n >= FG_BLACK && n <= FG_WHITE) {
-                terminal->fg_color = rgb256[n - FG_BLACK];
+                terminal->fg_color = 0xff000000 | rgb256[n - FG_BLACK];
             }
 
             // Apply 16 color mode bright foreground
             else if (n >= FG_BRIGHT_BLACK && n <= FG_BRIGHT_WHITE) {
-                terminal->fg_color = rgb256[n - FG_BRIGHT_BLACK + 8];
+                terminal->fg_color = 0xff000000 | rgb256[n - FG_BRIGHT_BLACK + 8];
             }
 
             // Apply 16 color mode background
             else if (n >= BG_BLACK && n <= BG_WHITE) {
-                terminal->bg_color = rgb256[n - BG_BLACK];
+                terminal->bg_color = 0xff000000 | rgb256[n - BG_BLACK];
             }
 
             else if (n >= BG_BRIGHT_BLACK && n <= BG_BRIGHT_WHITE) {
-                terminal->bg_color = rgb256[n - BG_BRIGHT_BLACK + 8];
+                terminal->bg_color = 0xff000000 | rgb256[n - BG_BRIGHT_BLACK + 8];
             }
 
             break;
@@ -180,7 +180,7 @@ static void parse_sgr(terminal_t *terminal, char *sequence) {
                 break;
             }
 
-            color = rgb256[n];
+            color = 0xff000000 | rgb256[n];
             
             apply_color(terminal, color);
 

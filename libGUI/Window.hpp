@@ -4,6 +4,7 @@
 #include "libGUI/Rect.hpp"
 #include "libTellur/DevPoll.hpp"
 #include "libTellur/ImageReader.hpp"
+#include "Surface.hpp"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -146,7 +147,7 @@ public:
 
     /// @brief Determine if rectangle intersects with Window
     /// @param rect The window to test
-    bool intersects(Window *rect) { return intersects(rect->winRect); }
+    bool intersects(Window *rect);
 
     /// @brief Get the child Window underneath the mouse
     /// @param mouse the position
@@ -257,8 +258,9 @@ protected:
     char *windowName; // unused
     int windowID; // Used as index in window stack list
     WindowFlags flags; // Common window options
-    Rect *winRect; // Window dimension as Rect
-    uint32_t *winBuff; // Window buffer
+    // Rect *winRect; // Window dimension as Rect
+    // uint32_t *winBuff; // Window buffer
+    Surface *surface;
     uint32_t color; // Default background color of window
     WindowPriority priority; // Window priority, used in window list
     Window *parent; // Parent window that self is attached to

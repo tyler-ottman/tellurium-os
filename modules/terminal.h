@@ -43,7 +43,7 @@
 #define CURSOR_COLOR                        0xff808080
 #define RESET_COLOR                         0xff333333
 #define FG_COLOR_DEFAULT                    0xff0096aa
-#define BG_COLOR_DEFAULT                    RESET_COLOR
+#define BG_COLOR_DEFAULT                    0x7f333333
 
 typedef struct terminal {
     // User provided memory management

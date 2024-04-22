@@ -16,7 +16,10 @@ CWindow *CWindow::getInstance() {
     FbInfo *fbInfo = new FbInfo;
     syscall_get_fb_context(fbInfo);
 
-    instance = new CWindow(fbInfo);
+    Rect fbBoundary(0, 0, fbInfo->fb_width, fbInfo->fb_height);
+    Surface *screen = new Surface(fbBoundary, (uint32_t*)fbInfo->fb_buff);
+
+    instance = new CWindow(screen);
     
     return instance;
 }
@@ -42,14 +45,14 @@ void CWindow::pollEvents() {
     }
 }
 
-CWindow::CWindow(FbInfo *fbInfo)
-    : Window(NULL, 0, 0, fbInfo->fb_width,
-             fbInfo->fb_height), nEvents(0), fbInfo(fbInfo) {
+CWindow::CWindow(Surface *surface)
+    : Window(NULL, 0, 0, surface->rect.getWidth(),
+             surface->rect.getHeight()), nEvents(0), surface(surface) {
     ImageReader *mouseImg = imageReaderDriver("/tmp/mouse.ppm");
     mouse = new Window("mouse", getWidth() / 2, getHeight() / 2, mouseImg,
                        WindowFlags::WNONE, WindowPriority::WPRIO9);
 
-    compositor = new Compositor(fbInfo);
+    compositor = new Compositor(surface);
 
     ImageReader *backgroundImg = imageReaderDriver("/tmp/background.ppm");
     Window *background = new Window(NULL, 0, 0, backgroundImg);
@@ -96,11 +99,11 @@ void CWindow::updateMousePos(Device::MouseData *data) {
     int xNew = mouse->getX() + data->delta_x;
     int yNew = mouse->getY() - data->delta_y;
 
-    if (xNew >= 0 && xNew < (int)(fbInfo->fb_width)) {
+    if (xNew >= 0 && xNew < (int)(surface->rect.getWidth())) {
         mouse->setX(xNew);
     }
 
-    if (yNew >= 0 && yNew < (int)(fbInfo->fb_height)) {
+    if (yNew >= 0 && yNew < (int)(surface->rect.getHeight())) {
         mouse->setY(yNew);
     }
 

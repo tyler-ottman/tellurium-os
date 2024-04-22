@@ -9,14 +9,16 @@ struct ClipRegions;
 
 class Compositor {
 public:
-    Compositor(FbInfo *context);
+    Compositor(Surface *surface);
     ~Compositor(void);
 
-    // Framebuffer operations
-    void drawBuffRaw(Rect &rect, uint32_t *bitmap);
+    /// @brief Render to final buffer
+    /// @param root Top of Window structure
+    /// @param mouse Current position of mouse
+    /// @param oldMouse Old position of mouse
+    void render(Window *root, Window *mouse);
 
-    void drawWindow(Window *win);
-
+private:
     /// @brief Generate dirty regions from Window tree structure
     /// @param win Cur traversed window
     /// @param dirtyAncestor Highest ancestor of win marked as dirty
@@ -27,21 +29,16 @@ public:
     /// @param oldMouse Old position of mouse
     void createDirtyMouseRegion(Window *mouse);
 
-    /// @brief Render to final buffer
-    /// @param root Top of Window structure
-    /// @param mouse Current position of mouse
-    /// @param oldMouse Old position of mouse
-    void render(Window *root, Window *mouse);
+    /// @brief Draw the Window tree structure
+    /// @param win The root window
+    void drawWindow(Window *win);
 
-private:
-    FbInfo *fbInfo;
+    Surface *fSurface; // The surface that the compositor renders the final image
+    Surface *bSurface; // The backbuffer surface (avoid reads from framebuffer)
 
-    Rect *screen;
-    ClipRegions *renderRegion; // Regions to render to screen  
+    ClipRegions *fRenderClips; // Regions copied from the backbuffer surface 
+    ClipRegions *bRenderClips; // Regions that require a re-render
 
-    // Draw a clipped buffer within bounds of Rect area
-    void blit(Rect &rect, uint32_t *buff, Rect *area);
-    void alphaBlit(Rect &rect, uint32_t *buff, Rect *area);
     // void drawClippedRegions(void);
 };
 
@@ -76,6 +73,12 @@ struct ClipRegions {
     void removeClippedRegion(Rect *rect);
 
     /// @brief List operations
+    void copyRegion(ClipRegions *other) {
+        for (int i = 0; i < other->numClipped; i++) {
+            clippedRects[i] = other->clippedRects[i];
+        }
+        numClipped = other->numClipped;
+    }
     void pushRect(ClipRect *rect) {
         if (numClipped < maxClipped) {
             clippedRects[numClipped++] = *rect;

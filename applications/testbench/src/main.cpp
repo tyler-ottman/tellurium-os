@@ -15,10 +15,10 @@ int main() {
     GUI::Window *square2 = new GUI::Window("square", 150, 100, 200, 70);
     GUI::Window *square3 = new GUI::Window("square", 100, 250, 150, 100);
     GUI::Window *square4 = new GUI::Window("square", 220, 130, 100, 140);
-    square1->loadBuff(0xff89cff0);
-    square2->loadBuff(0xffd1ffbd);
-    square3->loadBuff(0xfffaa0a0);
-    square4->loadBuff(0xffffd580);
+    square1->loadTransparentColor(0xff89cff0);
+    square2->loadTransparentColor(0xffd1ffbd);
+    square3->loadTransparentColor(0xfffaa0a0);
+    square4->loadTransparentColor(0xffffd580);
     geoWin->appendWindow(square1);
     geoWin->appendWindow(square2);
     geoWin->appendWindow(square3);
@@ -37,11 +37,13 @@ int main() {
     // Terminal window
     GUI::Window *termWin = new GUI::Window("Terminal", 100, 150, 500, 300,
         GUI::WindowFlags::WDECORATION);
+    termWin->setVisible(false);
     GUI::Terminal *term = new GUI::Terminal(
         100 + 1, 150 + TITLE_HEIGHT + 1, termWin->getWidth() - 2,
         termWin->getHeight() - 2 - TITLE_HEIGHT);
+    term->setTransparent(true);
     termWin->appendWindow(term);
-    term->printf("TelluriumOS - Hello World!\n");
+    term->printf("Hello World!\n");
     for (size_t i = 0; i < 16; i++) {
         if (i % 8 == 0) term->printf("\n");
         term->printf("\033[38;5;%i;48;5;%im%03i", i, i, i);
@@ -49,6 +51,13 @@ int main() {
 
     // Attach test windows to root window
     GUI::CWindow *wapp = GUI::CWindow::getInstance();
+
+    GUI::Window *transparent = new GUI::Window(nullptr, 350, 350, 100, 100);
+    transparent->loadTransparentColor(0x008080);
+    wapp->appendWindow(transparent);
+    transparent = new GUI::Window(nullptr, 400, 400, 100, 100);
+    transparent->loadTransparentColor(0x800000);
+    wapp->appendWindow(transparent);
 
     wapp->appendWindow(geoWin);
     wapp->appendWindow(fruitWin);

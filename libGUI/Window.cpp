@@ -29,8 +29,7 @@ void Window::initialize(const char *windowName, int x, int y, int width,
     this->windowName = nullptr;
     windowID = -1;
     this->flags = flags;
-    winRect = nullptr;
-    winBuff = nullptr;
+    surface = nullptr;
     color = 0xff333333;
     this->priority = priority;
     parent = nullptr;
@@ -47,15 +46,15 @@ void Window::initialize(const char *windowName, int x, int y, int width,
         this->windowName[len] = '\0';
     }
 
-    // This will always store the most up-to-date position/size of Window
-    winRect = new Rect(x, y, width, height);
+    // The surface will store the position and size of Window and buffer
+    surface = new Surface;
+    surface->rect = Rect(x, y, width, height);
+    surface->buff = new uint32_t[width * height];
 
-    // The actual contents of the window
-    winBuff = new uint32_t[width * height];
     loadBuff(color);
 
     // This will store the position/size of Window on last refresh
-    winPrevRect = new Rect(*winRect);
+    winPrevRect = new Rect(surface->rect);
 
     for (int i = 0; i < maxWindows; i++) {
         windows[i] = nullptr;
@@ -291,7 +290,11 @@ bool Window::onSubtreeUnselect() {
     return true;
 }
 
-bool Window::intersects(Rect *rect) { return winRect->overlaps(rect); }
+bool Window::intersects(Rect *rect) { return surface->rect.overlaps(rect); }
+
+bool Window::intersects(Window *rect) {
+    return intersects(&rect->surface->rect);
+}
 
 Window *Window::getWindowUnderMouse(Window *mouse) {
     for (int i = numWindows - 1; i >= 0; i--) {
@@ -316,7 +319,7 @@ void Window::updateChildPositions(Device::MouseData *data) {
     setY(getY() - data->delta_y);
 }
 
-void Window::updatePrevRect() { *winPrevRect = *winRect; }
+void Window::updatePrevRect() { *winPrevRect = surface->rect; }
 
 bool Window::moveToTop(Window *child) {
     // Invalid window
@@ -337,59 +340,59 @@ bool Window::moveToTop(Window *child) {
 }
 
 void Window::loadBuff(uint32_t *buff) {
-    size_t buffSize = winRect->getWidth() * winRect->getHeight();
+    size_t buffSize = surface->getSize();
     for (size_t i = 0; i < buffSize; i++) {
-        winBuff[i] = buff[i];
+        surface->buff[i] = buff[i];
     }
 }
 
 void Window::loadBuff(uint32_t color) {
-    size_t buffSize = winRect->getWidth() * winRect->getHeight();
+    size_t buffSize = surface->getSize();
     for (size_t i = 0; i < buffSize; i++) {
-        winBuff[i] = color;
+        surface->buff[i] = color;
     }
 }
 
 void Window::loadTransparentColor(uint32_t color) {
-    size_t buffSize = winRect->getWidth() * winRect->getHeight();
+    size_t buffSize = surface->getSize();
     for (size_t i = 0; i < buffSize; i++) {
-        winBuff[i] = 0x80000000 | (0xffffff & color);
+        surface->buff[i] = 0x80000000 | (0xffffff & color);
     }
     setTransparent(true);
 }
 
 int Window::getWindowID() { return this->windowID; }
 
-int Window::getX() { return winRect->getX(); }
+int Window::getX() { return surface->rect.getX(); }
 
-int Window::getY() { return winRect->getY(); }
+int Window::getY() { return surface->rect.getY(); }
 
-int Window::getWidth() { return winRect->getWidth(); }
+int Window::getWidth() { return surface->rect.getWidth(); }
 
-int Window::getHeight() { return winRect->getHeight(); }
+int Window::getHeight() { return surface->rect.getHeight(); }
 
 int Window::getColor() { return color; }
 
 int Window::getNumChildren() { return numWindows; }
 
-Rect *Window::getWinRect() { return winRect; }
+Rect *Window::getWinRect() { return &surface->rect; }
 
 Rect *Window::getPrevRect() { return winPrevRect; }
 
 void Window::setWindowID(int windowID) { this->windowID = windowID; }
 
-void Window::setX(int x) { winRect->setX(x); }
+void Window::setX(int x) { surface->rect.setX(x); }
 
-void Window::setY(int y) { winRect->setY(y); }
+void Window::setY(int y) { surface->rect.setY(y); }
 
 void Window::setPosition(int xNew, int yNew) {
     setX(xNew);
     setY(yNew);
 }
 
-void Window::setWidth(int width) { winRect->setWidth(width); }
+void Window::setWidth(int width) { surface->rect.setWidth(width); }
 
-void Window::setHeight(int height) { winRect->setHeight(height); }
+void Window::setHeight(int height) { surface->rect.setHeight(height); }
 
 void Window::setPriority(WindowPriority priority) {
     if (priority >= WindowPriority::WPRIO0 &&
