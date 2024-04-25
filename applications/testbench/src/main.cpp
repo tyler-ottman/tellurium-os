@@ -19,6 +19,12 @@ int main() {
     square2->loadTransparentColor(0xffd1ffbd);
     square3->loadTransparentColor(0xfffaa0a0);
     square4->loadTransparentColor(0xffffd580);
+
+    ImageReader *pinkCircle = imageReaderDriver("/tmp/Circle.bmp");
+    GUI::Window *bmpCircle = new GUI::Window("Circle", 100, 100, pinkCircle);
+    bmpCircle->setTransparent(true);
+    geoWin->appendWindow(bmpCircle);
+    
     geoWin->appendWindow(square1);
     geoWin->appendWindow(square2);
     geoWin->appendWindow(square3);

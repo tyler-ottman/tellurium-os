@@ -47,7 +47,7 @@ bool Button::onWindowUnhover() {
 
 void Button::loadHoverImage(ImageReader *img) {
     if (img->getWidth() == getWidth() && img->getHeight() == getHeight()) {
-        int nBytes = img->getBpp() * img->getWidth() * img->getHeight();
+        int nBytes = (img->getBpp() / 8) * img->getWidth() * img->getHeight();
         imgHover = new uint8_t[nBytes];
         __memcpy((void *)imgHover, img->getBuff(), nBytes);
     }

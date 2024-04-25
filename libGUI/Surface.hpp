@@ -10,7 +10,7 @@ struct Surface {
     Surface(Rect& rect, uint32_t *buff) : rect(rect), buff(buff) {}
     Surface(void) : buff(nullptr) {}
 
-    /// @brief Alpha Blit surface to this
+    /// @brief Alpha Blit surface under this
     /// @param surface The surface source
     /// @param area The area to restrict the alpha blitting to
     void alphaBlit(Surface& source, Rect *area);

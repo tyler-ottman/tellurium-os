@@ -84,7 +84,7 @@ void Compositor::createDirtyMouseRegion(Window *mouse) {
 
         // Add new and old location of mouse to region to render
         bRenderClips->addClippedRegion(mouse->getPrevRect(), mouse);
-        bRenderClips->addClippedRegion(mouse->getWinRect(), mouse);
+        // bRenderClips->addClippedRegion(mouse->getWinRect(), mouse);
 
         // Now store current position of mouse in previous position
         mouse->updatePrevRect();
