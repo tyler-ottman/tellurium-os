@@ -9,28 +9,33 @@
 
 int main() {
     // Geometry Window
-    GUI::Window *geoWin = new GUI::Window("Geometry", 10, 10, 400, 400,
+    GUI::Window *geoWin = new GUI::Window("Geometry", 10, 10, 700, 400,
                                           GUI::WindowFlags::WDECORATION);
-    GUI::Window *square1 = new GUI::Window("square", 80, 70, 200, 220);
-    GUI::Window *square2 = new GUI::Window("square", 150, 100, 200, 70);
-    GUI::Window *square3 = new GUI::Window("square", 100, 250, 150, 100);
-    GUI::Window *square4 = new GUI::Window("square", 220, 130, 100, 140);
-    square1->loadTransparentColor(0xff89cff0);
-    square2->loadTransparentColor(0xffd1ffbd);
-    square3->loadTransparentColor(0xfffaa0a0);
-    square4->loadTransparentColor(0xffffd580);
+
+    ImageReader *redPentagon = imageReaderDriver("/tmp/Pentagon.bmp");
+    GUI::Window *bmpPentagon = new GUI::Window("Pentagon", 275, 150, redPentagon);
+    bmpPentagon->setTransparent(true);
+    geoWin->appendWindow(bmpPentagon);
 
     ImageReader *pinkCircle = imageReaderDriver("/tmp/Circle.bmp");
-    GUI::Window *bmpCircle = new GUI::Window("Circle", 100, 100, pinkCircle);
+    GUI::Window *bmpCircle = new GUI::Window("Circle", 90, 100, pinkCircle);
     bmpCircle->setTransparent(true);
     geoWin->appendWindow(bmpCircle);
-    
-    geoWin->appendWindow(square1);
-    geoWin->appendWindow(square2);
-    geoWin->appendWindow(square3);
-    geoWin->appendWindow(square4);
-    geoWin->appendWindow(new GUI::Window(NULL, 20, 70, 100, 100,
-                         GUI::WindowFlags::WDECORATION));
+
+    ImageReader *greenSquare = imageReaderDriver("/tmp/Square.bmp");
+    GUI::Window *bmpSquare = new GUI::Window("Square", 170, 150, greenSquare);
+    bmpSquare->setTransparent(true);
+    geoWin->appendWindow(bmpSquare);
+
+    ImageReader *blueTriangle = imageReaderDriver("/tmp/Triangle.bmp");
+    GUI::Window *bmpTriangle = new GUI::Window("Triangle", 380, 150, blueTriangle);
+    bmpTriangle->setTransparent(true);
+    geoWin->appendWindow(bmpTriangle);
+
+    ImageReader *orangeStar = imageReaderDriver("/tmp/Star.bmp");
+    GUI::Window *bmpStar = new GUI::Window("Pentagon", 440, 100, orangeStar);
+    bmpStar->setTransparent(true);
+    geoWin->appendWindow(bmpStar);
 
     // Image window
     const char *imagePath = "/tmp/basketOfFruits.ppm";

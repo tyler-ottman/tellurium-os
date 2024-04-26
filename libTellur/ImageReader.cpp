@@ -129,7 +129,7 @@ BmpReader::BmpReader(const char *path) : ImageReader(path) {
     bmpHeader = new BmpFileHeader;
     dibHeader = new DibHeader;
 
-    ImageReaderErrors err = loadImage(path); // TODO: Fix and move out of constructor
+    loadImage(path); // TODO: Fix and move out of constructor
 }
 
 BmpReader::~BmpReader() {}
@@ -165,10 +165,11 @@ ImageReaderErrors BmpReader::loadImage(const char *path) {
 
     bmpStream.setOffset(bmpHeader->bmpOffset); // Point to beginning of image data
     uint8_t *data = (uint8_t *)bmpStream.getData();
+    size_t pixelCounter = 0;
     for (int i = bmpHeight - 1; i >= 0; i--) {
         for (int j = 0; j < bmpWidth; j++) {
             // Get the pixel at row i, column j
-            buff[bmpWidth * i + j] = bmpGetPixel(data, i, j);
+            buff[pixelCounter++] = bmpGetPixel(data, i, j);
         }
     }
 
@@ -199,10 +200,10 @@ uint32_t BmpReader::bmpGetPixel(uint8_t *data, size_t row, size_t column) {
     switch (dibHeader->bpp) {
     case 32: {
         for (int i = 0; i < 8; i++) {
-            alpha |= (bit(data, bitStart + 24 + i) << (7 - i));
-            red |= (bit(data, bitStart + 16 + i) << (7 - i));
-            green |= (bit(data, bitStart + 8 + i) << (7 - i));
-            blue |= (bit(data, bitStart + i) << (7 - i));
+            alpha |= (bit(data, bitStart + 24 + i) << i);
+            red |= (bit(data, bitStart + 16 + i) << i);
+            green |= (bit(data, bitStart + 8 + i) << i);
+            blue |= (bit(data, bitStart + i) << i);
         }
         break;
     }
