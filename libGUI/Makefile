@@ -9,7 +9,8 @@ override CFLAGS += $(INCLUDE)				\
 	-nostdlib								\
 	-Wall									\
 	-mgeneral-regs-only						\
-	-mcmodel=large
+	-mcmodel=large							\
+	-O2
 
 override CPPFILES := $(shell find . -type f -name '*.cpp')
 override OBJ := $(CPPFILES:.cpp=.o)

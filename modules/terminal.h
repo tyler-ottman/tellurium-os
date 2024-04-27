@@ -43,7 +43,8 @@
 #define CURSOR_COLOR                        0xff808080
 #define RESET_COLOR                         0xff333333
 #define FG_COLOR_DEFAULT                    0xff0096aa
-#define BG_COLOR_DEFAULT                    RESET_COLOR
+#define BG_COLOR_DEFAULT                    0x7f000000
+
 
 typedef struct terminal {
     // User provided memory management
@@ -72,6 +73,9 @@ typedef struct terminal {
     uint32_t cursor_v_max;
     uint32_t cursor_color;
     bool cursor_enabled;
+
+    // Scroll Info
+    bool scroll_enabled;
 
     // ANSI state info
     uint32_t fg_color_default;

@@ -17,7 +17,7 @@ Terminal::Terminal(int x, int y, int width, int height, WindowFlags flags,
 
     terminal->clear(terminal);
 
-    winBuff = terminal->buf1;
+    surface->buff = terminal->buf1;
 }
 
 Terminal::~Terminal() {}
@@ -46,6 +46,10 @@ void Terminal::enableCursor() {
 
 void Terminal::disableCursor() {
     terminal->cursor_enabled = false;
+}
+
+void Terminal::setScroll(bool enable) {
+    terminal->scroll_enabled = enable;
 }
 
 void Terminal::setFg(uint32_t color) {

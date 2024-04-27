@@ -9,41 +9,24 @@
 
 int main() {
     // Geometry Window
-    GUI::Window *geoWin = new GUI::Window("Geometry", 10, 10, 400, 400,
-                                          GUI::WindowFlags::WDECORATION);
-    GUI::Window *square1 = new GUI::Window("square", 80, 70, 200, 220);
-    GUI::Window *square2 = new GUI::Window("square", 150, 100, 200, 70);
-    GUI::Window *square3 = new GUI::Window("square", 100, 250, 150, 100);
-    GUI::Window *square4 = new GUI::Window("square", 220, 130, 100, 140);
-    square1->loadBuff(0xff89cff0);
-    square2->loadBuff(0xffd1ffbd);
-    square3->loadBuff(0xfffaa0a0);
-    square4->loadBuff(0xffffd580);
-    geoWin->appendWindow(square1);
-    geoWin->appendWindow(square2);
-    geoWin->appendWindow(square3);
-    geoWin->appendWindow(square4);
-    geoWin->appendWindow(new GUI::Window(NULL, 20, 70, 100, 100,
-                         GUI::WindowFlags::WDECORATION));
+    GUI::Window *geoWin = new GUI::Window("Geometry", 10, 10, 700, 400, GUI::WindowFlags_Decoration);
+    geoWin->appendWindow(new GUI::Window(nullptr, 275, 150, "/tmp/Pentagon.bmp", GUI::WindowFlags_Transparent));
+    geoWin->appendWindow(new GUI::Window(nullptr, 90, 100, "/tmp/Circle.bmp", GUI::WindowFlags_Transparent));
+    geoWin->appendWindow(new GUI::Window(nullptr, 170, 150, "/tmp/Square.bmp", GUI::WindowFlags_Transparent));
+    geoWin->appendWindow(new GUI::Window(nullptr, 380, 150, "/tmp/Triangle.bmp", GUI::WindowFlags_Transparent));
+    geoWin->appendWindow(new GUI::Window(nullptr, 440, 100, "/tmp/Star.bmp", GUI::WindowFlags_Transparent));
+    geoWin->appendWindow(new GUI::Window(nullptr, geoWin->getX() + 1, geoWin->getY() + TITLE_HEIGHT, geoWin->getWidth() - 2, geoWin->getHeight() - TITLE_HEIGHT - 1, GUI::WindowFlags_None, GUI::WindowPriority_0));
 
     // Image window
-    const char *imagePath = "/tmp/basketOfFruits.ppm";
-    GUI::Window *fruitWin = new GUI::Window(imagePath, 150, 100, 402,
-        316 + TITLE_HEIGHT, GUI::WindowFlags::WDECORATION);
-    PpmReader fruitPpm(imagePath);
-    GUI::Window *fruitImg = new GUI::Window(NULL, 151, 101 + TITLE_HEIGHT,
-        fruitWin->getWidth() - 2, fruitWin->getHeight() - 2 - TITLE_HEIGHT);
-    fruitImg->loadBuff(fruitPpm.getBuff());
-    fruitWin->appendWindow(fruitImg);
+    const char *imagePath = "/tmp/Universe.bmp";
+    GUI::Window *universeWin = new GUI::Window(imagePath, 150, 100, 802, 377 + TITLE_HEIGHT + 1, GUI::WindowFlags_Decoration);
+    universeWin->appendWindow(new GUI::Window(nullptr, 151, 100 + TITLE_HEIGHT, imagePath));
 
     // Terminal window
-    GUI::Window *termWin = new GUI::Window("Terminal", 100, 150, 500, 300,
-        GUI::WindowFlags::WDECORATION);
-    GUI::Terminal *term = new GUI::Terminal(
-        100 + 1, 150 + TITLE_HEIGHT + 1, termWin->getWidth() - 2,
-        termWin->getHeight() - 2 - TITLE_HEIGHT);
+    GUI::Window *termWin = new GUI::Window("Terminal", 100, 150, 800, 480, GUI::WindowFlags_Decoration | GUI::WindowFlags_Invisible);
+    GUI::Terminal *term = new GUI::Terminal(100 + 1, 150 + TITLE_HEIGHT + 1, termWin->getWidth() - 2, termWin->getHeight() - 2 - TITLE_HEIGHT, GUI::WindowFlags_Transparent);
     termWin->appendWindow(term);
-    term->printf("TelluriumOS - Hello World!\n");
+    term->printf("Hello World! This is a testbench.\n");
     for (size_t i = 0; i < 16; i++) {
         if (i % 8 == 0) term->printf("\n");
         term->printf("\033[38;5;%i;48;5;%im%03i", i, i, i);
@@ -53,7 +36,7 @@ int main() {
     GUI::CWindow *wapp = GUI::CWindow::getInstance();
 
     wapp->appendWindow(geoWin);
-    wapp->appendWindow(fruitWin);
+    wapp->appendWindow(universeWin);
     wapp->appendWindow(termWin);
 
     while (1) {

@@ -9,8 +9,8 @@ namespace GUI {
 class Taskbar : public Window {
 public:
     Taskbar(int x, int y, int width, int height,
-            WindowFlags flags = WindowFlags::WNONE,
-            WindowPriority priority = WindowPriority::WPRIO9);
+            WindowFlags flags = WindowFlags_None,
+            WindowPriority priority = WindowPriority_9);
     ~Taskbar();
 };
 

@@ -8,8 +8,8 @@ namespace GUI {
 class MenuBar : public Window {
 public:
     MenuBar(int x, int y, int width, int height,
-            WindowFlags flags = WindowFlags::WNONE,
-            WindowPriority priority = WindowPriority::WPRIO5);
+            WindowFlags flags = WindowFlags_None,
+            WindowPriority priority = WindowPriority_5);
     ~MenuBar();
 
     bool onWindowDrag(Device::MouseData *data) override;

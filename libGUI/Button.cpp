@@ -7,51 +7,54 @@ Button::Button(int x, int y, int width, int height, WindowFlags flags,
                ButtonFlags bFlags, WindowPriority priority)
     : Window::Window("", x, y, width, height, flags, priority),
       imgNoHover(nullptr), imgHover(nullptr), buttonFlags(bFlags) {
-    imgNoHover = (uint8_t *)winBuff;
+    imgNoHover = (uint8_t *)surface->buff;
 }
 
-Button::Button(int x, int y, ImageReader *img, WindowFlags flags,
+Button::Button(int x, int y, const char *path, WindowFlags flags,
                ButtonFlags bFlags, WindowPriority priority)
-    : Window::Window("", x, y, img->getWidth(), img->getHeight(), flags,
-                     priority),
-      imgNoHover(nullptr), imgHover(nullptr), buttonFlags(bFlags) {
-    // Use initial winBuff as location for default button image
-    imgNoHover = (uint8_t *)winBuff;
-    loadBuff(img->getBuff());
+    : Window::Window("", x, y, path, flags, priority),
+      imgNoHover(nullptr),
+      imgHover(nullptr),
+      buttonFlags(bFlags) {
+    imgNoHover = (uint8_t *)surface->buff;
 }
 
 Button::~Button() {}
 
 bool Button::onWindowHover() {
-    if (!isFlagHover()) {
+    if (!getFlag(ButtonFlags_Hover)) {
         return false;
     }
 
     if (imgHover) {
-        winBuff = (uint32_t *)imgHover;
-        setDirty(true);
+        surface->buff = (uint32_t *)imgHover;
+        setFlags(WindowFlags_Dirty);
     }
 
     return true;
 }
 
 bool Button::onWindowUnhover() {
-    if (!isFlagHover()) {
+    if (!getFlag(ButtonFlags_Hover)) {
         return false;
     }
 
-    winBuff = (uint32_t *)imgNoHover;
-    setDirty(true);
+    surface->buff = (uint32_t *)imgNoHover;
+    setFlags(WindowFlags_Dirty);
 
     return true;
 }
 
-void Button::loadHoverImage(ImageReader *img) {
+void Button::loadHoverImage(const char *path) {
+    ImageReader *img = imageReaderDriver(path);
+
     if (img->getWidth() == getWidth() && img->getHeight() == getHeight()) {
-        int nBytes = img->getBpp() * img->getWidth() * img->getHeight();
+        int nBytes = (img->getBpp() / 8) * img->getWidth() * img->getHeight();
         imgHover = new uint8_t[nBytes];
         __memcpy((void *)imgHover, img->getBuff(), nBytes);
     }
+
+    delete img;
 }
 
 }

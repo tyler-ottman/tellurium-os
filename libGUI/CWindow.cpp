@@ -6,34 +6,6 @@
 
 namespace GUI {
 
-#define MOUSE_W                             11
-#define MOUSE_H                             18
-
-#define BL                                  0xff000000
-#define CL                                  0x0
-#define WH                                  0xffffffff
-
-uint32_t mouseBitmap[MOUSE_W * MOUSE_H] = {  
-    BL, CL, CL, CL, CL, CL, CL, CL, CL, CL, CL,
-    BL, BL, CL, CL, CL, CL, CL, CL, CL, CL, CL,
-    BL, WH, BL, CL, CL, CL, CL, CL, CL, CL, CL,
-    BL, WH, WH, BL, CL, CL, CL, CL, CL, CL, CL,
-    BL, WH, WH, WH, BL, CL, CL ,CL, CL, CL, CL,
-    BL, WH, WH, WH, WH, BL, CL, CL, CL, CL, CL,
-    BL, WH, WH, WH, WH, WH, BL, CL, CL, CL, CL,
-    BL, WH, WH, WH, WH, WH, WH, BL, CL, CL, CL,
-    BL, WH, WH, WH, WH, WH, WH, WH, BL, CL, CL,
-    BL, WH, WH, WH, WH, WH, WH, WH, WH, BL, CL,
-    BL, WH, WH, WH, WH, WH, WH, WH, WH, WH, BL,
-    BL, WH, WH, WH, WH, WH, WH, BL, BL, BL, BL,
-    BL, WH, WH, WH, BL, WH, WH, BL, CL, CL, CL,
-    BL, WH, WH, BL, BL, WH, WH, BL, CL, CL, CL,
-    BL, WH, BL, CL, CL, BL, WH, WH, BL, CL, CL,
-    BL, BL, CL, CL, CL, BL, WH, WH, BL, CL, CL,
-    BL, CL, CL, CL, CL, CL, BL, WH, BL, CL, CL,
-    CL, CL, CL, CL, CL, CL, CL, BL, BL, CL, CL
-};
-
 CWindow *CWindow::instance = nullptr;
 
 CWindow *CWindow::getInstance() {
@@ -44,7 +16,10 @@ CWindow *CWindow::getInstance() {
     FbInfo *fbInfo = new FbInfo;
     syscall_get_fb_context(fbInfo);
 
-    instance = new CWindow(fbInfo);
+    Rect fbBoundary(0, 0, fbInfo->fb_width, fbInfo->fb_height);
+    Surface *screen = new Surface(fbBoundary, (uint32_t*)fbInfo->fb_buff);
+
+    instance = new CWindow(screen);
     
     return instance;
 }
@@ -70,19 +45,14 @@ void CWindow::pollEvents() {
     }
 }
 
-CWindow::CWindow(FbInfo *fbInfo)
-    : Window(NULL, 0, 0, fbInfo->fb_width,
-             fbInfo->fb_height), nEvents(0), fbInfo(fbInfo) {
-    mouse = new Window("mouse", getWidth() / 2, getHeight() / 2, MOUSE_W,
-                       MOUSE_H, WindowFlags::WNONE, WindowPriority::WPRIO9);
-    mouse->loadBuff(mouseBitmap); // Copy mouse image to its buffer
+CWindow::CWindow(Surface *surface)
+    : Window(NULL, 0, 0, surface->rect.getWidth(),
+             surface->rect.getHeight()), nEvents(0), surface(surface) {
+    mouse = new Window("mouse", getWidth() / 2, getHeight() / 2, "/tmp/mouse.ppm",
+                       WindowFlags_None, WindowPriority_9);
+    compositor = new Compositor(surface);
 
-    compositor = new Compositor(fbInfo);
-
-    Window *background = new Window(NULL, 0, 0, fbInfo->fb_width,
-                                    fbInfo->fb_height);
-    PpmReader backgroundImg("/tmp/background.ppm");
-    background->loadBuff(backgroundImg.getBuff());
+    Window *background = new Window(NULL, 0, 0, "/tmp/background.bmp");
     appendWindow(background);
 
     Taskbar *taskbar = new Taskbar(0, getHeight() - 40, getWidth(), 40);
@@ -90,17 +60,13 @@ CWindow::CWindow(FbInfo *fbInfo)
     appendWindow(taskbar);
 
     // Sample home button
-    PpmReader homeButtonImg("/tmp/homeButtonUnhover.ppm");
-    PpmReader homeButtonHoverImg("/tmp/homeButtonHover.ppm");
-    Button *homeButton = new Button(taskbar->getX(), taskbar->getY(),
-        &homeButtonImg, WindowFlags::WNONE, ButtonFlags::BHOVER);
-    homeButton->loadHoverImage(&homeButtonHoverImg);
+    Button *homeButton = new Button(taskbar->getX(), taskbar->getY(), "/tmp/homeButtonUnhover.ppm", WindowFlags_None, ButtonFlags_Hover);
+    homeButton->loadHoverImage("/tmp/homeButtonHover.ppm");
     
     taskbar->appendWindow(homeButton);
 
     // Sample clock
-    Terminal *clock = new Terminal(taskbar->getWidth() - 50,
-        taskbar->getY() + 14, 50, 20);
+    Terminal *clock = new Terminal(taskbar->getWidth() - 50, taskbar->getY() + 14, 50, 20);
     clock->setBg(0xffbebebe);
     clock->setFg(0);
     clock->disableCursor();
@@ -113,7 +79,7 @@ CWindow::CWindow(FbInfo *fbInfo)
     // devManager->addDevice(new Device::DeviceKeyboardPs2("/dev/kb0"));
 
     // Entire screen is dirty on startup
-    setDirty(true);
+    setFlags(WindowFlags_Dirty);
 }
 
 CWindow::~CWindow() {}
@@ -123,15 +89,15 @@ void CWindow::updateMousePos(Device::MouseData *data) {
     int xNew = mouse->getX() + data->delta_x;
     int yNew = mouse->getY() - data->delta_y;
 
-    if (xNew >= 0 && xNew < (int)(fbInfo->fb_width)) {
+    if (xNew >= 0 && xNew < (int)(surface->rect.getWidth())) {
         mouse->setX(xNew);
     }
 
-    if (yNew >= 0 && yNew < (int)(fbInfo->fb_height)) {
+    if (yNew >= 0 && yNew < (int)(surface->rect.getHeight())) {
         mouse->setY(yNew);
     }
 
-    mouse->setDirty(true);
+    mouse->setFlags(WindowFlags_Dirty);
 }
 
 }

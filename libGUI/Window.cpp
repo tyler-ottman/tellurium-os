@@ -9,21 +9,39 @@
 namespace GUI {
 
 Window::Window(const char *windowName, int x, int y, int width, int height,
-               WindowFlags flags, WindowPriority priority)
-    : windowName(nullptr),
-      windowID(-1),
-      flags(flags),
-      winRect(nullptr),
-      winBuff(nullptr),
-      color(0xff333333),
-      priority(priority),
-      parent(nullptr),
-      numWindows(0),
-      maxWindows(WINDOW_MAX),
-      winPrevRect(nullptr),
-      dirty(false),
-      hoverWindow(nullptr),
-      selectedWindow(nullptr) {
+               WindowFlags flags, WindowPriority priority) {
+    initialize(windowName, x, y, width, height, flags, priority);
+}
+
+Window::Window(const char *windowName, int xPos, int yPos, const char *path,
+               WindowFlags flags, WindowPriority priority){   
+    ImageReader *image = imageReaderDriver(path);
+
+    initialize(windowName, xPos, yPos, image->getWidth(), image->getHeight(), flags,
+               priority);
+    
+    // Load image into buffer
+    loadBuff(image->getBuff());
+
+    delete image;    
+}
+
+Window::~Window() {}
+
+void Window::initialize(const char *windowName, int x, int y, int width,
+        int height, WindowFlags flags, WindowPriority priority) {
+    this->windowName = nullptr;
+    windowID = -1;
+    this->flags = flags;
+    surface = nullptr;
+    color = 0xff333333;
+    this->priority = priority;
+    parent = nullptr;
+    numWindows = 0;
+    maxWindows = WINDOW_MAX;
+    winPrevRect = nullptr;
+    hoverWindow = nullptr;
+    selectedWindow = nullptr;
 
     if (windowName) {
         int len = __strlen(windowName);
@@ -32,29 +50,31 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
         this->windowName[len] = '\0';
     }
 
-    // This will always store the most up-to-date position/size of Window
-    winRect = new Rect(x, y, width, height);
+    // The surface will store the position and size of Window and buffer
+    surface = new Surface;
+    surface->rect = Rect(x, y, width, height);
+    surface->buff = new uint32_t[width * height];
 
-    // The actual contents of the window
-    winBuff = new uint32_t[width * height];
     loadBuff(color);
 
     // This will store the position/size of Window on last refresh
-    winPrevRect = new Rect(*winRect);
+    winPrevRect = new Rect(surface->rect);
 
     for (int i = 0; i < maxWindows; i++) {
         windows[i] = nullptr;
     }
 
     // Menu bar can only be attached to movable windows
-    if (hasDecoration()) {
-        MenuBar *menuBar = new MenuBar(x, y, width, TITLE_HEIGHT);
+    if (getFlag(WindowFlags_Decoration)) {
+        MenuBar *menuBar = new MenuBar(x + 10, y, width - 20, TITLE_HEIGHT);
+        appendWindow(menuBar);
 
         if (this->windowName) {
             int titleLen = __strlen(this->windowName) * 8;  // 8 is default font width
             Terminal *title = new Terminal(x + width / 2 - titleLen / 2,
-                y + 10, titleLen, 30);
+                y + 10, titleLen, 20);
             title->disableCursor();
+            title->setScroll(false);
             title->setBg(0xffbebebe);
             title->setFg(0);
             title->clear();
@@ -62,29 +82,29 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
             menuBar->appendWindow(title);
         }
 
-        PpmReader exitImg("/tmp/exitButtonUnhover.ppm");
-        PpmReader exitHoverImg("/tmp/exitButtonHover.ppm");
-        Button *exitButton = new Button(x + width - 20, y + 5, &exitImg,
-            WindowFlags::WNONE, ButtonFlags::BHOVER);
-        exitButton->loadHoverImage(&exitHoverImg);
-        menuBar->appendWindow(exitButton);
+        // Menu Bar's Top Left Corner
+        appendWindow(new GUI::Window("BorderTopLeft", x, y, "/tmp/BorderTopLeft.bmp", WindowFlags_Transparent));
 
-        PpmReader minimizeImg("/tmp/minimizeButtonUnhover.ppm");
-        PpmReader minimizeHoverImg("/tmp/minimizeButtonHover.ppm");
-        Button *minimizeButton = new Button(x + width - 40, y + 5, &minimizeImg,
-            WindowFlags::WNONE, ButtonFlags::BHOVER);
-        minimizeButton->loadHoverImage(&minimizeHoverImg);
-        menuBar->appendWindow(minimizeButton);
+        // Menu Bar's Top Right Corner
+        appendWindow(new GUI::Window("BorderTopRight", x + width - 10, y, "/tmp/BorderTopRight.bmp", WindowFlags_Transparent));
 
-        appendWindow(menuBar);
+        // Menu Bar's Exit Button
+        menuBar->appendWindow(new Button(x + width - 22, y + 5, "/tmp/ExitButtonUnhover.bmp", WindowFlags_Transparent, ButtonFlags_None));
+
+        // Menu Bar's Fullscreen Button
+        menuBar->appendWindow(new Button(x + width - 44, y + 5, "/tmp/FullscreenButton.bmp", WindowFlags_Transparent, ButtonFlags_None));
+
+        // Menu Bar's Minimize Button
+        menuBar->appendWindow(new Button(x + width - 66, y + 5, "/tmp/MinimizeButton.bmp", WindowFlags_Transparent, ButtonFlags_None));
+
+        // Window's Border
         appendWindow(new Border(x, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1));
         appendWindow(new Border(x + width - 1, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1));
         appendWindow(new Border(x, y + height - 1, width, 1));
-        appendWindow(new Border(x, y + TITLE_HEIGHT, width, 1));
+
+        setFlags(WindowFlags_Invisible);
     }
 }
-
-Window::~Window() {}
 
 Window *Window::appendWindow(Window *window) {
     if (numWindows == maxWindows || !window) {
@@ -195,7 +215,7 @@ bool Window::onEvent(Device::TellurEvent *event, Window *mouse) {
         selectedWindow = childWindow;
 
         // Notify parent to move Window to top of stack if it's decorable
-        if (parent && hasDecoration()) {
+        if (parent && getFlag(WindowFlags_Decoration)) {
             parent->moveToTop(this);
         }
 
@@ -272,7 +292,11 @@ bool Window::onSubtreeUnselect() {
     return true;
 }
 
-bool Window::intersects(Rect *rect) { return winRect->intersects(rect); }
+bool Window::intersects(Rect *rect) { return surface->rect.overlaps(rect); }
+
+bool Window::intersects(Window *rect) {
+    return intersects(&rect->surface->rect);
+}
 
 Window *Window::getWindowUnderMouse(Window *mouse) {
     for (int i = numWindows - 1; i >= 0; i--) {
@@ -297,7 +321,7 @@ void Window::updateChildPositions(Device::MouseData *data) {
     setY(getY() - data->delta_y);
 }
 
-void Window::updatePrevRect() { *winPrevRect = *winRect; }
+void Window::updatePrevRect() { *winPrevRect = surface->rect; }
 
 bool Window::moveToTop(Window *child) {
     // Invalid window
@@ -311,76 +335,74 @@ bool Window::moveToTop(Window *child) {
     // If the Window actually moved in the stack, mark as dirty
     Window *win = appendWindow(child);
     if (win->getWindowID() != oldWindowID) {
-        win->setDirty(true);
+        setFlags(WindowFlags_Dirty);
     }
 
     return true;
 }
 
 void Window::loadBuff(uint32_t *buff) {
-    size_t buffSize = winRect->getWidth() * winRect->getHeight();
+    size_t buffSize = surface->getSize();
     for (size_t i = 0; i < buffSize; i++) {
-        winBuff[i] = buff[i];
+        surface->buff[i] = buff[i];
     }
 }
 
 void Window::loadBuff(uint32_t color) {
-    size_t buffSize = winRect->getWidth() * winRect->getHeight();
+    size_t buffSize = surface->getSize();
     for (size_t i = 0; i < buffSize; i++) {
-        winBuff[i] = color;
+        surface->buff[i] = color;
     }
-    this->color = color;
+}
+
+void Window::loadTransparentColor(uint32_t color) {
+    size_t buffSize = surface->getSize();
+    for (size_t i = 0; i < buffSize; i++) {
+        surface->buff[i] = 0x80000000 | (0xffffff & color);
+    }
+    setFlags(WindowFlags_Transparent);
 }
 
 int Window::getWindowID() { return this->windowID; }
 
-int Window::getX() { return winRect->getX(); }
+int Window::getX() { return surface->rect.getX(); }
 
-int Window::getY() { return winRect->getY(); }
+int Window::getY() { return surface->rect.getY(); }
 
-int Window::getWidth() { return winRect->getWidth(); }
+int Window::getWidth() { return surface->rect.getWidth(); }
 
-int Window::getHeight() { return winRect->getHeight(); }
+int Window::getHeight() { return surface->rect.getHeight(); }
 
 int Window::getColor() { return color; }
 
 int Window::getNumChildren() { return numWindows; }
 
-Rect *Window::getWinRect() { return winRect; }
+Rect *Window::getWinRect() { return &surface->rect; }
 
 Rect *Window::getPrevRect() { return winPrevRect; }
 
+bool Window::getFlag(WindowFlags field) { return flags & field; }
+
 void Window::setWindowID(int windowID) { this->windowID = windowID; }
 
-void Window::setX(int x) { winRect->setX(x); }
+void Window::setX(int x) { surface->rect.setX(x); }
 
-void Window::setY(int y) { winRect->setY(y); }
+void Window::setY(int y) { surface->rect.setY(y); }
 
 void Window::setPosition(int xNew, int yNew) {
     setX(xNew);
     setY(yNew);
 }
 
-void Window::setWidth(int width) { winRect->setWidth(width); }
+void Window::setWidth(int width) { surface->rect.setWidth(width); }
 
-void Window::setHeight(int height) { winRect->setHeight(height); }
+void Window::setHeight(int height) { surface->rect.setHeight(height); }
 
-void Window::setDirty(bool dirty) { this->dirty = dirty; }
+void Window::setPriority(WindowPriority priority) { this->priority = priority; }
 
-void Window::setPriority(WindowPriority priority) {
-    if (priority >= WindowPriority::WPRIO0 &&
-        priority <= WindowPriority::WPRIO9) {
-        this->priority = priority;
-    }
-}
+void Window::setFlags(WindowFlags fields) { flags |= fields; }
 
-bool Window::hasDecoration() { return flags & WindowFlags::WDECORATION; }
-
-bool Window::hasMovable() { return flags & WindowFlags::WMOVABLE; }
-
-bool Window::hasUnbounded() { return flags & WindowFlags::WUNBOUNDED; }
-
-bool Window::isDirty() { return dirty; }
+void Window::resetFlags(WindowFlags fields) { flags &= (0xffffffff ^ fields); }
 
 bool Window::isCoordInBounds(int x, int y) {
     return ((x >= getX()) && (x <= (getX() + getWidth())) &&

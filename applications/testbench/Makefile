@@ -21,7 +21,8 @@ override CFLAGS += $(INCLUDE)				\
 	-nostdlib								\
 	-Wall									\
 	-mgeneral-regs-only						\
-	-mcmodel=large
+	-mcmodel=large							\
+	-O2
 
 override LDFILE = ./linker.ld
 override LDFLAGS = -T $(LDFILE) 			\

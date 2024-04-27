@@ -8,8 +8,8 @@ namespace GUI {
 class Terminal : public Window {
 public:
     Terminal(int x, int y, int width, int height,
-             WindowFlags flags = WindowFlags::WNONE,
-             WindowPriority priority = WindowPriority::WPRIO2);
+             WindowFlags flags = WindowFlags_None,
+             WindowPriority priority = WindowPriority_2);
     ~Terminal();
 
     // Buffer opeations
@@ -18,6 +18,7 @@ public:
 
     void enableCursor(void);
     void disableCursor(void);
+    void setScroll(bool enable);
 
     void setFg(uint32_t color);
     void setBg(uint32_t color);

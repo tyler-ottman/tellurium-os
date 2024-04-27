@@ -3,6 +3,7 @@
 
 #include "libTellur/DevPoll.hpp"
 #include "Compositor.hpp"
+#include "Surface.hpp"
 #include "Window.hpp"
 
 namespace GUI {
@@ -21,7 +22,7 @@ public:
     void forceRefresh(void);
 
 private:
-    CWindow(FbInfo *fbInfo);
+    CWindow(Surface *surface);
     ~CWindow();
 
     /// @brief Process event 
@@ -35,7 +36,7 @@ private:
     Device::DeviceManager *devManager;
 
     Compositor *compositor;
-    FbInfo *fbInfo;
+    Surface *surface;
 
     static CWindow *instance;
 };

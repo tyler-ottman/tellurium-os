@@ -69,10 +69,10 @@ tellurium-os$ make
 To run the bootable ISO using QEMU, type:
 
 ```console
-tellurium-os$ qemu-system-x86_64 -M q35 -m 2G -cdrom tellurium.iso -boot d -M smm=off -d int -D qemu.log -smp 2
+tellurium-os$ qemu-system-x86_64 -cdrom tellurium.iso -M q35 -m 2G -boot d -enable-kvm -cpu host -smp 2
 ```
-The 'm' and 'smp' flags can be adjusted to change the total system memory and processor cores present, respectively.
+The 'm' and 'smp' flags can be adjusted to change the total system memory and processor cores present, respectively. Leave KVM enabled
 
 ### Screenshots
 
-<img src="docs/sampleGUI.png" alt="drawing"/>
+<img src="docs/sample2.png" alt="drawing"/>
