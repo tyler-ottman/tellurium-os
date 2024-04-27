@@ -62,7 +62,7 @@ void Window::initialize(const char *windowName, int x, int y, int width,
 
     // Menu bar can only be attached to movable windows
     if (hasDecoration()) {
-        MenuBar *menuBar = new MenuBar(x, y, width, TITLE_HEIGHT);
+        MenuBar *menuBar = new MenuBar(x + 10, y, width - 20, TITLE_HEIGHT);
         appendWindow(menuBar);
 
         if (this->windowName) {
@@ -78,29 +78,43 @@ void Window::initialize(const char *windowName, int x, int y, int width,
             menuBar->appendWindow(title);
         }
 
+        // Menu Bar's Top Left Corner
+        ImageReader *topLeftBorder = imageReaderDriver("/tmp/BorderTopLeft.bmp");
+        GUI::Window *bmpTopLeftBorder = new GUI::Window("BorderTopLeft", x, y, topLeftBorder);
+        bmpTopLeftBorder->setTransparent(true);
+        appendWindow(bmpTopLeftBorder);
+
+        // Menu Bar's Top Right Corner
+        ImageReader *topRightBorder = imageReaderDriver("/tmp/BorderTopRight.bmp");
+        GUI::Window *bmpTopRightBorder = new GUI::Window("BorderTopRight", x + width - 10, y, topRightBorder);
+        bmpTopRightBorder->setTransparent(true);
+        appendWindow(bmpTopRightBorder);
+
         // Menu Bar's Exit Button
-        ImageReader *exitImg = imageReaderDriver("/tmp/exitButtonUnhover.ppm");
-        ImageReader *exitHoverImg = imageReaderDriver("/tmp/exitButtonHover.ppm");
-        Button *exitButton = new Button(x + width - 20, y + 5, exitImg, WindowFlags::WNONE, ButtonFlags::BHOVER);
-        exitButton->loadHoverImage(exitHoverImg);
+        ImageReader *exitImg = imageReaderDriver("/tmp/ExitButtonUnhover.bmp");
+        Button *exitButton = new Button(x + width - 22, y + 5, exitImg, WindowFlags::WNONE, ButtonFlags::BHOVER);
+        exitButton->setTransparent(true);
         menuBar->appendWindow(exitButton);
         delete exitImg;
-        delete exitHoverImg;
+
+        // Menu Bar's Fullscreen Button
+        ImageReader *fullscreenImg = imageReaderDriver("/tmp/FullscreenButton.bmp");
+        Button *fullscreenButton = new Button(x + width - 44, y + 5, fullscreenImg, WindowFlags::WNONE, ButtonFlags::BBORDER);
+        fullscreenButton->setTransparent(true);
+        menuBar->appendWindow(fullscreenButton);
 
         // Menu Bar's Minimize Button
-        ImageReader *minimizeImg = imageReaderDriver("/tmp/minimizeButtonUnhover.ppm");
-        ImageReader *minimizeHoverImg = imageReaderDriver("/tmp/minimizeButtonHover.ppm");
-        Button *minimizeButton = new Button(x + width - 40, y + 5, minimizeImg, WindowFlags::WNONE, ButtonFlags::BHOVER);
-        minimizeButton->loadHoverImage(minimizeHoverImg);
+        ImageReader *minimizeImg = imageReaderDriver("/tmp/MinimizeButton.bmp");
+        Button *minimizeButton = new Button(x + width - 66, y + 5, minimizeImg, WindowFlags::WNONE, ButtonFlags::BBORDER);
+        minimizeButton->setTransparent(true);
         menuBar->appendWindow(minimizeButton);
-        delete minimizeImg;
-        delete minimizeHoverImg;
 
         // Window's Border
         appendWindow(new Border(x, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1));
         appendWindow(new Border(x + width - 1, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1));
         appendWindow(new Border(x, y + height - 1, width, 1));
-        appendWindow(new Border(x, y + TITLE_HEIGHT, width, 1));
+
+        cFlags.visible = false; // TODO: Fix
     }
 }
 

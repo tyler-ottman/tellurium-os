@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define WINDOW_MAX                          10
+#define WINDOW_MAX                          20
 #define TITLE_HEIGHT                        31
 #define TITLE_WIDTH                         (width)
 

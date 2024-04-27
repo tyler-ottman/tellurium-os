@@ -54,7 +54,7 @@ CWindow::CWindow(Surface *surface)
 
     compositor = new Compositor(surface);
 
-    ImageReader *backgroundImg = imageReaderDriver("/tmp/background.ppm");
+    ImageReader *backgroundImg = imageReaderDriver("/tmp/background.bmp");
     Window *background = new Window(NULL, 0, 0, backgroundImg);
     appendWindow(background);
     delete backgroundImg;

@@ -37,24 +37,24 @@ int main() {
     bmpStar->setTransparent(true);
     geoWin->appendWindow(bmpStar);
 
-    // Image window
-    const char *imagePath = "/tmp/basketOfFruits.ppm";
-    GUI::Window *fruitWin = new GUI::Window(imagePath, 150, 100, 402, 316 + TITLE_HEIGHT, GUI::WindowFlags::WDECORATION);
-    ImageReader *fruit = imageReaderDriver(imagePath);
-    GUI::Window *fruitImg = new GUI::Window(NULL, 151, 101 + TITLE_HEIGHT, fruit);
-    delete fruit;
-    fruitWin->appendWindow(fruitImg);
+    // Restrict drawing of self to inside of border
+    geoWin->appendWindow(new GUI::Window(NULL, geoWin->getX() + 1, geoWin->getY() + TITLE_HEIGHT, geoWin->getWidth() - 2, geoWin->getHeight() - TITLE_HEIGHT - 1, GUI::WindowFlags::WNONE, GUI::WindowPriority::WPRIO0));
 
-    // Terminal window
-    GUI::Window *termWin = new GUI::Window("Terminal", 100, 150, 500, 300,
-        GUI::WindowFlags::WDECORATION);
+    // Image window
+    const char *imagePath = "/tmp/Universe.bmp";
+    GUI::Window *universeWin = new GUI::Window(imagePath, 150, 100, 802, 377 + TITLE_HEIGHT + 1, GUI::WindowFlags::WDECORATION);
+    ImageReader *universe = imageReaderDriver(imagePath);
+    GUI::Window *universeImg = new GUI::Window(NULL, 151, 100 + TITLE_HEIGHT, universe);
+    delete universe;
+    universeWin->appendWindow(universeImg);
+
+    // // Terminal window
+    GUI::Window *termWin = new GUI::Window("Terminal", 100, 150, 800, 480, GUI::WindowFlags::WDECORATION);
     termWin->setVisible(false);
-    GUI::Terminal *term = new GUI::Terminal(
-        100 + 1, 150 + TITLE_HEIGHT + 1, termWin->getWidth() - 2,
-        termWin->getHeight() - 2 - TITLE_HEIGHT);
+    GUI::Terminal *term = new GUI::Terminal(100 + 1, 150 + TITLE_HEIGHT + 1, termWin->getWidth() - 2, termWin->getHeight() - 2 - TITLE_HEIGHT);
     term->setTransparent(true);
     termWin->appendWindow(term);
-    term->printf("Hello World!\n");
+    term->printf("Hello World! This is a testbench.\n");
     for (size_t i = 0; i < 16; i++) {
         if (i % 8 == 0) term->printf("\n");
         term->printf("\033[38;5;%i;48;5;%im%03i", i, i, i);
@@ -63,15 +63,8 @@ int main() {
     // Attach test windows to root window
     GUI::CWindow *wapp = GUI::CWindow::getInstance();
 
-    GUI::Window *transparent = new GUI::Window(nullptr, 350, 350, 100, 100);
-    transparent->loadTransparentColor(0x008080);
-    wapp->appendWindow(transparent);
-    transparent = new GUI::Window(nullptr, 400, 400, 100, 100);
-    transparent->loadTransparentColor(0x800000);
-    wapp->appendWindow(transparent);
-
     wapp->appendWindow(geoWin);
-    wapp->appendWindow(fruitWin);
+    wapp->appendWindow(universeWin);
     wapp->appendWindow(termWin);
 
     while (1) {
