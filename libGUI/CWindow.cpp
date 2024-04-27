@@ -48,35 +48,25 @@ void CWindow::pollEvents() {
 CWindow::CWindow(Surface *surface)
     : Window(NULL, 0, 0, surface->rect.getWidth(),
              surface->rect.getHeight()), nEvents(0), surface(surface) {
-    ImageReader *mouseImg = imageReaderDriver("/tmp/mouse.ppm");
-    mouse = new Window("mouse", getWidth() / 2, getHeight() / 2, mouseImg,
-                       WindowFlags::WNONE, WindowPriority::WPRIO9);
-
+    mouse = new Window("mouse", getWidth() / 2, getHeight() / 2, "/tmp/mouse.ppm",
+                       WindowFlags_None, WindowPriority_9);
     compositor = new Compositor(surface);
 
-    ImageReader *backgroundImg = imageReaderDriver("/tmp/background.bmp");
-    Window *background = new Window(NULL, 0, 0, backgroundImg);
+    Window *background = new Window(NULL, 0, 0, "/tmp/background.bmp");
     appendWindow(background);
-    delete backgroundImg;
 
     Taskbar *taskbar = new Taskbar(0, getHeight() - 40, getWidth(), 40);
     taskbar->loadBuff(0xffbebebe);
     appendWindow(taskbar);
 
     // Sample home button
-    ImageReader *homeButtonImg = imageReaderDriver("/tmp/homeButtonUnhover.ppm");
-    ImageReader *homeButtonHoverImg = imageReaderDriver("/tmp/homeButtonHover.ppm");
-    Button *homeButton = new Button(taskbar->getX(), taskbar->getY(),
-        homeButtonImg, WindowFlags::WNONE, ButtonFlags::BHOVER);
-    homeButton->loadHoverImage(homeButtonHoverImg);
-    delete homeButtonImg;
-    delete homeButtonHoverImg;
+    Button *homeButton = new Button(taskbar->getX(), taskbar->getY(), "/tmp/homeButtonUnhover.ppm", WindowFlags_None, ButtonFlags_Hover);
+    homeButton->loadHoverImage("/tmp/homeButtonHover.ppm");
     
     taskbar->appendWindow(homeButton);
 
     // Sample clock
-    Terminal *clock = new Terminal(taskbar->getWidth() - 50,
-        taskbar->getY() + 14, 50, 20);
+    Terminal *clock = new Terminal(taskbar->getWidth() - 50, taskbar->getY() + 14, 50, 20);
     clock->setBg(0xffbebebe);
     clock->setFg(0);
     clock->disableCursor();
@@ -89,7 +79,7 @@ CWindow::CWindow(Surface *surface)
     // devManager->addDevice(new Device::DeviceKeyboardPs2("/dev/kb0"));
 
     // Entire screen is dirty on startup
-    setDirty(true);
+    setFlags(WindowFlags_Dirty);
 }
 
 CWindow::~CWindow() {}
@@ -107,7 +97,7 @@ void CWindow::updateMousePos(Device::MouseData *data) {
         mouse->setY(yNew);
     }
 
-    mouse->setDirty(true);
+    mouse->setFlags(WindowFlags_Dirty);
 }
 
 }

@@ -12,7 +12,7 @@ MenuBar::~MenuBar() {}
 
 bool MenuBar::onWindowDrag(Device::MouseData *data) {
     parent->updateChildPositions(data);
-    parent->setDirty(true);
+    parent->setFlags(WindowFlags_Dirty);
 
     return true;
 }

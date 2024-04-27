@@ -43,8 +43,7 @@
 #define CURSOR_COLOR                        0xff808080
 #define RESET_COLOR                         0xff333333
 #define FG_COLOR_DEFAULT                    0xff0096aa
-// #define BG_COLOR_DEFAULT                    0x7f333333
-#define BG_COLOR_DEFAULT                    0x7f000000 // TODO: Fix
+#define BG_COLOR_DEFAULT                    0x7f000000
 
 
 typedef struct terminal {

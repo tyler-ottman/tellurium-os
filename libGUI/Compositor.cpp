@@ -34,7 +34,7 @@ void Compositor::render(Window *root, Window *mouse) {
         drawWindow(root);
 
         // Draw mouse on top of final image, does not use clipped regions
-        bSurface->blit(*mouse->surface, &mouse->surface->rect);
+        bSurface->blit(*mouse->surface, &mouse->surface->rect); // TODO: Alpha blit the mouse
 
         // Copy backbuffer surface to main surface;
         int nRects = fRenderClips->getNumClipped();
@@ -51,9 +51,9 @@ void Compositor::render(Window *root, Window *mouse) {
 void Compositor::createDirtyWindowRegions(Window *win, Window *dirtyAncestor) {
     // If window is marked as dirty, add it to dirty list
     // for the compositor
-    if (win->isDirty()) {
+    if (win->getFlag(WindowFlags_Dirty)) {
         // Reset dirty flag because it won't be dirty after refresh
-        win->setDirty(false);
+        win->resetFlags(WindowFlags_Dirty);
 
         // This is an optimization, dirty child Windows bounded by a dirty
         // ancestor (parent or above) Window do not need to be added to
@@ -78,9 +78,9 @@ void Compositor::createDirtyWindowRegions(Window *win, Window *dirtyAncestor) {
 }
 
 void Compositor::createDirtyMouseRegion(Window *mouse) {
-    if (mouse->isDirty()) {
+    if (mouse->getFlag(WindowFlags_Dirty)) {
         // Reset dirty flag because it won't be dirty after refresh
-        mouse->setDirty(false);
+        mouse->resetFlags(WindowFlags_Dirty);
 
         // Add new and old location of mouse to region to render
         bRenderClips->addClippedRegion(mouse->getPrevRect(), mouse);
@@ -99,17 +99,17 @@ void Compositor::drawWindow(Window *win) {
         drawWindow(win->windows[i]);
     }
 
-    // Window is not marked as visible, do not render
-    if (!win->isVisible()) {
+    // Window marked as invisible, do not render
+    if (win->getFlag(WindowFlags_Invisible)) {
         return;
     }
 
-    // Draw self (TODO: put in surface)
+    // Draw self
     for (int i = 0; i < bRenderClips->numClipped; i++) {
         ClipRect *clippedRect = &bRenderClips->clippedRects[i];
 
         // The clipped region is marked as transparent, perform alpha blit
-        if (clippedRect->win->isTransparent()) {
+        if (clippedRect->win->getFlag(WindowFlags_Transparent)) {
             bSurface->alphaBlit(*win->surface, &clippedRect->rect);
         }
 
@@ -122,7 +122,7 @@ void Compositor::drawWindow(Window *win) {
     // The Window just drawn is transparent, existing parts of clipped
     // region must be marked as transparent to indicate to the Compositor
     // that the surface must be alpha blended with the existing surface
-    if (win->isTransparent()) {
+    if (win->getFlag(WindowFlags_Transparent)) {
         bRenderClips->divideClippedRegion(&win->surface->rect, win);
     }
 

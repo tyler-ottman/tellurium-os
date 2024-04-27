@@ -13,13 +13,17 @@ Window::Window(const char *windowName, int x, int y, int width, int height,
     initialize(windowName, x, y, width, height, flags, priority);
 }
 
-Window::Window(const char *windowName, int xPos, int yPos, ImageReader *img,
-               WindowFlags flags, WindowPriority priority){    
-    initialize(windowName, xPos, yPos, img->getWidth(), img->getHeight(), flags,
+Window::Window(const char *windowName, int xPos, int yPos, const char *path,
+               WindowFlags flags, WindowPriority priority){   
+    ImageReader *image = imageReaderDriver(path);
+
+    initialize(windowName, xPos, yPos, image->getWidth(), image->getHeight(), flags,
                priority);
     
     // Load image into buffer
-    loadBuff(img->getBuff());
+    loadBuff(image->getBuff());
+
+    delete image;    
 }
 
 Window::~Window() {}
@@ -61,7 +65,7 @@ void Window::initialize(const char *windowName, int x, int y, int width,
     }
 
     // Menu bar can only be attached to movable windows
-    if (hasDecoration()) {
+    if (getFlag(WindowFlags_Decoration)) {
         MenuBar *menuBar = new MenuBar(x + 10, y, width - 20, TITLE_HEIGHT);
         appendWindow(menuBar);
 
@@ -79,42 +83,26 @@ void Window::initialize(const char *windowName, int x, int y, int width,
         }
 
         // Menu Bar's Top Left Corner
-        ImageReader *topLeftBorder = imageReaderDriver("/tmp/BorderTopLeft.bmp");
-        GUI::Window *bmpTopLeftBorder = new GUI::Window("BorderTopLeft", x, y, topLeftBorder);
-        bmpTopLeftBorder->setTransparent(true);
-        appendWindow(bmpTopLeftBorder);
+        appendWindow(new GUI::Window("BorderTopLeft", x, y, "/tmp/BorderTopLeft.bmp", WindowFlags_Transparent));
 
         // Menu Bar's Top Right Corner
-        ImageReader *topRightBorder = imageReaderDriver("/tmp/BorderTopRight.bmp");
-        GUI::Window *bmpTopRightBorder = new GUI::Window("BorderTopRight", x + width - 10, y, topRightBorder);
-        bmpTopRightBorder->setTransparent(true);
-        appendWindow(bmpTopRightBorder);
+        appendWindow(new GUI::Window("BorderTopRight", x + width - 10, y, "/tmp/BorderTopRight.bmp", WindowFlags_Transparent));
 
         // Menu Bar's Exit Button
-        ImageReader *exitImg = imageReaderDriver("/tmp/ExitButtonUnhover.bmp");
-        Button *exitButton = new Button(x + width - 22, y + 5, exitImg, WindowFlags::WNONE, ButtonFlags::BHOVER);
-        exitButton->setTransparent(true);
-        menuBar->appendWindow(exitButton);
-        delete exitImg;
+        menuBar->appendWindow(new Button(x + width - 22, y + 5, "/tmp/ExitButtonUnhover.bmp", WindowFlags_Transparent, ButtonFlags_None));
 
         // Menu Bar's Fullscreen Button
-        ImageReader *fullscreenImg = imageReaderDriver("/tmp/FullscreenButton.bmp");
-        Button *fullscreenButton = new Button(x + width - 44, y + 5, fullscreenImg, WindowFlags::WNONE, ButtonFlags::BBORDER);
-        fullscreenButton->setTransparent(true);
-        menuBar->appendWindow(fullscreenButton);
+        menuBar->appendWindow(new Button(x + width - 44, y + 5, "/tmp/FullscreenButton.bmp", WindowFlags_Transparent, ButtonFlags_None));
 
         // Menu Bar's Minimize Button
-        ImageReader *minimizeImg = imageReaderDriver("/tmp/MinimizeButton.bmp");
-        Button *minimizeButton = new Button(x + width - 66, y + 5, minimizeImg, WindowFlags::WNONE, ButtonFlags::BBORDER);
-        minimizeButton->setTransparent(true);
-        menuBar->appendWindow(minimizeButton);
+        menuBar->appendWindow(new Button(x + width - 66, y + 5, "/tmp/MinimizeButton.bmp", WindowFlags_Transparent, ButtonFlags_None));
 
         // Window's Border
         appendWindow(new Border(x, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1));
         appendWindow(new Border(x + width - 1, y + TITLE_HEIGHT, 1, height - TITLE_HEIGHT - 1));
         appendWindow(new Border(x, y + height - 1, width, 1));
 
-        cFlags.visible = false; // TODO: Fix
+        setFlags(WindowFlags_Invisible);
     }
 }
 
@@ -227,7 +215,7 @@ bool Window::onEvent(Device::TellurEvent *event, Window *mouse) {
         selectedWindow = childWindow;
 
         // Notify parent to move Window to top of stack if it's decorable
-        if (parent && hasDecoration()) {
+        if (parent && getFlag(WindowFlags_Decoration)) {
             parent->moveToTop(this);
         }
 
@@ -347,7 +335,7 @@ bool Window::moveToTop(Window *child) {
     // If the Window actually moved in the stack, mark as dirty
     Window *win = appendWindow(child);
     if (win->getWindowID() != oldWindowID) {
-        win->setDirty(true);
+        setFlags(WindowFlags_Dirty);
     }
 
     return true;
@@ -372,7 +360,7 @@ void Window::loadTransparentColor(uint32_t color) {
     for (size_t i = 0; i < buffSize; i++) {
         surface->buff[i] = 0x80000000 | (0xffffff & color);
     }
-    setTransparent(true);
+    setFlags(WindowFlags_Transparent);
 }
 
 int Window::getWindowID() { return this->windowID; }
@@ -393,6 +381,8 @@ Rect *Window::getWinRect() { return &surface->rect; }
 
 Rect *Window::getPrevRect() { return winPrevRect; }
 
+bool Window::getFlag(WindowFlags field) { return flags & field; }
+
 void Window::setWindowID(int windowID) { this->windowID = windowID; }
 
 void Window::setX(int x) { surface->rect.setX(x); }
@@ -408,18 +398,11 @@ void Window::setWidth(int width) { surface->rect.setWidth(width); }
 
 void Window::setHeight(int height) { surface->rect.setHeight(height); }
 
-void Window::setPriority(WindowPriority priority) {
-    if (priority >= WindowPriority::WPRIO0 &&
-        priority <= WindowPriority::WPRIO9) {
-        this->priority = priority;
-    }
-}
+void Window::setPriority(WindowPriority priority) { this->priority = priority; }
 
-bool Window::hasDecoration() { return flags & WindowFlags::WDECORATION; }
+void Window::setFlags(WindowFlags fields) { flags |= fields; }
 
-bool Window::hasMovable() { return flags & WindowFlags::WMOVABLE; }
-
-bool Window::hasUnbounded() { return flags & WindowFlags::WUNBOUNDED; }
+void Window::resetFlags(WindowFlags fields) { flags &= (0xffffffff ^ fields); }
 
 bool Window::isCoordInBounds(int x, int y) {
     return ((x >= getX()) && (x <= (getX() + getWidth())) &&

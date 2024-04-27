@@ -9,50 +9,22 @@
 
 int main() {
     // Geometry Window
-    GUI::Window *geoWin = new GUI::Window("Geometry", 10, 10, 700, 400,
-                                          GUI::WindowFlags::WDECORATION);
-
-    ImageReader *redPentagon = imageReaderDriver("/tmp/Pentagon.bmp");
-    GUI::Window *bmpPentagon = new GUI::Window("Pentagon", 275, 150, redPentagon);
-    bmpPentagon->setTransparent(true);
-    geoWin->appendWindow(bmpPentagon);
-
-    ImageReader *pinkCircle = imageReaderDriver("/tmp/Circle.bmp");
-    GUI::Window *bmpCircle = new GUI::Window("Circle", 90, 100, pinkCircle);
-    bmpCircle->setTransparent(true);
-    geoWin->appendWindow(bmpCircle);
-
-    ImageReader *greenSquare = imageReaderDriver("/tmp/Square.bmp");
-    GUI::Window *bmpSquare = new GUI::Window("Square", 170, 150, greenSquare);
-    bmpSquare->setTransparent(true);
-    geoWin->appendWindow(bmpSquare);
-
-    ImageReader *blueTriangle = imageReaderDriver("/tmp/Triangle.bmp");
-    GUI::Window *bmpTriangle = new GUI::Window("Triangle", 380, 150, blueTriangle);
-    bmpTriangle->setTransparent(true);
-    geoWin->appendWindow(bmpTriangle);
-
-    ImageReader *orangeStar = imageReaderDriver("/tmp/Star.bmp");
-    GUI::Window *bmpStar = new GUI::Window("Pentagon", 440, 100, orangeStar);
-    bmpStar->setTransparent(true);
-    geoWin->appendWindow(bmpStar);
-
-    // Restrict drawing of self to inside of border
-    geoWin->appendWindow(new GUI::Window(NULL, geoWin->getX() + 1, geoWin->getY() + TITLE_HEIGHT, geoWin->getWidth() - 2, geoWin->getHeight() - TITLE_HEIGHT - 1, GUI::WindowFlags::WNONE, GUI::WindowPriority::WPRIO0));
+    GUI::Window *geoWin = new GUI::Window("Geometry", 10, 10, 700, 400, GUI::WindowFlags_Decoration);
+    geoWin->appendWindow(new GUI::Window(nullptr, 275, 150, "/tmp/Pentagon.bmp", GUI::WindowFlags_Transparent));
+    geoWin->appendWindow(new GUI::Window(nullptr, 90, 100, "/tmp/Circle.bmp", GUI::WindowFlags_Transparent));
+    geoWin->appendWindow(new GUI::Window(nullptr, 170, 150, "/tmp/Square.bmp", GUI::WindowFlags_Transparent));
+    geoWin->appendWindow(new GUI::Window(nullptr, 380, 150, "/tmp/Triangle.bmp", GUI::WindowFlags_Transparent));
+    geoWin->appendWindow(new GUI::Window(nullptr, 440, 100, "/tmp/Star.bmp", GUI::WindowFlags_Transparent));
+    geoWin->appendWindow(new GUI::Window(nullptr, geoWin->getX() + 1, geoWin->getY() + TITLE_HEIGHT, geoWin->getWidth() - 2, geoWin->getHeight() - TITLE_HEIGHT - 1, GUI::WindowFlags_None, GUI::WindowPriority_0));
 
     // Image window
     const char *imagePath = "/tmp/Universe.bmp";
-    GUI::Window *universeWin = new GUI::Window(imagePath, 150, 100, 802, 377 + TITLE_HEIGHT + 1, GUI::WindowFlags::WDECORATION);
-    ImageReader *universe = imageReaderDriver(imagePath);
-    GUI::Window *universeImg = new GUI::Window(NULL, 151, 100 + TITLE_HEIGHT, universe);
-    delete universe;
-    universeWin->appendWindow(universeImg);
+    GUI::Window *universeWin = new GUI::Window(imagePath, 150, 100, 802, 377 + TITLE_HEIGHT + 1, GUI::WindowFlags_Decoration);
+    universeWin->appendWindow(new GUI::Window(nullptr, 151, 100 + TITLE_HEIGHT, imagePath));
 
-    // // Terminal window
-    GUI::Window *termWin = new GUI::Window("Terminal", 100, 150, 800, 480, GUI::WindowFlags::WDECORATION);
-    termWin->setVisible(false);
-    GUI::Terminal *term = new GUI::Terminal(100 + 1, 150 + TITLE_HEIGHT + 1, termWin->getWidth() - 2, termWin->getHeight() - 2 - TITLE_HEIGHT);
-    term->setTransparent(true);
+    // Terminal window
+    GUI::Window *termWin = new GUI::Window("Terminal", 100, 150, 800, 480, GUI::WindowFlags_Decoration | GUI::WindowFlags_Invisible);
+    GUI::Terminal *term = new GUI::Terminal(100 + 1, 150 + TITLE_HEIGHT + 1, termWin->getWidth() - 2, termWin->getHeight() - 2 - TITLE_HEIGHT, GUI::WindowFlags_Transparent);
     termWin->appendWindow(term);
     term->printf("Hello World! This is a testbench.\n");
     for (size_t i = 0; i < 16; i++) {
